@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://living-image.local/schemas/limg-v1.schema.json",
+  "title": "Living Image v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "id", "compiler", "image", "analysis", "rig", "behavior", "quality", "provenance"],
+  "properties": {
+    "format": { "const": "living-image" },
+    "version": { "const": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "compiler": {
+      "type": "object",
+      "required": ["name", "version", "detector", "detectorVersion", "faceModel", "landmarkModel", "modelSha256"]
+    },
+    "image": {
+      "type": "object",
+      "required": ["mimeType", "width", "height", "sha256", "dataUrl"],
+      "properties": {
+        "mimeType": { "type": "string", "pattern": "^image/" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "dataUrl": { "type": "string", "pattern": "^data:image/" }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "required": ["face", "landmarks", "features"],
+      "properties": {
+        "face": { "type": "object", "required": ["bbox", "score"] },
+        "landmarks": { "type": "array", "minItems": 28, "maxItems": 28, "items": { "$ref": "#/$defs/scoredPoint" } },
+        "features": {
+          "type": "object",
+          "required": ["eyes", "mouth"],
+          "properties": {
+            "eyes": { "type": "array", "minItems": 2, "maxItems": 2 },
+            "mouth": { "type": "object" }
+          }
+        }
+      }
+    },
+    "rig": { "type": "object", "required": ["controls", "breath"] },
+    "behavior": { "type": "object", "required": ["seed", "blink", "breath", "smoothing"] },
+    "quality": {
+      "type": "object",
+      "required": ["status", "score", "disabledCapabilities", "warnings", "rejectionReasons", "metrics"],
+      "properties": {
+        "status": { "enum": ["full", "limited", "reject"] },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "provenance": { "type": "object" }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+    },
+    "scoredPoint": {
+      "allOf": [
+        { "$ref": "#/$defs/point" },
+        { "type": "object", "required": ["score"], "properties": { "score": { "type": "number" } } }
+      ]
+    }
+  }
+}
+

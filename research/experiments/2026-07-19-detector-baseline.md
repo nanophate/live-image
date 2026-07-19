@@ -53,3 +53,5 @@ The compiler must save raw/derived points, overlay them, apply confidence gates,
 and use those exact values to drive blink, gaze and mouth in the separate Viewer.
 Passing this baseline alone does not establish animation quality.
 
+That next evidence is now recorded in
+[`2026-07-19-animation-validation.md`](2026-07-19-animation-validation.md).

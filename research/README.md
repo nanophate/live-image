@@ -12,6 +12,8 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`license-matrix.md`](license-matrix.md) — code/model/data/sample-asset licensing separately tracked
 - [`sources.md`](sources.md) — primary references and the exact claims checked
 - [`experiments/2026-07-19-detector-baseline.md`](experiments/2026-07-19-detector-baseline.md) — first local detector measurements
+- [`experiments/2026-07-19-animation-validation.md`](experiments/2026-07-19-animation-validation.md) — end-to-end browser and reject-path results
+- [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels
 
@@ -22,4 +24,3 @@ open questions, so a later product or legal review can reproduce the reasoning.
 
 The research snapshot date is **2026-07-19**. Dependency releases, model terms,
 and remote files can change; re-check them before a public or commercial release.
-

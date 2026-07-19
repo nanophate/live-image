@@ -12,6 +12,7 @@ unoccluded, head-and-shoulders anime character with both eyes open.
 | --- | --- |
 | `teal-librarian.png` | Crisp cel shading, teal bob, amber irises |
 | `copper-courier.png` | Softer shading, wavy copper hair, cyan irises |
+| `unsupported-no-face.png` | Locally generated colour gradient; expected detector rejection |
 
 Generated artifacts belong in `compiled/` and detector overlays in `overlays/`.
 The generated artifacts are ignored because they are reproducible from the
@@ -24,4 +25,8 @@ head-and-shoulders composition, two unobstructed open eyes with visible pupils,
 a visible closed mouth, a plain background, and no text, watermark, logo,
 signature, or existing intellectual property. The two subjects were an amber-
 eyed fantasy librarian and a blue-green-eyed sky courier.
+
+`unsupported-no-face.png` is a deterministic gradient created locally with
+ImageMagick. It exists to prove that the compiler does not fabricate a rig when
+the dedicated detector returns no face.
 

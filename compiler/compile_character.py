@@ -52,11 +52,15 @@ def normalise_point(point: Sequence[float], width: int, height: int) -> dict[str
 
 def normalise_box(box: Sequence[float], width: int, height: int) -> dict[str, float]:
     x0, y0, x1, y1 = (float(v) for v in box[:4])
+    normalised_x0 = clamp(x0 / width, 0.0, 1.0)
+    normalised_y0 = clamp(y0 / height, 0.0, 1.0)
+    normalised_x1 = clamp(x1 / width, 0.0, 1.0)
+    normalised_y1 = clamp(y1 / height, 0.0, 1.0)
     return {
-        "x": clamp(x0 / width, 0.0, 1.0),
-        "y": clamp(y0 / height, 0.0, 1.0),
-        "width": clamp((x1 - x0) / width, 0.0, 1.0),
-        "height": clamp((y1 - y0) / height, 0.0, 1.0),
+        "x": normalised_x0,
+        "y": normalised_y0,
+        "width": max(0.0, normalised_x1 - normalised_x0),
+        "height": max(0.0, normalised_y1 - normalised_y0),
     }
 
 
