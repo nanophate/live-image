@@ -2,6 +2,12 @@
 
 Snapshot: 2026-07-19
 
+## Toolchain
+
+**Confirmed:** Node.js 24.18.0 is the latest LTS release in the official Node.js
+release table on the snapshot date. The repository pins that exact version in
+`.node-version` for nodenv and declares the same line in `package.json`.
+
 ## Format
 
 **Decision:** Version 1 is a single UTF-8 JSON document with the `.limg`
@@ -56,4 +62,3 @@ player.setState({
 Values are normalised. The runtime clamps them against capability and rig ranges
 stored by the compiler. Automatic idle behaviour is seeded and deterministic;
 explicit input can override it.
-

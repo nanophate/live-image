@@ -7,6 +7,8 @@ dependency decisions.
 
 ## Detector and runtime candidates
 
+- [Node.js release table](https://nodejs.org/en/about/previous-releases) —
+  selection of Node.js 24.18.0 LTS for the nodenv-pinned frontend toolchain
 - [hysts/anime-face-detector](https://github.com/hysts/anime-face-detector) —
   package architecture, 28 points, Python requirement, code licenses
 - [anime-face-detector on PyPI](https://pypi.org/project/anime-face-detector/) —
@@ -47,4 +49,3 @@ dependency decisions.
 Search-result snippets, forks, community wrappers, reposted checkpoints, and
 third-party summaries were used only to discover primary pages. They are not
 evidence for license or commercial-use claims in this folder.
-

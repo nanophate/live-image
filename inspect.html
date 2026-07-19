@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Living Image Detection Inspector</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/">Living Image</a>
+        <span class="topbar-label">Compiler / Detection inspector</span>
+        <a class="text-link" href="/viewer.html">Open player</a>
+      </header>
+      <section class="workspace">
+        <div class="stage-panel inspector-stage">
+          <canvas id="inspection-canvas" width="768" height="768" aria-label="Detection result"></canvas>
+          <div class="legend"><span class="cyan"></span>raw landmark <span class="yellow"></span>eye polygon <span class="red"></span>derived pupil <span class="magenta"></span>mouth region</div>
+        </div>
+        <aside class="control-panel">
+          <div>
+            <p class="eyebrow">Evidence, not hand-authored rigging</p>
+            <h1 id="inspection-name">Detection inspector</h1>
+            <p class="muted">Every overlay comes from the values stored in the selected .limg.</p>
+          </div>
+          <div class="load-row">
+            <label class="file-button">Inspect .limg<input id="inspection-file" type="file" accept=".limg,application/json" /></label>
+            <button class="secondary" id="inspect-teal" type="button">Teal sample</button>
+            <button class="secondary" id="inspect-copper" type="button">Copper sample</button>
+          </div>
+          <div class="quality-card" id="inspection-quality" hidden></div>
+          <div id="metric-list" class="metric-list"></div>
+          <details>
+            <summary>Raw provenance</summary>
+            <pre id="provenance"></pre>
+          </details>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/src/ui/inspect.ts"></script>
+  </body>
+</html>
+
