@@ -1,0 +1,13 @@
+.DS_Store
+.venv/
+node_modules/
+dist/
+coverage/
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+fixtures/compiled/*.limg
+fixtures/compiled/*.json
+fixtures/overlays/*.png
+

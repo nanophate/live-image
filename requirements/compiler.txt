@@ -1,0 +1,7 @@
+# anime-face-detector 0.1.0 currently resolves OpenCV 5 + NumPy 2 on macOS,
+# while its PyTorch 2.2.2 x86_64 wheel still needs the NumPy 1.x ABI.
+# Keep these compatibility pins until the upstream wheel matrix changes.
+anime-face-detector==0.1.0
+numpy==1.26.4
+opencv-python-headless==4.10.0.84
+
