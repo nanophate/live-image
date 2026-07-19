@@ -132,8 +132,20 @@ The complete evidence index is [`research/README.md`](research/README.md).
   it is not an iris-specific trained detector.
 - No hair separation/lag, protected line-art field, TPS/ARAP, or head rotation yet.
 - The detector/model cards say MIT, but do not warrant training-data provenance;
-  commercial release still needs the review recorded in `research/license-matrix.md`.
+  a commercial compiler bundle still needs the review recorded in
+  `research/license-matrix.md`.
 
-The repository's own license has intentionally not been chosen. That is a
-project-owner policy decision; third-party notices are recorded separately.
+## Responsible use
 
+Use Living Image lawfully and responsibly. In particular, do not use character
+images or likenesses without the necessary rights, or use animated characters
+for impersonation, fraud, harassment, exploitation, or deception. This is a
+community request and does not add restrictions to the MIT License.
+
+## License
+
+Project-authored source code is available under the [MIT License](LICENSE), with
+the public project-level notice `The live-image Authors`; no personal legal name
+or commercial contact is published. Third-party code, models, weights, data, and
+sample assets retain their own terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+and [`research/license-matrix.md`](research/license-matrix.md).

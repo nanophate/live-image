@@ -2,6 +2,10 @@
 
 Snapshot: 2026-07-19. This is an engineering record, not legal advice.
 
+Project-authored source code is released under the MIT License. This matrix
+tracks separate third-party code, model, data, and asset terms that the project
+license cannot override.
+
 | Item | Code | Weights/data/assets | MVP use | Status |
 | --- | --- | --- | --- | --- |
 | anime-face-detector | MIT; vendored portions Apache-2.0 | Model cards state MIT, but training-data provenance is not warranted | compile-time detector | usable for research MVP; provenance review before commercial release |
@@ -27,5 +31,3 @@ Snapshot: 2026-07-19. This is an engineering record, not legal advice.
 - Re-check all remote model cards at the release tag rather than relying on this
   dated snapshot.
 - Do not import InsightFace weights or any `-NC` asset into a commercial bundle.
-- Choose and add a license for this repository only with the owner's approval.
-
