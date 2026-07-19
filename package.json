@@ -1,0 +1,25 @@
+{
+  "name": "living-image",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "24.18.x"
+  },
+  "packageManager": "npm@11.16.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test:ts": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
+    "test:py": "PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v",
+    "test": "npm run test:ts && npm run test:py",
+    "compile:fixtures": "PYTHONPATH=. .venv/bin/python -m compiler.compile_character fixtures/source/copper-courier.png fixtures/source/teal-librarian.png",
+    "compile:fixtures:offline": "PYTHONPATH=. .venv/bin/python -m compiler.compile_character --offline fixtures/source/copper-courier.png fixtures/source/teal-librarian.png"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
+  }
+}

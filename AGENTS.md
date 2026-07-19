@@ -109,6 +109,20 @@ Investigate the following as needed.
 - Use only self-made or properly licensed sample images
 - Record failure results without hiding them
 
+## Research and licensing discipline
+- Put all project research in `research/`; do not leave important findings only in chat, temporary notes, or commit messages
+- Add new research documents to `research/README.md` so the evidence trail stays discoverable
+- Prefer primary sources such as official repositories, papers, model cards, license texts, and vendor documentation; record the review date and direct links
+- Clearly label statements as **Confirmed**, **Decision**, **Inference**, or **Open**. Do not present an inference or an unresolved license question as confirmed
+- Record implementation decisions, adoption/rejection reasons, reproduced results, failures, and follow-up actions in the relevant `research/` document
+- Review code, pretrained weights, training/evaluation data, sample media, generated artifacts, and transitive dependencies as separate licensing/provenance surfaces
+- Record exact dependency/model versions and checksums when they affect reproducibility or redistribution
+- Do not call a path commercially safe merely because its repository code has a permissive license; verify the model weights, data provenance, assets, and redistribution terms as well
+- Keep non-commercial, research-only, unclear-provenance, or incompatible artifacts out of the commercial path unless the project owner explicitly approves a documented exception
+- Do not describe this project as “open source” unless the selected project license satisfies the Open Source Definition. Use “source-available” when commercial, purpose, or ethical-use restrictions apply
+- Treat selection or modification of the project license, commercial-use policy, contributor licensing, or acceptable-use restrictions as a major policy decision and ask the project owner before changing them
+- Preserve third-party notices and keep `THIRD_PARTY_NOTICES.md` and `research/license-matrix.md` current when dependencies or assets change
+
 ## Definition of success
 At minimum the following pipeline must work:
 
