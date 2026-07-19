@@ -1,4 +1,8 @@
 import { requireElement } from "./shared.js";
+import {
+  isSafeValidationArtifactPath,
+  type ValidationArtifactKind,
+} from "../validation-report.js";
 
 type ValidationResult = "full" | "limited" | "reject" | "error";
 type ExpectedResult = ValidationResult | string;
@@ -206,14 +210,24 @@ function renderRecord(title: string, values: DetailRecord): HTMLElement {
   const list = document.createElement("dl");
   list.className = "case-metrics";
   for (const [key, value] of Object.entries(values)) {
-    const term = document.createElement("dt");
-    term.textContent = humanize(key);
-    const description = document.createElement("dd");
-    description.textContent = formatValue(value);
-    list.append(term, description);
+    if (key === "metrics" && isRecord(value)) {
+      for (const [metric, metricValue] of Object.entries(value)) {
+        appendDetail(list, metric, metricValue);
+      }
+    } else {
+      appendDetail(list, key, value);
+    }
   }
   section.append(heading, list);
   return section;
+}
+
+function appendDetail(list: HTMLDListElement, key: string, value: unknown): void {
+  const term = document.createElement("dt");
+  term.textContent = humanize(key);
+  const description = document.createElement("dd");
+  description.textContent = formatValue(value);
+  list.append(term, description);
 }
 
 function renderArtifacts(artifacts: ValidationArtifacts, caseId: string): HTMLElement {
@@ -228,6 +242,7 @@ function renderArtifacts(artifacts: ValidationArtifacts, caseId: string): HTMLEl
     const path = artifacts[kind];
     if (!path) continue;
     const url = resolveArtifact(path);
+    if (!url) continue;
     const item = document.createElement("div");
     item.className = "artifact-item";
     const link = document.createElement("a");
@@ -235,7 +250,7 @@ function renderArtifacts(artifacts: ValidationArtifacts, caseId: string): HTMLEl
     link.textContent = `${humanize(kind)} ↗`;
     link.target = "_blank";
     link.rel = "noreferrer";
-    if (kind !== "limg") {
+    if (kind === "overlay") {
       const image = document.createElement("img");
       image.src = url;
       image.alt = `${caseId} ${kind}`;
@@ -250,11 +265,14 @@ function renderArtifacts(artifacts: ValidationArtifacts, caseId: string): HTMLEl
   return section;
 }
 
-function resolveArtifact(path: string): string {
+function resolveArtifact(path: string): string | undefined {
   try {
-    return new URL(path, artifactBase).href;
+    const url = new URL(path, artifactBase);
+    if ((url.protocol !== "http:" && url.protocol !== "https:")
+      || url.origin !== window.location.origin) return undefined;
+    return url.href;
   } catch {
-    return path;
+    return undefined;
   }
 }
 
@@ -300,7 +318,7 @@ function parseCase(value: unknown, index: number): ValidationCase {
   }
   if (value.quality !== undefined && !isRecord(value.quality)) throw new Error(`Invalid quality data for ${value.id}.`);
   if (value.capabilities !== undefined && !isRecord(value.capabilities)) throw new Error(`Invalid capabilities for ${value.id}.`);
-  if (value.artifacts !== undefined && !isArtifacts(value.artifacts)) throw new Error(`Invalid artifacts for ${value.id}.`);
+  const artifacts = parseArtifacts(value.artifacts, value.id);
   if (value.message !== undefined && typeof value.message !== "string") throw new Error(`Invalid message for ${value.id}.`);
   return {
     id: value.id,
@@ -310,7 +328,7 @@ function parseCase(value: unknown, index: number): ValidationCase {
     result: value.result,
     quality: value.quality,
     capabilities: value.capabilities,
-    artifacts: value.artifacts,
+    artifacts,
     message: value.message,
   };
 }
@@ -327,6 +345,21 @@ function isSummary(value: unknown): value is ValidationSummary {
   return isRecord(value) && ["total", ...RESULTS].every((key) => typeof value[key] === "number");
 }
 
-function isArtifacts(value: unknown): value is ValidationArtifacts {
-  return isRecord(value) && ["limg", "overlay", "diagnostic"].every((key) => value[key] === undefined || typeof value[key] === "string");
+function parseArtifacts(value: unknown, caseId: string): ValidationArtifacts | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) throw new Error(`Invalid artifacts for ${caseId}.`);
+  const allowed: ValidationArtifactKind[] = ["limg", "overlay", "diagnostic"];
+  if (Object.keys(value).some((key) => !allowed.includes(key as ValidationArtifactKind))) {
+    throw new Error(`Invalid artifacts for ${caseId}.`);
+  }
+  const artifacts: ValidationArtifacts = {};
+  for (const kind of allowed) {
+    const path = value[kind];
+    if (path === undefined) continue;
+    if (typeof path !== "string" || !isSafeValidationArtifactPath(kind, path, caseId)) {
+      throw new Error(`Unsafe ${kind} artifact path for ${caseId}.`);
+    }
+    artifacts[kind] = path;
+  }
+  return artifacts;
 }

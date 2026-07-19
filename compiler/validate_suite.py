@@ -139,10 +139,10 @@ def _run_compiler(
 
 
 def _error_message(result: CompilerResult) -> str:
-    detail = result.stderr.strip() or result.stdout.strip()
-    if detail:
-        return detail
-    return f"compiler exited with status {result.returncode} without diagnostics"
+    # Child stderr can contain tracebacks, virtualenv/cache paths, and other
+    # machine-specific details. Keep the checked report deterministic; callers
+    # can reproduce the failing case directly when full diagnostics are needed.
+    return f"compiler exited with status {result.returncode}"
 
 
 def _relative_artifact(path: Path, output_dir: Path) -> str:
@@ -180,6 +180,25 @@ def _clean_expected_outputs(source_path: Path, artifact_dir: Path, overlay_dir: 
             path.unlink()
 
 
+def _prepare_output_directory(output_dir: Path, relative: Path) -> Path:
+    """Create one case directory without following pre-existing symlinks."""
+
+    current = output_dir
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise RuntimeError(f"validation output contains a symlink: {relative}")
+    current.mkdir(parents=True, exist_ok=True)
+    resolved = current.resolve()
+    try:
+        resolved.relative_to(output_dir)
+    except ValueError as error:
+        raise RuntimeError("validation output resolves outside the selected directory") from error
+    if resolved != current:
+        raise RuntimeError(f"validation output contains a symlink: {relative}")
+    return current
+
+
 def _case_result(
     case: ValidationCase,
     output_dir: Path,
@@ -187,8 +206,6 @@ def _case_result(
     offline: bool,
     flip_test: bool,
 ) -> dict[str, Any]:
-    artifact_dir = output_dir / "artifacts" / case.id
-    overlay_dir = output_dir / "overlays" / case.id
     result: dict[str, Any] = {
         "id": case.id,
         "category": case.category,
@@ -196,8 +213,12 @@ def _case_result(
         "expected": case.expected,
     }
     try:
-        artifact_dir.mkdir(parents=True, exist_ok=True)
-        overlay_dir.mkdir(parents=True, exist_ok=True)
+        artifact_dir = _prepare_output_directory(
+            output_dir, Path("artifacts") / case.id
+        )
+        overlay_dir = _prepare_output_directory(
+            output_dir, Path("overlays") / case.id
+        )
         _clean_expected_outputs(case.source_path, artifact_dir, overlay_dir)
         process = runner(case.source_path, artifact_dir, overlay_dir, offline, flip_test)
         limg_path = artifact_dir / f"{case.source_path.stem}.limg"

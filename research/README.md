@@ -13,6 +13,8 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`sources.md`](sources.md) — primary references and the exact claims checked
 - [`experiments/2026-07-19-detector-baseline.md`](experiments/2026-07-19-detector-baseline.md) — first local detector measurements
 - [`experiments/2026-07-19-animation-validation.md`](experiments/2026-07-19-animation-validation.md) — end-to-end browser and reject-path results
+- [`experiments/2026-07-19-validation-matrix.md`](experiments/2026-07-19-validation-matrix.md) — 12-image detector matrix, preserved first-run failures, and quality gate v2
+- [`experiments/2026-07-19-validation-before-quality-gate.json`](experiments/2026-07-19-validation-before-quality-gate.json) — raw 7/12 first-run evidence before gate changes
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

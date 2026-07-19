@@ -12,7 +12,7 @@ artifacts are not part of this release.
 | anime-face-detector | MIT; vendored portions Apache-2.0 | Model cards state MIT, but training-data provenance is not warranted | compile-time detector | usable for research MVP; provenance review before commercial release |
 | compiler dependency stack | OpenCV Apache-2.0; NumPy BSD-3-Clause; PyTorch/torchvision BSD-style; Hugging Face Hub and safetensors Apache-2.0 | no additional project-owned data | detector execution and checkpoint loading | versions pinned directly or transitively in the compiler environment |
 | web build stack | TypeScript Apache-2.0; Vite and esbuild MIT | none | development, tests, and browser bundle generation | no third-party package is required by the generated runtime at frame time |
-| repository fixtures | n/a | generated specifically for this project with OpenAI image generation | regression tests and demo | prompt/provenance recorded in `fixtures/README.md` |
+| repository fixtures | n/a | generated specifically for this project with OpenAI image generation, plus one locally downsampled derivative | regression tests, demo, and 12-image validation | prompt/provenance recorded in `fixtures/README.md` and `fixtures/validation/prompts.json` |
 
 ## Release checklist
 

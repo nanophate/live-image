@@ -19,6 +19,7 @@
           "faceScale": 0.40165941642992425,
           "faceScore": 0.9994938373565674,
           "meanLandmarkScore": 0.9598621726036072,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8665257055899411,
           "pupilConfidence": 1.0
         },
@@ -48,6 +49,7 @@
           "faceScale": 0.3880760521409614,
           "faceScore": 0.9989290833473206,
           "meanLandmarkScore": 0.9580478072166443,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9774035960435867,
           "pupilConfidence": 0.8535084078799204
         },
@@ -77,6 +79,7 @@
           "faceScale": 0.42911579430198366,
           "faceScore": 0.985558032989502,
           "meanLandmarkScore": 0.964948832988739,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8626856397194316,
           "pupilConfidence": 1.0
         },
@@ -106,6 +109,7 @@
           "faceScale": 0.4477387204694976,
           "faceScore": 0.9749826788902283,
           "meanLandmarkScore": 0.9386937022209167,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8694293082521667,
           "pupilConfidence": 1.0
         },
@@ -135,6 +139,7 @@
           "faceScale": 0.4620896724232456,
           "faceScore": 0.9986550211906433,
           "meanLandmarkScore": 0.8780241012573242,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8841284016436788,
           "pupilConfidence": 0.8698913800008405
         },
@@ -164,6 +169,7 @@
           "faceScale": 0.45155599737091306,
           "faceScore": 0.9989126324653625,
           "meanLandmarkScore": 0.892257571220398,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9267698039164387,
           "pupilConfidence": 0.6921205006499968
         },
@@ -180,12 +186,14 @@
         "overlay": "overlays/light-iris-silver/light-iris-silver.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [
+          "gaze"
+        ]
       },
       "category": "light-low-contrast-iris",
       "expected": "limited",
       "id": "light-iris-silver",
-      "matched": false,
+      "matched": true,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.8418164484229812,
@@ -193,14 +201,17 @@
           "faceScale": 0.4983033784078449,
           "faceScore": 0.9999233484268188,
           "meanLandmarkScore": 0.9255689382553101,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9381485270581058,
           "pupilConfidence": 0.4874800653631455
         },
         "rejectionReasons": [],
         "score": 0.9361058473021737,
-        "warnings": []
+        "warnings": [
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/light-iris-silver.png"
     },
     {
@@ -209,12 +220,14 @@
         "overlay": "overlays/light-iris-peach/light-iris-peach.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [
+          "gaze"
+        ]
       },
       "category": "light-low-contrast-iris",
       "expected": "limited",
       "id": "light-iris-peach",
-      "matched": false,
+      "matched": true,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.8423358865774493,
@@ -222,14 +235,17 @@
           "faceScale": 0.5074954481596392,
           "faceScore": 0.9998915195465088,
           "meanLandmarkScore": 0.9412669539451599,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.916861118138964,
           "pupilConfidence": 0.4452753381894251
         },
         "rejectionReasons": [],
         "score": 0.9388818003632996,
-        "warnings": []
+        "warnings": [
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/light-iris-peach.png"
     },
     {
@@ -238,12 +254,15 @@
         "overlay": "overlays/occluded-left-eye/occluded-left-eye.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [
+          "blink",
+          "gaze"
+        ]
       },
       "category": "eye-occlusion",
       "expected": "limited",
       "id": "occluded-left-eye",
-      "matched": false,
+      "matched": true,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.543672392048665,
@@ -251,14 +270,19 @@
           "faceScale": 0.3694394733727073,
           "faceScore": 0.9929389953613281,
           "meanLandmarkScore": 0.7666249871253967,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8933862828470566,
           "pupilConfidence": 0.5368398143759769
         },
         "rejectionReasons": [],
         "score": 0.7806661245318296,
-        "warnings": []
+        "warnings": [
+          "blink disabled because eye symmetry is below 0.70",
+          "blink and gaze disabled because eye confidence is below 0.70",
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/occluded-left-eye.png"
     },
     {
@@ -280,6 +304,7 @@
           "faceScale": 0.43880831339712917,
           "faceScore": 0.8307774066925049,
           "meanLandmarkScore": 0.9043170809745789,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9824976896713826,
           "pupilConfidence": 1.0
         },
@@ -296,12 +321,14 @@
         "overlay": "overlays/three-quarter/three-quarter.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [
+          "blink"
+        ]
       },
       "category": "three-quarter-pose",
       "expected": "limited",
       "id": "three-quarter",
-      "matched": false,
+      "matched": true,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.8043522483652492,
@@ -309,14 +336,17 @@
           "faceScale": 0.44282602313222685,
           "faceScore": 0.7481144666671753,
           "meanLandmarkScore": 0.8525644540786743,
+          "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8401473619255577,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
         "score": 0.7891550041129398,
-        "warnings": []
+        "warnings": [
+          "blink disabled because eye symmetry is below 0.70"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/three-quarter.png"
     },
     {
@@ -325,12 +355,15 @@
         "overlay": "overlays/low-resolution-192/low-resolution-192.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [
+          "blink",
+          "gaze"
+        ]
       },
       "category": "low-resolution",
       "expected": "limited",
       "id": "low-resolution-192",
-      "matched": false,
+      "matched": true,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.9243745260132799,
@@ -338,14 +371,17 @@
           "faceScale": 0.45030895868937176,
           "faceScore": 0.9977495074272156,
           "meanLandmarkScore": 0.9304707646369934,
+          "minImageDimensionPixels": 192,
           "mouthConfidence": 0.962312272346186,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
         "score": 0.9604156861457851,
-        "warnings": []
+        "warnings": [
+          "blink and gaze disabled because the image shortest side is below 256 pixels"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/low-resolution-192.png"
     }
   ],
@@ -373,11 +409,11 @@
         "total": 2
       },
       "eye-occlusion": {
-        "matched": 0,
+        "matched": 1,
         "outcomes": {
           "error": 0,
-          "full": 1,
-          "limited": 0,
+          "full": 0,
+          "limited": 1,
           "reject": 0
         },
         "total": 1
@@ -393,31 +429,31 @@
         "total": 1
       },
       "light-low-contrast-iris": {
-        "matched": 0,
+        "matched": 2,
         "outcomes": {
           "error": 0,
-          "full": 2,
-          "limited": 0,
+          "full": 0,
+          "limited": 2,
           "reject": 0
         },
         "total": 2
       },
       "low-resolution": {
-        "matched": 0,
+        "matched": 1,
         "outcomes": {
           "error": 0,
-          "full": 1,
-          "limited": 0,
+          "full": 0,
+          "limited": 1,
           "reject": 0
         },
         "total": 1
       },
       "three-quarter-pose": {
-        "matched": 0,
+        "matched": 1,
         "outcomes": {
           "error": 0,
-          "full": 1,
-          "limited": 0,
+          "full": 0,
+          "limited": 1,
           "reject": 0
         },
         "total": 1
@@ -430,14 +466,14 @@
       "limited": 5,
       "reject": 0
     },
-    "full": 12,
-    "limited": 0,
-    "matched": 7,
-    "mismatched": 5,
+    "full": 7,
+    "limited": 5,
+    "matched": 12,
+    "mismatched": 0,
     "outcomes": {
       "error": 0,
-      "full": 12,
-      "limited": 0,
+      "full": 7,
+      "limited": 5,
       "reject": 0
     },
     "reject": 0,

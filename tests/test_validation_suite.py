@@ -148,6 +148,42 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertIn("--flip-test", command)
         self.assertEqual(result, CompilerResult(0, "ok", ""))
 
+    def test_refuses_symlinked_case_output_before_cleanup_or_runner(self) -> None:
+        self._source("portrait.png")
+        manifest = self._manifest(
+            [{"id": "escape", "category": "security", "source": "images/portrait.png", "expected": "full"}]
+        )
+        output_dir = self.root / "report"
+        artifacts = output_dir / "artifacts"
+        artifacts.mkdir(parents=True)
+        outside = self.root / "outside"
+        outside.mkdir()
+        sentinel = outside / "portrait.limg"
+        sentinel.write_text("must survive", encoding="utf-8")
+        artifacts.joinpath("escape").symlink_to(outside, target_is_directory=True)
+        runner = mock.Mock(side_effect=AssertionError("runner must not be called"))
+
+        report = validate_suite(manifest, output_dir, runner=runner)
+
+        self.assertEqual(report["cases"][0]["result"], "error")
+        self.assertIn("symlink", report["cases"][0]["message"])
+        self.assertEqual(sentinel.read_text(encoding="utf-8"), "must survive")
+        runner.assert_not_called()
+
+    def test_child_failure_report_does_not_copy_machine_paths(self) -> None:
+        self._source("broken.png")
+        manifest = self._manifest(
+            [{"id": "broken", "category": "error", "source": "images/broken.png", "expected": "error"}]
+        )
+
+        def failed_runner(*_args: object) -> CompilerResult:
+            return CompilerResult(1, stderr="Traceback at /private/cache/model.py\nRuntimeError: failed")
+
+        report = validate_suite(manifest, self.root / "report", runner=failed_runner)
+
+        self.assertEqual(report["cases"][0]["message"], "compiler exited with status 1")
+        self.assertNotIn("/private/cache", json.dumps(report))
+
 
 if __name__ == "__main__":
     unittest.main()

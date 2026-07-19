@@ -82,7 +82,10 @@ npm run validate:fixtures:offline
 
 The checked-in `fixtures/validation/report.json` preserves expected-versus-actual
 outcomes. Large generated `.limg` and overlay artifacts stay ignored and can be
-regenerated locally for the report viewer.
+regenerated locally for the report viewer. The current calibrated result is 7
+full and 5 capability-limited cases with no errors; the initial 7/12 mismatch
+and its limitations are preserved in
+[`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 
 ## Compile another image
 
@@ -130,8 +133,9 @@ npm test
 npm run build
 ```
 
-The validated results and known limitations are in
-[`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md).
+The animation and multi-image validation results are in
+[`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md)
+and [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
