@@ -10,6 +10,7 @@ Branch: `codex/mvp-auto-rig-public`
 | `50aa606` | reproducible validation handoff | README, `.limg` schema, third-party notices, browser QA, actual no-face reject |
 | `aa6a0c9` | public MIT baseline | research discipline, project-level MIT license, responsible-use request, public branch without license-selection history |
 | `b8d0219` | shipped-artifact license inventory | matrix reduced to detector, active dependencies, build tools, and project fixtures |
+| `3d8b41b` | pull-request CI | Node 24.18 web tests/build and offline Python 3.12 compiler tests on Ubuntu 24.04 |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
