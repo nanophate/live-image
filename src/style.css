@@ -32,7 +32,7 @@ code, pre, output, .eyebrow, .topbar-label, .route-index { font-family: "SFMono-
 .landing h1 { margin: 8px 0 18px; font-size: clamp(4rem, 12vw, 9rem); line-height: .9; letter-spacing: -.075em; }
 .eyebrow { margin: 0; color: var(--mint); font-size: .72rem; text-transform: uppercase; letter-spacing: .15em; }
 .lede { max-width: 710px; color: #b7c0c8; font-size: clamp(1.1rem, 2.2vw, 1.55rem); line-height: 1.55; }
-.route-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 44px; }
+.route-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
 .route-card { position: relative; min-height: 240px; padding: 28px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); text-decoration: none; transition: transform .18s ease, border-color .18s ease; }
 .route-card:hover { transform: translateY(-3px); border-color: #5e6c76; }
 .route-card.accent { background: linear-gradient(145deg, #183229, #111a19 70%); border-color: #315f51; }
@@ -91,3 +91,51 @@ pre { max-height: 290px; overflow: auto; padding: 14px; border-radius: 8px; back
 }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Validation report */
+.validation-shell { width: min(1240px, calc(100% - 48px)); margin-inline: auto; padding: 56px 0 88px; }
+.validation-heading { display: flex; align-items: end; justify-content: space-between; gap: 32px; }
+.validation-heading h1 { margin: 8px 0 6px; font-size: clamp(2.2rem, 6vw, 4.5rem); letter-spacing: -.06em; }
+.validation-heading .muted { margin-bottom: 0; }
+.report-notice { margin: 28px 0 18px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: var(--panel); font-size: .8rem; }
+.report-notice-error { color: #ffb5af; border-color: #7b3f3c; background: #251817; }
+.summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+.summary-card { min-width: 0; padding: 18px; border: 1px solid var(--line); border-top: 3px solid #58636c; border-radius: 11px; background: var(--panel); }
+.summary-card strong { display: block; font-size: 1.8rem; line-height: 1; }
+.summary-card span { display: block; margin-top: 8px; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; }
+.result-full { --result-color: var(--mint); }.result-limited { --result-color: var(--amber); }.result-reject { --result-color: #ff8d85; }.result-error { --result-color: #ca8fff; }
+.summary-card.result-full, .summary-card.result-limited, .summary-card.result-reject, .summary-card.result-error { border-top-color: var(--result-color); }
+.report-toolbar { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; color: var(--muted); font-size: .78rem; }
+.report-toolbar select { padding: 8px 34px 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: #d9e1e6; background: var(--panel-2); font: inherit; }
+.report-toolbar output { margin-left: auto; font-family: "SFMono-Regular", Consolas, ui-monospace, monospace; }
+.case-list { display: grid; gap: 12px; }
+.validation-case { overflow: hidden; padding: 22px; border: 1px solid var(--line); border-left: 4px solid var(--result-color); border-radius: 12px; background: var(--panel); }
+.validation-case.has-mismatch { box-shadow: inset 0 0 0 1px rgba(243, 187, 102, .55); }
+.case-heading { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.case-heading h2 { margin: 3px 0 5px; font-size: 1.15rem; }
+.case-category { margin: 0; color: var(--mint); font-family: "SFMono-Regular", Consolas, ui-monospace, monospace; font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; }
+.case-source { margin: 0; color: var(--muted); font-size: .73rem; word-break: break-word; }
+.case-outcome { display: flex; align-items: flex-end; flex-direction: column; gap: 7px; }
+.result-badge { padding: 5px 9px; border: 1px solid color-mix(in srgb, var(--result-color), transparent 55%); border-radius: 999px; color: var(--result-color); background: color-mix(in srgb, var(--result-color), transparent 90%); font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.mismatch-label { color: var(--amber); font-size: .68rem; white-space: nowrap; }
+.case-message { margin: 16px 0 0; padding: 10px 12px; border-radius: 7px; color: #c5ced4; background: #0d1114; font-size: .78rem; line-height: 1.5; }
+.case-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.case-detail-group:empty, .case-details:empty { display: none; }
+.case-detail-group h3, .artifact-section h3 { margin: 20px 0 7px; color: #d7dfe4; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+.case-metrics { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(0, 1.4fr); margin: 0; border-top: 1px solid var(--line); }
+.case-metrics dt, .case-metrics dd { margin: 0; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: .7rem; }
+.case-metrics dt { color: var(--muted); }.case-metrics dd { overflow-wrap: anywhere; color: #d7dfe4; font-family: "SFMono-Regular", Consolas, ui-monospace, monospace; text-align: right; }
+.artifact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.artifact-item { display: flex; min-height: 42px; flex-direction: column; justify-content: end; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #0d1114; }
+.artifact-item img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: #20272c; }
+.artifact-item a { padding: 9px 11px; color: var(--mint); font-size: .72rem; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.empty-state { padding: 50px 20px; border: 1px dashed var(--line); border-radius: 12px; text-align: center; }
+
+@media (max-width: 760px) {
+  .validation-shell { width: min(100% - 28px, 1240px); padding-top: 34px; }
+  .validation-heading { align-items: start; flex-direction: column; }
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .summary-card:first-child { grid-column: 1 / -1; }
+  .case-details, .artifact-grid { grid-template-columns: 1fr; }
+  .validation-case { padding: 18px; }
+}

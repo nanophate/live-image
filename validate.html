@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Validation report — Living Image</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/">Living Image</a>
+        <span class="topbar-label">Compiler / Validation report</span>
+        <a class="text-link" href="/inspect.html">Open inspector</a>
+      </header>
+
+      <section class="validation-shell" aria-labelledby="validation-title">
+        <header class="validation-heading">
+          <div>
+            <p class="eyebrow">Multi-image evidence</p>
+            <h1 id="validation-title">Validation report</h1>
+            <p class="muted" id="report-meta">Load a compiler validation report. Local files stay in your browser.</p>
+          </div>
+          <div class="load-row">
+            <label class="file-button">Load JSON<input id="report-file" type="file" accept=".json,application/json" /></label>
+            <button class="secondary" id="load-sample" type="button">Load sample report</button>
+          </div>
+        </header>
+
+        <p class="report-notice" id="report-notice" role="status" aria-live="polite">No report loaded.</p>
+
+        <section class="summary-grid" id="summary-grid" aria-label="Validation summary" hidden></section>
+
+        <div class="report-toolbar" id="report-toolbar" hidden>
+          <label for="result-filter">Show result</label>
+          <select id="result-filter">
+            <option value="all">All cases</option>
+            <option value="mismatch">Expected mismatch</option>
+            <option value="full">Full</option>
+            <option value="limited">Limited</option>
+            <option value="reject">Reject</option>
+            <option value="error">Error</option>
+          </select>
+          <output id="visible-count"></output>
+        </div>
+
+        <section class="case-list" id="case-list" aria-label="Validation cases"></section>
+      </section>
+    </main>
+    <script type="module" src="/src/ui/validate.ts"></script>
+  </body>
+</html>
