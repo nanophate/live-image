@@ -23,6 +23,7 @@ Branch: `codex/iris-base-eye-layer`
 | `068174a` | Compiler 0.4 rigid iris/base-eye layers | fully contained automatic iris RGB/alpha cages, Telea base eyes, cardinal/diagonal gaze bounds, blink-only sclera warp, direct rendered-iris Canvas control, 12/12 matrix and preserved 2/5 stricter hold-out result |
 | `70da748` | source and exact motion contracts | all 12 public quality-calibration inputs pin SHA-256 plus exact blink/gaze/mouth capability partitions; real offline detection remains 12/12 and the tracked report is unit-checked |
 | `c53d241` | report-only support-domain descriptors | deterministic source-bound OpenCV metrics over 12 feasibility cases, explicit contaminated A replay/procedure failure, byte-identical raw reports, malformed-artifact isolation, and no production gate change |
+| `ec0172a` | semantic blink mesh and closed-eye endpoint | Compiler 0.8 explicit 42-vertex blink fields, rigid-iris aperture integration, preserved numeric-only/Telea/upper-band failures, lower-band-first affine corrective, 3/3 supported visual gate, 7/7 Chromium suite, 12/12 public matrix, and unchanged 2/5 hold-out boundary |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
