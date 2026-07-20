@@ -66,7 +66,7 @@ function previewCanvas(source: HTMLCanvasElement, manifest: LivingImageManifest,
   return preview;
 }
 
-function previewPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
+function canvasPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("Canvas 2D is not available for transition evidence");
   return context.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -175,8 +175,8 @@ async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLE
       cell.dataset.blinkAmount = frame.blinkAmount.toFixed(4);
       const preview = previewCanvas(renderCanvas, manifest, 180, `${manifest.id}: ${frame.label}`);
       cell.append(preview);
-      if (index === 0) openingPixels = previewPixels(preview);
-      if (index === transition.frames.length - 1) reopenedPixels = previewPixels(preview);
+      if (index === 0) openingPixels = canvasPixels(renderCanvas);
+      if (index === transition.frames.length - 1) reopenedPixels = canvasPixels(renderCanvas);
       const caption = document.createElement("figcaption");
       caption.textContent = `${frame.label} · ${Math.round(frame.timeSeconds * 1000)}ms`;
       cell.append(caption);
@@ -194,7 +194,7 @@ async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLE
     const evidence = document.createElement("p");
     evidence.className = "comparison-timeline-evidence";
     evidence.dataset.differingPixels = String(difference.differingPixels);
-    evidence.textContent = `Open → reopened difference: ${difference.differingPixels} pixels · max channel delta ${difference.maxChannelDelta}`;
+    evidence.textContent = `Full-resolution open → reopened difference: ${difference.differingPixels} pixels · max channel delta ${difference.maxChannelDelta}`;
     if (difference.differingPixels > 0) {
       section.classList.add("comparison-cell-error");
       evidence.classList.add("comparison-error-text");

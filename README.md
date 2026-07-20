@@ -163,12 +163,13 @@ The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
 
-- Canvas 2D piecewise-affine patches, not a full WebGL2 semantic mesh yet.
+- Compiler-authored Canvas 2D piecewise-affine feature meshes with protected
+  eye-line masks, not a full WebGL2 semantic mesh yet.
 - Mouth motion is deliberately small because a closed source image has no real
   teeth or oral cavity to reveal.
 - Pupil location is deterministic local image analysis seeded by eye landmarks;
   it is not an iris-specific trained detector.
-- No hair separation/lag, protected line-art field, TPS/ARAP, or head rotation yet.
+- No hair separation/lag, rigid iris/highlight layer, TPS/ARAP, or head rotation yet.
 - The detector/model cards say MIT, but do not warrant training-data provenance;
   a commercial compiler bundle still needs the review recorded in
   `research/license-matrix.md`.

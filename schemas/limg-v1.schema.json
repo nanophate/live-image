@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://living-image.local/schemas/limg-v1.schema.json",
   "title": "Living Image v1",
+  "$comment": "Cross-field ordering, containment, threshold ordering, decoded dimensions, and total image pixels are additionally enforced by src/schema.ts and src/runtime.ts.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "version", "id", "compiler", "image", "analysis", "rig", "behavior", "quality", "provenance"],
@@ -18,8 +19,8 @@
       "required": ["mimeType", "width", "height", "sha256", "dataUrl"],
       "properties": {
         "mimeType": { "type": "string", "pattern": "^image/" },
-        "width": { "type": "integer", "minimum": 1 },
-        "height": { "type": "integer", "minimum": 1 },
+        "width": { "type": "integer", "minimum": 1, "maximum": 8192 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 8192 },
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "dataUrl": { "type": "string", "pattern": "^data:image/" }
       }
@@ -34,8 +35,17 @@
           "type": "object",
           "required": ["eyes", "mouth"],
           "properties": {
-            "eyes": { "type": "array", "minItems": 2, "maxItems": 2 },
-            "mouth": { "type": "object" }
+            "eyes": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/$defs/eyeFeature" },
+              "allOf": [
+                { "contains": { "type": "object", "required": ["side"], "properties": { "side": { "const": "left" } } }, "minContains": 1, "maxContains": 1 },
+                { "contains": { "type": "object", "required": ["side"], "properties": { "side": { "const": "right" } } }, "minContains": 1, "maxContains": 1 }
+              ]
+            },
+            "mouth": { "$ref": "#/$defs/mouthFeature" }
           }
         }
       }
@@ -58,6 +68,132 @@
       "required": ["x", "y"],
       "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
     },
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "protectedLineArtMask": {
+      "type": "object",
+      "required": ["dataUrl", "width", "height", "coverage", "method", "cannyLow", "cannyHigh"],
+      "properties": {
+        "dataUrl": { "type": "string", "pattern": "^data:image/png;base64," },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "method": { "const": "canny-active-aperture-v1" },
+        "cannyLow": { "type": "number", "minimum": 0 },
+        "cannyHigh": { "type": "number", "minimum": 0 }
+      }
+    },
+    "eyeFeature": {
+      "type": "object",
+      "required": ["side", "region", "anchors", "pupil", "rig"],
+      "properties": {
+        "side": { "enum": ["left", "right"] },
+        "region": { "$ref": "#/$defs/rect" },
+        "anchors": {
+          "type": "object",
+          "required": ["left", "right", "top", "bottom", "centreY"],
+          "properties": {
+            "left": { "type": "number" },
+            "right": { "type": "number" },
+            "top": { "type": "number" },
+            "bottom": { "type": "number" },
+            "centreY": { "type": "number" }
+          }
+        },
+        "pupil": {
+          "allOf": [
+            { "$ref": "#/$defs/point" },
+            {
+              "type": "object",
+              "required": ["radius", "confidence", "contrast", "method"],
+              "properties": {
+                "radius": { "type": "number", "exclusiveMinimum": 0 },
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "contrast": { "type": "number", "minimum": 0 },
+                "method": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        "rig": {
+          "type": "object",
+          "required": ["maxGazeX", "maxGazeY", "blinkFloor"],
+          "properties": {
+            "maxGazeX": { "type": "number", "minimum": 0, "maximum": 1 },
+            "maxGazeY": { "type": "number", "minimum": 0, "maximum": 1 },
+            "blinkFloor": { "type": "number", "minimum": 0, "maximum": 1 },
+            "deformation": {
+              "type": "object",
+              "required": ["method", "sourceRows", "closedRows", "gazeRowWeights", "protectedLineArtMask", "region"],
+              "properties": {
+                "method": { "const": "fixed-boundary-piecewise-affine-v1" },
+                "sourceRows": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number" } },
+                "closedRows": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number" } },
+                "gazeRowWeights": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number", "minimum": 0, "maximum": 1 } },
+                "protectedLineArtMask": { "$ref": "#/$defs/protectedLineArtMask" },
+                "region": { "$ref": "#/$defs/rect" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "mouthFeature": {
+      "type": "object",
+      "required": ["region", "anchors", "rig"],
+      "properties": {
+        "region": { "$ref": "#/$defs/rect" },
+        "anchors": {
+          "type": "object",
+          "required": ["left", "right", "centreX", "centreY"],
+          "properties": {
+            "left": { "type": "number" },
+            "right": { "type": "number" },
+            "centreX": { "type": "number" },
+            "centreY": { "type": "number" }
+          }
+        },
+        "lineConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rig": {
+          "type": "object",
+          "required": ["maxOpen", "interiorColour"],
+          "properties": {
+            "maxOpen": { "type": "number", "minimum": 0, "maximum": 1 },
+            "interiorColour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+            "deformation": {
+              "type": "object",
+              "required": ["method", "upperBand", "lowerBand", "cavity", "upperTravel", "lowerTravel", "lineContrast"],
+              "properties": {
+                "method": { "const": "bounded-lip-bands-v1" },
+                "upperBand": { "$ref": "#/$defs/rect" },
+                "lowerBand": { "$ref": "#/$defs/rect" },
+                "cavity": {
+                  "type": "object",
+                  "required": ["centreX", "centreY", "radiusX", "maxRadiusY"],
+                  "properties": {
+                    "centreX": { "type": "number" },
+                    "centreY": { "type": "number" },
+                    "radiusX": { "type": "number", "exclusiveMinimum": 0 },
+                    "maxRadiusY": { "type": "number", "exclusiveMinimum": 0 }
+                  }
+                },
+                "upperTravel": { "type": "number", "minimum": 0 },
+                "lowerTravel": { "type": "number", "minimum": 0 },
+                "lineContrast": { "type": "number", "minimum": 0 }
+              }
+            }
+          }
+        }
+      }
+    },
     "scoredPoint": {
       "allOf": [
         { "$ref": "#/$defs/point" },
@@ -66,4 +202,3 @@
     }
   }
 }
-

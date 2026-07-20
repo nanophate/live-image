@@ -9,6 +9,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`related-work.md`](related-work.md) — what was examined and what transfers to this project
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
+- [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
 - [`support-domain-gate.md`](support-domain-gate.md) — compile-time support gate options, separate license/provenance review, and the pre-registered next experiment
 - [`license-matrix.md`](license-matrix.md) — code/model/data/sample-asset licensing separately tracked
@@ -20,6 +21,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-holdout-motion-validation.md`](experiments/2026-07-20-holdout-motion-validation.md) — independent licensed hold-out result and deterministic blink/gaze/mouth review
 - [`experiments/2026-07-20-holdout-first-run.json`](experiments/2026-07-20-holdout-first-run.json) — unmodified 3/5 first-run evidence before any response to hold-out mismatches
 - [`experiments/2026-07-20-blink-transition-validation.md`](experiments/2026-07-20-blink-transition-validation.md) — sequential close/reopen samples, capability skips, and pixel-exact recovery evidence
+- [`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md) — compiler-authored eye mesh, protected-line mask, bounded mouth bands, reproduced mask failure, and multi-image results
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

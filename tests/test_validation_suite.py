@@ -69,6 +69,38 @@ class ValidationSuiteTests(unittest.TestCase):
             artifact_dir.joinpath(f"{source.stem}.limg").write_text(
                 json.dumps(
                     {
+                        "compiler": {
+                            "name": "fake-compiler",
+                            "version": "0.3.0",
+                            "detectorVersion": "test",
+                        },
+                        "analysis": {
+                            "features": {
+                                "eyes": [
+                                    {
+                                        "side": "left",
+                                        "rig": {
+                                            "deformation": {
+                                                "method": "fixed-boundary-piecewise-affine-v1",
+                                                "protectedLineArtMask": {
+                                                    "method": "canny-active-aperture-v1",
+                                                    "coverage": 0.25,
+                                                },
+                                            }
+                                        },
+                                    }
+                                ],
+                                "mouth": {
+                                    "lineConfidence": 0.8,
+                                    "rig": {
+                                        "deformation": {
+                                            "method": "bounded-lip-bands-v1",
+                                            "lineContrast": 48.0,
+                                        }
+                                    },
+                                },
+                            }
+                        },
                         "quality": {
                             "status": status,
                             "score": 0.75,
@@ -100,6 +132,14 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(first["cases"][0]["artifacts"]["limg"], "artifacts/normal/full.limg")
         self.assertEqual(first["cases"][0]["artifacts"]["overlay"], "overlays/normal/full.png")
         self.assertEqual(first["cases"][0]["quality"]["metrics"], {"faceScore": 0.9})
+        self.assertEqual(first["cases"][0]["compiler"]["version"], "0.3.0")
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["protectedLineCoverage"],
+            0.25,
+        )
+        self.assertEqual(first["cases"][0]["deformation"]["mouth"]["lineConfidence"], 0.8)
+        self.assertRegex(first["cases"][0]["sourceSha256"], r"^[0-9a-f]{64}$")
+        self.assertRegex(first["cases"][0]["artifactSha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(
             first["cases"][1]["capabilities"],
             {"enabled": ["blink", "mouth"], "disabled": ["gaze"]},
@@ -250,6 +290,47 @@ class ValidationSuiteTests(unittest.TestCase):
 
         self.assertFalse(report["cases"][0]["matched"])
         self.assertEqual(report["summary"]["mismatched"], 1)
+
+    def test_unknown_actual_capability_is_an_artifact_error(self) -> None:
+        self._source("full.png")
+        manifest = self._manifest(
+            [
+                {
+                    "id": "typo",
+                    "category": "contract",
+                    "source": "images/full.png",
+                    "expected": "full",
+                    "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+                    "expectedDisabledCapabilities": [],
+                }
+            ]
+        )
+
+        def fake_runner(
+            source: Path,
+            artifact_dir: Path,
+            _overlay_dir: Path,
+            _offline: bool,
+            _flip_test: bool,
+        ) -> CompilerResult:
+            artifact_dir.joinpath(f"{source.stem}.limg").write_text(
+                json.dumps(
+                    {
+                        "quality": {
+                            "status": "full",
+                            "disabledCapabilities": ["mout"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return CompilerResult(0)
+
+        report = validate_suite(manifest, self.root / "report", runner=fake_runner)
+
+        self.assertEqual(report["cases"][0]["result"], "error")
+        self.assertFalse(report["cases"][0]["matched"])
+        self.assertIn("unknown disabledCapabilities", report["cases"][0]["message"])
 
     def test_rejects_unknown_or_overlapping_capability_expectations(self) -> None:
         self._source("portrait.png")

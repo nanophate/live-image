@@ -1,15 +1,55 @@
 {
   "cases": [
     {
+      "artifactSha256": "9c7c98eb43ba1bbbfff1fd238c1d1bbfe4a9d04d4ef30c19c520ad3388b75958",
       "artifacts": {
         "limg": "artifacts/stevenburrow-sample1/stevenburrow-sample1.limg",
         "overlay": "overlays/stevenburrow-sample1/stevenburrow-sample1.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "clean-frontal-external",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.21017871017871018,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.07765606242496999,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 142.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "stevenburrow-sample1",
       "matched": true,
       "quality": {
@@ -21,6 +61,7 @@
           "meanLandmarkScore": 0.9164047241210938,
           "minImageDimensionPixels": 1000,
           "mouthConfidence": 0.8148298431516257,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -28,18 +69,59 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/stevenburrow-sample1.png"
+      "source": "source/stevenburrow-sample1.png",
+      "sourceSha256": "d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831"
     },
     {
+      "artifactSha256": "364b0824ce26f1f411d6198081a7000dd5963d7d93d1738e99419cd3e707bfde",
       "artifacts": {
         "limg": "artifacts/mcproject-manga-girl/mcproject-manga-girl.limg",
         "overlay": "overlays/mcproject-manga-girl/mcproject-manga-girl.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "strong-highlight-external",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.11229885057471264,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.09956546382013981,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 102.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "mcproject-manga-girl",
       "matched": true,
       "quality": {
@@ -51,6 +133,7 @@
           "meanLandmarkScore": 0.9052454233169556,
           "minImageDimensionPixels": 832,
           "mouthConfidence": 0.9250444325677281,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -58,9 +141,11 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/mcproject-manga-girl.png"
+      "source": "source/mcproject-manga-girl.png",
+      "sourceSha256": "c724af25f948bc73080b4c94e1f21ebbd1540fdd8f9eb84a9b918c853a9c9b8b"
     },
     {
+      "artifactSha256": "33a72f949ecf24e5e29b8c76478e675845ee9877d20e1e07a1c20fa17de6f2d6",
       "artifacts": {
         "limg": "artifacts/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.limg",
         "overlay": "overlays/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.png"
@@ -70,10 +155,46 @@
           "blink",
           "gaze",
           "mouth"
-        ]
+        ],
+        "enabled": []
       },
       "category": "one-eye-closed-external",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.4504998812946794,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.17796060832710048,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 0.0,
+          "lineContrast": 0.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ],
+        "enabled": [
+          "mouth"
+        ]
+      },
       "id": "kitsuge-casual-avatar-00",
       "matched": false,
       "quality": {
@@ -85,6 +206,7 @@
           "meanLandmarkScore": 0.268320232629776,
           "minImageDimensionPixels": 512,
           "mouthConfidence": 0.29153725504875183,
+          "mouthLineConfidence": 0.0,
           "pupilConfidence": 0.8016325625494441
         },
         "rejectionReasons": [
@@ -94,13 +216,15 @@
         "score": 0.5639981585618065,
         "warnings": [
           "blink and gaze disabled because eye confidence is below 0.70",
-          "mouth control disabled because its region is unreliable"
+          "mouth control disabled because its landmarks or source line are unreliable"
         ]
       },
       "result": "reject",
-      "source": "source/kitsuge-casual-avatar-00.png"
+      "source": "source/kitsuge-casual-avatar-00.png",
+      "sourceSha256": "652ccd346cc96adf42bed09080a92cffb1b50426393921b336729540f590293b"
     },
     {
+      "artifactSha256": "abea45678dfaa8d8d37a38ec21718bd9c6d2543afb5e3af594e32e20bafe982c",
       "artifacts": {
         "limg": "artifacts/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.limg",
         "overlay": "overlays/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.png"
@@ -110,10 +234,45 @@
           "blink",
           "gaze",
           "mouth"
-        ]
+        ],
+        "enabled": []
       },
       "category": "small-face-full-body-external",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.2361863488624052,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.24135681669928244,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 50.96000000000001,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "reject",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ],
+        "enabled": []
+      },
       "id": "jupitersdaughter-maid-neutral",
       "matched": true,
       "quality": {
@@ -125,6 +284,7 @@
           "meanLandmarkScore": 0.8949946165084839,
           "minImageDimensionPixels": 320,
           "mouthConfidence": 0.7765403985223058,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.768975526625979
         },
         "rejectionReasons": [
@@ -134,9 +294,11 @@
         "warnings": []
       },
       "result": "reject",
-      "source": "source/jupitersdaughter-maid-neutral.png"
+      "source": "source/jupitersdaughter-maid-neutral.png",
+      "sourceSha256": "dbcffaae6181bec6035f5729542e0e30c9287d02d4fe55359754b49261606242"
     },
     {
+      "artifactSha256": "ad0058bc6f9e3a402f7bf9802371e3a2e8ee42a5854697def96ecd6a1cf76ecc",
       "artifacts": {
         "limg": "artifacts/zonked-painted-portrait/zonked-painted-portrait.limg",
         "overlay": "overlays/zonked-painted-portrait/zonked-painted-portrait.png"
@@ -144,10 +306,48 @@
       "capabilities": {
         "disabled": [
           "gaze"
+        ],
+        "enabled": [
+          "blink",
+          "mouth"
         ]
       },
       "category": "outside-anime-domain-external",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.3008805031446541,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.4557657657657658,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 41.879999999999995,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "reject",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ],
+        "enabled": []
+      },
       "id": "zonked-painted-portrait",
       "matched": false,
       "quality": {
@@ -159,6 +359,7 @@
           "meanLandmarkScore": 0.8814598917961121,
           "minImageDimensionPixels": 1250,
           "mouthConfidence": 0.8599012494087219,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.5999656060616926
         },
         "rejectionReasons": [],
@@ -168,7 +369,8 @@
         ]
       },
       "result": "limited",
-      "source": "source/zonked-painted-portrait.png"
+      "source": "source/zonked-painted-portrait.png",
+      "sourceSha256": "a20340ed563c45e7dee7c35a952a30a8a0bd4540255008779af30f6d4dd0836b"
     }
   ],
   "generatedAt": "reproducible-validation-does-not-store-wall-clock",

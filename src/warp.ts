@@ -1,4 +1,4 @@
-import type { EyeFeature } from "./schema.js";
+import type { EyeFeature, MouthFeature, Rect } from "./schema.js";
 import { clamp, mix } from "./math.js";
 
 export interface Vec2 { x: number; y: number }
@@ -35,7 +35,21 @@ export function drawTexturedTriangle(
   context.closePath();
   context.clip();
   context.transform(...transform);
-  context.drawImage(image, 0, 0);
+  const sourceX = Math.floor(Math.min(...source.map((point) => point.x)));
+  const sourceY = Math.floor(Math.min(...source.map((point) => point.y)));
+  const sourceWidth = Math.max(1, Math.ceil(Math.max(...source.map((point) => point.x))) - sourceX);
+  const sourceHeight = Math.max(1, Math.ceil(Math.max(...source.map((point) => point.y))) - sourceY);
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+  );
   context.restore();
 }
 
@@ -80,29 +94,78 @@ export function eyeWarpGrids(
   const eyeBottom = eye.anchors.bottom * imageHeight;
   const pupilX = clamp(eye.pupil.x * imageWidth, eyeLeft + 1, eyeRight - 1);
   const sourceXs = [x0, eyeLeft, pupilX, eyeRight, x1];
-  const sourceYs = [y0, eyeTop, eyeBottom, y1];
+  const deformation = eye.rig.deformation;
+  const sourceYs = deformation
+    ? deformation.sourceRows.map((row) => row * imageHeight)
+    : [y0, eyeTop, eyeBottom, y1];
   const source = sourceYs.map((y) => sourceXs.map((x) => ({ x, y })));
   const blink = clamp(blinkValue, 0, 1);
-  const centreY = eye.anchors.centreY * imageHeight;
-  const floor = eye.rig.blinkFloor * imageHeight;
-  const closedTop = centreY - floor * 0.5;
-  const closedBottom = centreY + floor * 0.5;
-  const innerTop = mix(eyeTop, closedTop, blink);
-  const innerBottom = mix(eyeBottom, closedBottom, blink);
+  const closedYs = deformation
+    ? deformation.closedRows.map((row) => row * imageHeight)
+    : (() => {
+        const centreY = eye.anchors.centreY * imageHeight;
+        const floor = eye.rig.blinkFloor * imageHeight;
+        return [y0, centreY - floor * 0.5, centreY + floor * 0.5, y1];
+      })();
   const gazeSuppression = 1 - blink;
   const shiftX = clamp(gazeX, -1, 1) * eye.rig.maxGazeX * imageWidth * gazeSuppression;
   const shiftY = clamp(gazeY, -1, 1) * eye.rig.maxGazeY * imageHeight * gazeSuppression;
 
   const destination = source.map((row, rowIndex) => row.map((point, columnIndex) => {
-    const innerRow = rowIndex === 1 || rowIndex === 2;
-    let y = point.y;
-    if (rowIndex === 1) y = innerTop;
-    if (rowIndex === 2) y = innerBottom;
+    const gazeWeight = deformation
+      ? (deformation.gazeRowWeights[rowIndex] ?? 0)
+      : (rowIndex === 1 || rowIndex === 2 ? 1 : 0);
+    const closedY = closedYs[rowIndex] ?? point.y;
+    const y = mix(point.y, closedY, blink);
     const columnWeight = columnIndex === 2 ? 1 : 0;
     return {
-      x: point.x + (innerRow ? shiftX * columnWeight : 0),
-      y: y + (innerRow ? shiftY * columnWeight : 0),
+      x: point.x + shiftX * columnWeight * gazeWeight,
+      y: y + shiftY * columnWeight * gazeWeight,
     };
   }));
   return { source, destination };
+}
+
+export interface MouthOpenPlan {
+  amount: number;
+  cavity: { centreX: number; centreY: number; radiusX: number; radiusY: number };
+  upper: { source: Rect; destination: Rect };
+  lower: { source: Rect; destination: Rect };
+}
+
+function pixelRect(rect: Rect, width: number, height: number): Rect {
+  return { x: rect.x * width, y: rect.y * height, width: rect.width * width, height: rect.height * height };
+}
+
+/** Convert compiler-authored mouth bands into one bounded runtime draw plan. */
+export function mouthOpenPlan(
+  mouth: MouthFeature,
+  imageWidth: number,
+  imageHeight: number,
+  openValue: number,
+): MouthOpenPlan | null {
+  const deformation = mouth.rig.deformation;
+  const amount = clamp(openValue, 0, 1);
+  if (!deformation || amount <= 0.001) return null;
+  const upperSource = pixelRect(deformation.upperBand, imageWidth, imageHeight);
+  const lowerSource = pixelRect(deformation.lowerBand, imageWidth, imageHeight);
+  const upperOffset = deformation.upperTravel * imageHeight * amount;
+  const lowerOffset = deformation.lowerTravel * imageHeight * amount;
+  return {
+    amount,
+    cavity: {
+      centreX: deformation.cavity.centreX * imageWidth,
+      centreY: deformation.cavity.centreY * imageHeight,
+      radiusX: deformation.cavity.radiusX * imageWidth,
+      radiusY: Math.max(0.1, deformation.cavity.maxRadiusY * imageHeight * amount),
+    },
+    upper: {
+      source: upperSource,
+      destination: { ...upperSource, y: upperSource.y - upperOffset },
+    },
+    lower: {
+      source: lowerSource,
+      destination: { ...lowerSource, y: lowerSource.y + lowerOffset },
+    },
+  };
 }

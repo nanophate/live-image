@@ -240,6 +240,75 @@ def _read_artifact(path: Path) -> Any:
         raise ValueError(f"could not read compiler artifact {path.name}: {error}") from error
 
 
+def _extract_build_evidence(document: Any) -> dict[str, Any]:
+    """Keep small deterministic compiler/deformation facts in tracked reports."""
+
+    if not isinstance(document, dict):
+        return {}
+    evidence: dict[str, Any] = {}
+    compiler = document.get("compiler")
+    if isinstance(compiler, dict):
+        selected = {
+            field: compiler[field]
+            for field in ("name", "version", "detectorVersion")
+            if isinstance(compiler.get(field), str)
+        }
+        if selected:
+            evidence["compiler"] = selected
+
+    analysis = document.get("analysis")
+    features = analysis.get("features") if isinstance(analysis, dict) else None
+    if not isinstance(features, dict):
+        return evidence
+    deformation: dict[str, Any] = {}
+    eyes = features.get("eyes")
+    eye_evidence: list[dict[str, Any]] = []
+    if isinstance(eyes, list):
+        for eye in eyes:
+            if not isinstance(eye, dict):
+                continue
+            rig = eye.get("rig")
+            eye_deformation = rig.get("deformation") if isinstance(rig, dict) else None
+            if not isinstance(eye_deformation, dict):
+                continue
+            mask = eye_deformation.get("protectedLineArtMask")
+            item: dict[str, Any] = {}
+            if isinstance(eye.get("side"), str):
+                item["side"] = eye["side"]
+            if isinstance(eye_deformation.get("method"), str):
+                item["method"] = eye_deformation["method"]
+            if isinstance(mask, dict):
+                coverage = mask.get("coverage")
+                if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+                    item["protectedLineCoverage"] = coverage
+                if isinstance(mask.get("method"), str):
+                    item["protectedLineMethod"] = mask["method"]
+            if item:
+                eye_evidence.append(item)
+    if eye_evidence:
+        deformation["eyes"] = eye_evidence
+
+    mouth = features.get("mouth")
+    if isinstance(mouth, dict):
+        rig = mouth.get("rig")
+        mouth_deformation = rig.get("deformation") if isinstance(rig, dict) else None
+        if isinstance(mouth_deformation, dict):
+            item = {}
+            if isinstance(mouth_deformation.get("method"), str):
+                item["method"] = mouth_deformation["method"]
+            contrast = mouth_deformation.get("lineContrast")
+            if isinstance(contrast, (int, float)) and not isinstance(contrast, bool) and math.isfinite(contrast):
+                item["lineContrast"] = contrast
+            line_confidence = mouth.get("lineConfidence")
+            if isinstance(line_confidence, (int, float)) and not isinstance(line_confidence, bool) and math.isfinite(line_confidence):
+                item["lineConfidence"] = line_confidence
+            if item:
+                deformation["mouth"] = item
+    if deformation:
+        evidence["deformation"] = deformation
+    return evidence
+
+
 def _clean_expected_outputs(source_path: Path, artifact_dir: Path, overlay_dir: Path) -> None:
     """Remove only files this case's compiler invocation can regenerate."""
 
@@ -282,6 +351,7 @@ def _case_result(
         "id": case.id,
         "category": case.category,
         "source": case.source,
+        "sourceSha256": _sha256_file(case.source_path),
         "expected": case.expected,
     }
     expected_capabilities: dict[str, list[str]] = {}
@@ -309,6 +379,8 @@ def _case_result(
         if not artifact_path.is_file():
             raise RuntimeError("compiler did not produce a .limg or diagnostic artifact")
         document = _read_artifact(artifact_path)
+        result["artifactSha256"] = _sha256_file(artifact_path)
+        result.update(_extract_build_evidence(document))
         quality = _extract_quality(document)
         actual = quality["status"]
         expected_returncode = 2 if actual == "reject" else 0
@@ -346,13 +418,24 @@ def _case_result(
         if quality_report:
             result["quality"] = quality_report
         disabled = quality.get("disabledCapabilities")
-        if isinstance(disabled, list) and all(isinstance(item, str) for item in disabled):
-            actual_disabled = sorted(set(disabled) & set(MOTION_CAPABILITIES))
-            actual_enabled = sorted(set(MOTION_CAPABILITIES) - set(actual_disabled))
-            result["capabilities"] = {
-                "enabled": actual_enabled,
-                "disabled": actual_disabled,
-            }
+        if disabled is None and actual == "reject" and artifact_path.name.endswith(".diagnostic.json"):
+            disabled = list(MOTION_CAPABILITIES)
+        if not isinstance(disabled, list) or not all(isinstance(item, str) for item in disabled):
+            raise ValueError("compiler artifact has invalid disabledCapabilities")
+        if len(disabled) != len(set(disabled)):
+            raise ValueError("compiler artifact has duplicate disabledCapabilities")
+        unknown_disabled = sorted(set(disabled) - set(MOTION_CAPABILITIES))
+        if unknown_disabled:
+            raise ValueError(
+                "compiler artifact has unknown disabledCapabilities: "
+                + ", ".join(unknown_disabled)
+            )
+        actual_disabled = sorted(disabled)
+        actual_enabled = sorted(set(MOTION_CAPABILITIES) - set(actual_disabled))
+        result["capabilities"] = {
+            "enabled": actual_enabled,
+            "disabled": actual_disabled,
+        }
     except Exception as error:  # Continue the suite after compiler and artifact failures.
         message = str(error) or error.__class__.__name__
         message = message.replace(str(case.source_path), case.source)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 import tempfile
@@ -10,7 +11,14 @@ import cv2
 import numpy as np
 
 from compiler import __version__
-from compiler.compile_character import assess_quality, compile_paths, detect_pupil, normalise_box
+from compiler.compile_character import (
+    assess_quality,
+    compile_eye,
+    compile_mouth,
+    compile_paths,
+    detect_pupil,
+    normalise_box,
+)
 
 
 class CompilerGeometryTests(unittest.TestCase):
@@ -20,6 +28,7 @@ class CompilerGeometryTests(unittest.TestCase):
         pupil_confidence: float = 0.90,
         eye_confidence: float = 0.90,
         eye_symmetry: float = 0.90,
+        mouth_line_confidence: float = 0.90,
         image_width: int = 512,
         image_height: int = 512,
     ) -> dict[str, object]:
@@ -46,7 +55,7 @@ class CompilerGeometryTests(unittest.TestCase):
             face_box,
             keypoints,
             eyes,
-            {"confidence": 0.90},
+            {"confidence": 0.90, "lineConfidence": mouth_line_confidence},
             image_width,
             image_height,
             1,
@@ -82,6 +91,54 @@ class CompilerGeometryTests(unittest.TestCase):
         self.assertEqual(quality["status"], "reject")
         self.assertIn("blink", quality["disabledCapabilities"])
         self.assertTrue(quality["rejectionReasons"])
+
+    def test_compiler_authors_eye_mesh_and_protected_line_mask(self) -> None:
+        image = np.full((120, 180, 3), 230, dtype=np.uint8)
+        cv2.line(image, (42, 20), (42, 85), (15, 15, 15), 3)
+        keypoints = np.zeros((28, 3), dtype=np.float32)
+        keypoints[:, 2] = 0.95
+        keypoints[[11, 12, 13, 16, 15, 14], :2] = np.array(
+            [[55, 58], [76, 44], [112, 56], [108, 70], [80, 74], [58, 69]],
+            dtype=np.float32,
+        )
+        cv2.ellipse(image, (82, 59), (15, 17), 0, 0, 360, (70, 50, 30), -1)
+
+        eye = compile_eye("left", image, keypoints, 180, 120, 120)
+        deformation = eye["rig"]["deformation"]
+
+        self.assertEqual(len(deformation["sourceRows"]), 6)
+        self.assertEqual(len(deformation["closedRows"]), 6)
+        self.assertTrue(all(a < b for a, b in zip(deformation["sourceRows"], deformation["sourceRows"][1:])))
+        self.assertTrue(all(a < b for a, b in zip(deformation["closedRows"], deformation["closedRows"][1:])))
+        mask = deformation["protectedLineArtMask"]
+        self.assertTrue(mask["dataUrl"].startswith("data:image/png;base64,"))
+        self.assertGreater(mask["coverage"], 0)
+        self.assertEqual(mask["method"], "canny-active-aperture-v1")
+        mask_bytes = base64.b64decode(mask["dataUrl"].split(",", 1)[1])
+        decoded_mask = cv2.imdecode(np.frombuffer(mask_bytes, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        region = deformation["region"]
+        local_pupil_x = int(round(eye["pupil"]["x"] * 180 - region["x"] * 180))
+        local_pupil_y = int(round(eye["pupil"]["y"] * 120 - region["y"] * 120))
+        self.assertEqual(int(decoded_mask[local_pupil_y, local_pupil_x, 3]), 0)
+
+    def test_compiler_authors_bounded_mouth_line_bands(self) -> None:
+        image = np.full((140, 180, 3), 225, dtype=np.uint8)
+        cv2.line(image, (68, 92), (113, 91), (35, 25, 30), 2)
+        keypoints = np.zeros((28, 3), dtype=np.float32)
+        keypoints[:, 2] = 0.95
+        keypoints[[24, 25, 26, 27], :2] = np.array(
+            [[68, 92], [90, 94], [113, 91], [90, 95]], dtype=np.float32
+        )
+
+        mouth = compile_mouth(image, keypoints, 180, 140, (30, 20, 150, 125, 0.95))
+        deformation = mouth["rig"]["deformation"]
+
+        self.assertEqual(deformation["method"], "bounded-lip-bands-v1")
+        self.assertGreater(deformation["upperBand"]["height"], 0)
+        self.assertGreater(deformation["lowerBand"]["height"], 0)
+        self.assertGreater(deformation["cavity"]["radiusX"], 0)
+        self.assertGreater(deformation["lineContrast"], 0)
+        self.assertGreater(mouth["lineConfidence"], 0)
 
     def test_quality_v2_full_boundaries_are_inclusive(self) -> None:
         quality = self.quality_with(
@@ -138,6 +195,16 @@ class CompilerGeometryTests(unittest.TestCase):
         )
         self.assertEqual(quality["metrics"]["minImageDimensionPixels"], 255)
 
+    def test_low_mouth_line_confidence_disables_only_mouth(self) -> None:
+        quality = self.quality_with(mouth_line_confidence=0.249)
+
+        self.assertEqual(quality["status"], "limited")
+        self.assertEqual(quality["disabledCapabilities"], ["mouth"])
+        self.assertIn(
+            "mouth control disabled because its landmarks or source line are unreliable",
+            quality["warnings"],
+        )
+
     def test_reject_diagnostic_uses_portable_input_name_and_compiler_version(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -155,7 +222,7 @@ class CompilerGeometryTests(unittest.TestCase):
                 results = compile_paths([source], root / "output", None, False, False)
 
             diagnostic = json.loads(results[0][0].read_text(encoding="utf-8"))
-            self.assertEqual(__version__, "0.2.0")
+            self.assertEqual(__version__, "0.3.0")
             self.assertEqual(diagnostic["input"], "portrait.png")
             self.assertEqual(diagnostic["compilerVersion"], __version__)
             self.assertNotIn(str(root), json.dumps(diagnostic))
