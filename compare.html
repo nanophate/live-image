@@ -32,6 +32,14 @@
           <button id="load-comparison-urls" type="button">Load URLs</button>
         </details>
 
+        <label class="comparison-renderer-select">Eye renderer
+          <select id="comparison-eye-deformation">
+            <option value="row-grid">Bounded row grid (baseline)</option>
+            <option value="semantic-mesh-required">Semantic mesh (required)</option>
+            <option value="semantic-mesh-corrective-required">Semantic mesh + closed-eye corrective</option>
+          </select>
+        </label>
+
         <p class="report-notice" id="comparison-status" role="status" aria-live="polite">Load one or more compiled .limg assets.</p>
         <div id="comparison-output" class="comparison-output"></div>
       </section>

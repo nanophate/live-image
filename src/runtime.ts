@@ -1,5 +1,6 @@
 import { clampState, IdleBehavior, ZERO_STATE, type ControlState } from "./behavior.js";
-import { clamp, smooth } from "./math.js";
+import { clamp, easeInOut, smooth } from "./math.js";
+import { drawSemanticMeshWarp, planEyeSemanticMesh } from "./semantic-mesh.js";
 import { validateManifest, type EyeFeature, type LivingImageManifest, type MouthFeature } from "./schema.js";
 import { drawGridWarp, eyeIrisPlan, eyeWarpGrids, mouthOpenPlan } from "./warp.js";
 
@@ -8,6 +9,12 @@ export type StatePatch = Partial<ControlState>;
 interface EyeIrisLayers {
   baseEye: HTMLImageElement;
   texture: HTMLImageElement;
+}
+
+export type EyeDeformationMode = "row-grid" | "semantic-mesh-required" | "semantic-mesh-corrective-required";
+
+export interface LivingImagePlayerOptions {
+  eyeDeformation?: EyeDeformationMode;
 }
 
 /** Shared pulse shape for interactive blinks and deterministic visual checks. */
@@ -38,9 +45,12 @@ export class LivingImagePlayer {
   private blinkPulseDuration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
   private eyeProtectionLayers = new Map<string, HTMLCanvasElement>();
   private eyeIrisLayers = new Map<string, EyeIrisLayers>();
+  private eyeCorrectiveLayers = new Map<string, HTMLImageElement>();
   private loadGeneration = 0;
+  private readonly eyeDeformationMode: EyeDeformationMode;
 
-  constructor(readonly canvas: HTMLCanvasElement) {
+  constructor(readonly canvas: HTMLCanvasElement, options: LivingImagePlayerOptions = {}) {
+    this.eyeDeformationMode = options.eyeDeformation ?? "row-grid";
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) throw new Error("Canvas 2D is not available");
     this.context = context;
@@ -61,15 +71,17 @@ export class LivingImagePlayer {
     if (image.naturalWidth !== manifest.image.width || image.naturalHeight !== manifest.image.height) {
       throw new Error("embedded source image dimensions do not match its manifest");
     }
-    const [protectionLayers, irisLayers] = await Promise.all([
+    const [protectionLayers, irisLayers, correctiveLayers] = await Promise.all([
       this.buildEyeProtectionLayers(manifest, image),
       this.buildEyeIrisLayers(manifest),
+      this.buildEyeCorrectiveLayers(manifest),
     ]);
     if (generation !== this.loadGeneration) return;
     this.manifest = manifest;
     this.image = image;
     this.eyeProtectionLayers = protectionLayers;
     this.eyeIrisLayers = irisLayers;
+    this.eyeCorrectiveLayers = correctiveLayers;
     this.behavior = new IdleBehavior(manifest);
     this.elapsed = 0;
     this.previousTimestamp = null;
@@ -188,17 +200,43 @@ export class LivingImagePlayer {
   private drawEye(eye: EyeFeature, image: HTMLImageElement, width: number, height: number): void {
     const blink = eye.side === "left" ? this.renderedState.blinkLeft : this.renderedState.blinkRight;
     if (blink <= 0.001 && Math.abs(this.renderedState.gazeX) <= 0.001 && Math.abs(this.renderedState.gazeY) <= 0.001) return;
+    const deformation = eye.rig.deformation;
+    const semanticMesh = deformation?.semanticMesh;
+    const semanticRequired = this.eyeDeformationMode !== "row-grid";
+    const semanticPlan = semanticRequired && blink > 0.001
+      ? (() => {
+          if (!semanticMesh) throw new Error(`${eye.side} eye is missing its required semantic mesh`);
+          return planEyeSemanticMesh(semanticMesh, width, height, blink);
+        })()
+      : null;
     const irisLayers = this.eyeIrisLayers.get(eye.side);
-    const irisPlan = eyeIrisPlan(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
+    const irisPlan = eyeIrisPlan(
+      eye,
+      width,
+      height,
+      blink,
+      this.renderedState.gazeX,
+      this.renderedState.gazeY,
+      semanticPlan?.aperture,
+    );
+    if (semanticPlan && (!semanticMesh || !irisLayers || !irisPlan)) {
+      throw new Error(`${eye.side} semantic eye mesh requires decoded iris/base-eye layers and an aperture`);
+    }
     const grids = irisLayers && irisPlan
       ? eyeWarpGrids(eye, width, height, blink, 0, 0)
       : eyeWarpGrids(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
     if (irisLayers && irisPlan) {
-      const region = eye.rig.deformation?.region;
+      const region = deformation?.region;
       if (!region) throw new Error(`${eye.side} iris layer is missing its deformation region`);
-      drawGridWarp(this.context, irisLayers.baseEye, grids.source, grids.destination, {
-        sourceOrigin: { x: region.x * width, y: region.y * height },
-      });
+      if (semanticPlan && semanticMesh) {
+        drawSemanticMeshWarp(this.context, irisLayers.baseEye, semanticMesh, semanticPlan, {
+          sourceOrigin: { x: region.x * width, y: region.y * height },
+        });
+      } else {
+        drawGridWarp(this.context, irisLayers.baseEye, grids.source, grids.destination, {
+          sourceOrigin: { x: region.x * width, y: region.y * height },
+        });
+      }
       if (irisPlan.alpha > 0) {
         this.context.save();
         this.context.beginPath();
@@ -229,6 +267,28 @@ export class LivingImagePlayer {
     }
     const protectedLayer = this.eyeProtectionLayers.get(eye.side);
     const protectionRegion = eye.rig.deformation?.region;
+    if (this.eyeDeformationMode === "semantic-mesh-corrective-required" && blink > 0.001) {
+      const corrective = deformation?.closedEye;
+      const correctiveLayer = this.eyeCorrectiveLayers.get(eye.side);
+      if (!corrective || !correctiveLayer || !protectionRegion) {
+        throw new Error(`${eye.side} eye is missing its required closed-eye corrective`);
+      }
+      const alpha = easeInOut((blink - corrective.activationStart) / (1 - corrective.activationStart));
+      if (alpha > 0) {
+        this.context.save();
+        this.context.globalAlpha = alpha;
+        this.context.drawImage(
+          correctiveLayer,
+          protectionRegion.x * width,
+          protectionRegion.y * height,
+          protectionRegion.width * width,
+          protectionRegion.height * height,
+        );
+        this.context.restore();
+      }
+    }
+    // Restore compiler-protected hair, glasses, and unrelated line art after
+    // every moving/corrective layer so a full blink cannot paint over them.
     if (protectedLayer && protectionRegion) {
       this.context.drawImage(
         protectedLayer,
@@ -398,6 +458,32 @@ export class LivingImagePlayer {
         decode("iris texture", iris.texture.dataUrl, iris.texture.width, iris.texture.height),
       ]);
       layers.set(eye.side, { baseEye, texture });
+    }));
+    return layers;
+  }
+
+  private async buildEyeCorrectiveLayers(manifest: LivingImageManifest): Promise<Map<string, HTMLImageElement>> {
+    const layers = new Map<string, HTMLImageElement>();
+    await Promise.all(manifest.analysis.features.eyes.map(async (eye) => {
+      const deformation = eye.rig.deformation;
+      const corrective = deformation?.closedEye;
+      if (!deformation || !corrective) return;
+      const layer = new Image();
+      layer.decoding = "async";
+      await new Promise<void>((resolve, reject) => {
+        layer.onload = () => resolve();
+        layer.onerror = () => reject(new Error(`${eye.side} closed-eye corrective could not be decoded`));
+        layer.src = corrective.dataUrl;
+      });
+      const expectedWidth = Math.max(1, Math.round(deformation.region.width * manifest.image.width));
+      const expectedHeight = Math.max(1, Math.round(deformation.region.height * manifest.image.height));
+      if (
+        layer.naturalWidth !== corrective.width
+        || layer.naturalHeight !== corrective.height
+        || corrective.width !== expectedWidth
+        || corrective.height !== expectedHeight
+      ) throw new Error(`${eye.side} closed-eye corrective dimensions do not match its deformation region`);
+      layers.set(eye.side, layer);
     }));
     return layers;
   }

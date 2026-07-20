@@ -89,6 +89,27 @@ function eyeDeformationWithIris() {
   };
 }
 
+function semanticEyeMesh() {
+  return {
+    method: "semantic-weighted-triangle-mesh-v1" as const,
+    vertices: [
+      { x: 0.25, y: 0.38 }, { x: 0.35, y: 0.38 }, { x: 0.45, y: 0.38 },
+      { x: 0.25, y: 0.46 }, { x: 0.35, y: 0.46 }, { x: 0.45, y: 0.46 },
+    ],
+    triangles: [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]] as Array<[number, number, number]>,
+    fields: [{
+      control: "blink" as const,
+      weights: [0, 1, 0, 0, 1, 0],
+      maxDisplacements: [
+        { x: 0, y: 0 }, { x: 0, y: 0.02 }, { x: 0, y: 0 },
+        { x: 0, y: 0 }, { x: 0, y: -0.02 }, { x: 0, y: 0 },
+      ],
+    }] as [{ control: "blink"; weights: number[]; maxDisplacements: Array<{ x: number; y: number }> }],
+    aperture: [0, 1, 2, 5, 4, 3],
+    minimumAreaRatio: 0.5,
+  };
+}
+
 test("validates an optional compiler-authored iris/base-eye pair and preserves v1 fallback", () => {
   const manifest = fixtureManifest();
   manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
@@ -115,4 +136,77 @@ test("rejects malformed iris layer pairs, dimensions, and ellipse geometry", () 
   iris.centre = { x: 0.35, y: 0.42 };
   iris.texture.dataUrl = "data:image/png;base64,";
   assert.throws(() => validateManifest(manifest), /texture must contain an embedded PNG/);
+});
+
+test("validates an optional compiler-authored semantic eye mesh", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  manifest.analysis.features.eyes[0]!.rig.deformation.semanticMesh = semanticEyeMesh();
+  assert.equal(validateManifest(manifest), manifest);
+});
+
+test("rejects malformed semantic mesh topology and fields", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  const mesh = semanticEyeMesh();
+  manifest.analysis.features.eyes[0]!.rig.deformation.semanticMesh = mesh;
+
+  mesh.triangles[0] = [0, 0, 4];
+  assert.throws(() => validateManifest(manifest), /invalid indices/);
+
+  mesh.triangles[0] = [0, 1, 4];
+  mesh.fields[0].weights.pop();
+  assert.throws(() => validateManifest(manifest), /weights must match vertices/);
+
+  mesh.fields[0].weights.push(0);
+  mesh.minimumAreaRatio = 0.019;
+  assert.throws(() => validateManifest(manifest), /minimumAreaRatio/);
+});
+
+test("validates and bounds an optional closed-eye corrective", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  const deformation = manifest.analysis.features.eyes[0]!.rig.deformation!;
+  deformation.closedEye = {
+    dataUrl: EMBEDDED_PNG,
+    width: 20,
+    height: 20,
+    coverage: 0.2,
+    method: "telea-skin-fill-curve-v1" as const,
+    activationStart: 0.55,
+    inpaintRadius: 3,
+    lineThickness: 2,
+  };
+  assert.equal(validateManifest(manifest), manifest);
+
+  deformation.closedEye.activationStart = 1;
+  assert.throws(() => validateManifest(manifest), /activationStart/);
+  deformation.closedEye.activationStart = 0.55;
+  deformation.closedEye.width = 19;
+  assert.throws(() => validateManifest(manifest), /closedEye dimensions/);
+  deformation.closedEye.width = 20;
+  deformation.closedEye.lineThickness = 9;
+  assert.throws(() => validateManifest(manifest), /lineThickness/);
+});
+
+test("requires affine closed-eye sampling evidence", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  const deformation = manifest.analysis.features.eyes[0]!.rig.deformation!;
+  deformation.closedEye = {
+    dataUrl: EMBEDDED_PNG,
+    width: 20,
+    height: 20,
+    coverage: 0.2,
+    method: "affine-skin-fill-curve-v3",
+    activationStart: 0.55,
+    lineThickness: 2,
+    sampleExclusionRadius: 4,
+    retainedSamplePixels: 80,
+    medianFitResidual: 2.5,
+    upperSamplesIncluded: false,
+  };
+  assert.equal(validateManifest(manifest), manifest);
+  deformation.closedEye.upperSamplesIncluded = undefined;
+  assert.throws(() => validateManifest(manifest), /upperSamplesIncluded/);
 });

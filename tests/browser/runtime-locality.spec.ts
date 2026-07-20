@@ -81,7 +81,8 @@ async function cellMetrics(character: Locator, state: string): Promise<CellMetri
   });
 }
 
-test("automatic rigs keep browser-rendered motion inside compiler feature regions", async ({ page }) => {
+for (const eyeMode of ["row-grid", "semantic-mesh-required", "semantic-mesh-corrective-required"] as const) {
+test(`automatic rigs keep browser-rendered motion inside compiler feature regions (${eyeMode})`, async ({ page }) => {
   const browserErrors: string[] = [];
   const externalRequests: string[] = [];
   const evidence: Record<string, Record<string, CellMetrics>> = {};
@@ -97,6 +98,7 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
   });
 
   await page.goto("/compare.html");
+  await page.locator("#comparison-eye-deformation").selectOption(eyeMode);
   await page.locator("#comparison-files").setInputFiles([
     { name: "teal-librarian.limg", mimeType: "application/json", buffer: compiledRig("teal-librarian") },
     { name: "copper-courier.limg", mimeType: "application/json", buffer: compiledRig("copper-courier") },
@@ -194,5 +196,6 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
 
   expect(browserErrors).toEqual([]);
   expect(externalRequests).toEqual([]);
-  console.log(`LOCALITY_EVIDENCE ${JSON.stringify(evidence)}`);
+  console.log(`LOCALITY_EVIDENCE ${eyeMode} ${JSON.stringify(evidence)}`);
 });
+}

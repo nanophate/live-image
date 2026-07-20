@@ -12,6 +12,7 @@ PNG
   → anime-specific face + 28-point automatic detection
   → deterministic eye/pupil/mouth derivation + confidence gate
   → rigid iris/highlight texture + inpainted base eye when geometrically eligible
+  → optional compiler-authored semantic blink mesh and weight field
   → one self-contained .limg file
   → separate Inspector and Player
   → blink, gaze, mouth and breath through a common API
@@ -67,7 +68,7 @@ Open:
 - [http://127.0.0.1:5173/inspect.html](http://127.0.0.1:5173/inspect.html) for detector evidence
 - [http://127.0.0.1:5173/viewer.html](http://127.0.0.1:5173/viewer.html) for the separate player
 - [http://127.0.0.1:5173/validate.html](http://127.0.0.1:5173/validate.html) for the multi-image validation report
-- [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons plus a sequential blink close/reopen strip
+- [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons plus a sequential blink close/reopen strip; use its Eye renderer selector to compare the bounded baseline, required semantic mesh, and experimental semantic mesh + closed-eye corrective
 
 The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 `fixtures/overlays/`. Generated outputs are ignored because they are reproducible.
@@ -174,13 +175,14 @@ npx playwright install --only-shell chromium
 npm run test:browser
 ```
 
-The browser suite uses the Compiler 0.4.0 automatic rigs for both primary
-fixtures, reads the real full-resolution Canvas, and requires every enabled
+The browser suite uses the Compiler 0.8.0 automatic rigs for both primary
+fixtures in bounded-row, required-semantic-mesh, and required-corrective modes, reads the real
+full-resolution Canvas, and requires every enabled
 blink, wink, gaze, and mouth state to change pixels only inside its
 compiler-authored feature region. Eye states additionally require every opaque
 protected-mask core pixel to preserve RGB within one level while clear-mask
 pixels still move. Browser-executed motion-plan evidence additionally requires
-each selected Compiler 0.4 iris cage to retain its dimensions, translate in the
+each selected Compiler 0.8 iris cage to retain its dimensions, translate in the
 requested gaze direction, and reach zero alpha at full blink/wink. A second
 render with transparent iris textures provides direct Canvas evidence: every
 visible selected iris must contribute pixels, while full blink/wink must
@@ -201,13 +203,19 @@ The protected-pixel gate and current DPR/iris claim boundary are documented in
 [`research/experiments/2026-07-20-eye-preservation-metrics.md`](research/experiments/2026-07-20-eye-preservation-metrics.md).
 The Compiler 0.4 iris/base-eye implementation and cross-image evidence are in
 [`research/experiments/2026-07-20-iris-base-eye-validation.md`](research/experiments/2026-07-20-iris-base-eye-validation.md).
+The explicit semantic mesh and deterministic closed-eye corrective experiments
+are indexed in [`research/README.md`](research/README.md), including the two
+preserved failed endpoint methods before the lower-band-first v3 result.
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
 
 - Compiler-authored Canvas 2D piecewise-affine feature meshes with protected
-  eye-line masks and optional rigid iris/base-eye layers, not a full WebGL2
-  semantic mesh yet.
+  eye-line masks, optional rigid iris/base-eye layers, and an experimental
+  explicit 42-vertex blink weight field. An opt-in high-blink corrective fits
+  nearby skin and a closed-lid curve automatically; it has only passed the
+  frozen three-image visual gate and is not the default. This is not yet a full
+  face/hair WebGL2 mesh.
 - Mouth motion is deliberately small because a closed source image has no real
   teeth or oral cavity to reveal.
 - Pupil/iris extraction is deterministic local image analysis seeded by eye

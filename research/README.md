@@ -7,6 +7,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 ## Documents
 
 - [`related-work.md`](related-work.md) — what was examined and what transfers to this project
+- [`hugging-face-and-motion-landscape.md`](hugging-face-and-motion-landscape.md) — Hugging Face demos, closest compile-once precedents, license boundaries, and the next architecture experiment
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
@@ -28,6 +29,17 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-iris-base-eye-validation.md`](experiments/2026-07-20-iris-base-eye-validation.md) — Compiler 0.4 rigid iris/highlight texture, Telea base eye, fail-closed gates, two-rig browser evidence, 12-image matrix, and hold-out result
 - [`experiments/2026-07-20-validation-contract-hardening.md`](experiments/2026-07-20-validation-contract-hardening.md) — source SHA-256 and exact blink/gaze/mouth contracts for all 12 public validation cases
 - [`experiments/2026-07-20-support-domain-descriptor-probe.md`](experiments/2026-07-20-support-domain-descriptor-probe.md) — report-only OpenCV warp-support metrics, explicit contaminated hold-out replay, source/artifact binding, and reproduced false-positive boundaries
+- [`experiments/2026-07-20-semantic-mesh-v1-protocol.md`](experiments/2026-07-20-semantic-mesh-v1-protocol.md) — frozen six-case bounded-versus-mesh protocol, exact capability contracts, hard geometry/locality gates, and promotion rule
+- [`experiments/2026-07-20-semantic-mesh-v1-bounded-baseline.json`](experiments/2026-07-20-semantic-mesh-v1-bounded-baseline.json) — pre-implementation Compiler 0.4 artifact hashes, six-case capability result, and existing Canvas browser anchor
+- [`experiments/2026-07-20-semantic-mesh-v1-first-run.json`](experiments/2026-07-20-semantic-mesh-v1-first-run.json) — immutable Compiler 0.5 six-case artifact hashes, topology floor, payload delta, and browser gate summary
+- [`experiments/2026-07-20-semantic-mesh-v1-validation.md`](experiments/2026-07-20-semantic-mesh-v1-validation.md) — explicit blink mesh implementation, bounded A/B numbers, 12-image and hold-out outcomes, and visual-review boundary
+- [`experiments/2026-07-20-semantic-mesh-v1-visual-review.md`](experiments/2026-07-20-semantic-mesh-v1-visual-review.md) — hashed local captures, the reproduced full-close visual failure, and the corrective-layer decision
+- [`experiments/2026-07-20-closed-eye-corrective-v1-protocol.md`](experiments/2026-07-20-closed-eye-corrective-v1-protocol.md) — pre-registered deterministic skin-fill/eyelid endpoint experiment and visual promotion gate
+- [`experiments/2026-07-20-closed-eye-corrective-v1-first-run.md`](experiments/2026-07-20-closed-eye-corrective-v1-first-run.md) — preserved Compiler 0.6 hashes and the reproduced Telea/open-eye visual failure
+- [`experiments/2026-07-20-closed-eye-corrective-v2-protocol.md`](experiments/2026-07-20-closed-eye-corrective-v2-protocol.md) — pre-registered robust outside-eye affine skin-fit replacement
+- [`experiments/2026-07-20-closed-eye-corrective-v2-first-run.md`](experiments/2026-07-20-closed-eye-corrective-v2-first-run.md) — two-image improvement, dark-hair coherent fit failure, and bound artifacts
+- [`experiments/2026-07-20-closed-eye-corrective-v3-protocol.md`](experiments/2026-07-20-closed-eye-corrective-v3-protocol.md) — pre-registered lower-band-first sampling test
+- [`experiments/2026-07-20-closed-eye-corrective-v3-validation.md`](experiments/2026-07-20-closed-eye-corrective-v3-validation.md) — Compiler 0.8 implementation, 3/3 visual endpoint gate, 7/7 browser result, 12/12 public matrix, and preserved hold-out boundary
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

@@ -12,6 +12,7 @@ import {
   type MotionComparisonCell,
 } from "../motion-comparison.js";
 import { LivingImagePlayer } from "../runtime.js";
+import { planEyeSemanticMesh } from "../semantic-mesh.js";
 import {
   fetchLivingImage,
   loadLivingImageFile,
@@ -26,12 +27,27 @@ const urlInput = requireElement<HTMLTextAreaElement>("comparison-urls");
 const loadUrlsButton = requireElement<HTMLButtonElement>("load-comparison-urls");
 const status = requireElement<HTMLElement>("comparison-status");
 const output = requireElement<HTMLElement>("comparison-output");
+const eyeDeformationSelect = requireElement<HTMLSelectElement>("comparison-eye-deformation");
 const frameUrls = new Set<string>();
 const LOCALITY_PADDING_PIXELS = 1;
 
 interface NamedManifest {
   source: string;
   manifest: LivingImageManifest;
+}
+
+let currentManifests: NamedManifest[] = [];
+
+function selectedEyeDeformation() {
+  if (eyeDeformationSelect.value === "semantic-mesh-required") return "semantic-mesh-required" as const;
+  if (eyeDeformationSelect.value === "semantic-mesh-corrective-required") {
+    return "semantic-mesh-corrective-required" as const;
+  }
+  return "row-grid" as const;
+}
+
+function createPlayer(canvas: HTMLCanvasElement): LivingImagePlayer {
+  return new LivingImagePlayer(canvas, { eyeDeformation: selectedEyeDeformation() });
 }
 
 interface EyeProtectionEvidence {
@@ -149,7 +165,7 @@ async function eyeProtectionEvidence(manifest: LivingImageManifest): Promise<Eye
 
 async function neutralPixels(manifest: LivingImageManifest): Promise<Uint8ClampedArray> {
   const canvas = document.createElement("canvas");
-  const player = new LivingImagePlayer(canvas);
+  const player = createPlayer(canvas);
   try {
     await player.load(manifest);
     player.setAutoIdle(false);
@@ -191,7 +207,7 @@ async function renderedPixelsForState(
   cell: MotionComparisonCell,
 ): Promise<Uint8ClampedArray> {
   const canvas = document.createElement("canvas");
-  const player = new LivingImagePlayer(canvas);
+  const player = createPlayer(canvas);
   try {
     await player.load(manifest);
     settlePlayer(player, cell);
@@ -233,7 +249,7 @@ async function makeCell(
   }
 
   const renderCanvas = document.createElement("canvas");
-  const player = new LivingImagePlayer(renderCanvas);
+  const player = createPlayer(renderCanvas);
   try {
     await player.load(manifest);
     const stateError = settlePlayer(player, cell);
@@ -287,6 +303,13 @@ async function makeCell(
     }
     const irisByEye = selectedEyes.flatMap((eye) => {
       const blink = eye.side === "left" ? renderedState.blinkLeft : renderedState.blinkRight;
+      const semanticAperture = selectedEyeDeformation() !== "row-grid" && blink > 0.001
+        ? (() => {
+            const mesh = eye.rig.deformation?.semanticMesh;
+            if (!mesh) throw new Error(`${eye.side} eye is missing its required semantic mesh`);
+            return planEyeSemanticMesh(mesh, manifest.image.width, manifest.image.height, blink).aperture;
+          })()
+        : undefined;
       const plan = eyeIrisPlan(
         eye,
         manifest.image.width,
@@ -294,6 +317,7 @@ async function makeCell(
         blink,
         renderedState.gazeX,
         renderedState.gazeY,
+        semanticAperture,
       );
       const iris = eye.rig.deformation?.iris;
       if (!plan || !iris) return [];
@@ -408,7 +432,7 @@ async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLE
   const strip = document.createElement("div");
   strip.className = "comparison-timeline-strip";
   const renderCanvas = document.createElement("canvas");
-  const player = new LivingImagePlayer(renderCanvas);
+  const player = createPlayer(renderCanvas);
   let openingPixels: Uint8ClampedArray | null = null;
   let reopenedPixels: Uint8ClampedArray | null = null;
   try {
@@ -468,6 +492,7 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
   const section = document.createElement("section");
   section.className = "comparison-character";
   section.dataset.characterId = manifest.id;
+  section.dataset.eyeDeformation = selectedEyeDeformation();
 
   const heading = document.createElement("header");
   heading.className = "comparison-character-heading";
@@ -497,6 +522,7 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
 }
 
 async function renderManifests(manifests: NamedManifest[]): Promise<void> {
+  currentManifests = manifests;
   releaseFrameUrls();
   output.replaceChildren();
   status.textContent = `Rendering ${manifests.length} character${manifests.length === 1 ? "" : "s"} in fixed deterministic states…`;
@@ -537,8 +563,16 @@ async function loadUrls(urls: string[]): Promise<void> {
 
 fileInput.addEventListener("change", () => void loadFiles([...fileInput.files ?? []]));
 loadUrlsButton.addEventListener("click", () => void loadUrls(parseUrlList(urlInput.value)));
+eyeDeformationSelect.addEventListener("change", () => {
+  if (currentManifests.length) void renderManifests(currentManifests);
+});
 
-const initialUrls = new URL(window.location.href).searchParams.getAll("asset").flatMap(parseUrlList);
+const initialLocation = new URL(window.location.href);
+const initialEyeMode = initialLocation.searchParams.get("eyeMode");
+if (initialEyeMode === "semantic-mesh-required" || initialEyeMode === "semantic-mesh-corrective-required") {
+  eyeDeformationSelect.value = initialEyeMode;
+}
+const initialUrls = initialLocation.searchParams.getAll("asset").flatMap(parseUrlList);
 if (initialUrls.length) {
   urlInput.value = initialUrls.join("\n");
   void loadUrls(initialUrls);

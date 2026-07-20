@@ -95,6 +95,19 @@ class ValidationSuiteTests(unittest.TestCase):
                                                     },
                                                     "baseEye": {"method": "telea-inpaint-v1"},
                                                 },
+                                                "semanticMesh": {
+                                                    "method": "semantic-weighted-triangle-mesh-v1",
+                                                    "vertices": [{}, {}, {}],
+                                                    "triangles": [[0, 1, 2]],
+                                                    "minimumAreaRatio": 0.35,
+                                                },
+                                                "closedEye": {
+                                                    "method": "affine-skin-fill-curve-v3",
+                                                    "coverage": 0.2,
+                                                    "retainedSamplePixels": 128,
+                                                    "medianFitResidual": 2.5,
+                                                    "upperSamplesIncluded": False,
+                                                },
                                             }
                                         },
                                     }
@@ -157,6 +170,30 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(
             first["cases"][0]["deformation"]["eyes"][0]["baseEyeMethod"],
             "telea-inpaint-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshMethod"],
+            "semantic-weighted-triangle-mesh-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshVertices"],
+            3,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshMinimumAreaRatio"],
+            0.35,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeMethod"],
+            "affine-skin-fill-curve-v3",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeRetainedSamplePixels"],
+            128,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeUpperSamplesIncluded"],
+            False,
         )
         self.assertEqual(first["cases"][0]["deformation"]["mouth"]["lineConfidence"], 0.8)
         self.assertRegex(first["cases"][0]["sourceSha256"], r"^[0-9a-f]{64}$")

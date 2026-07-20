@@ -164,6 +164,7 @@ export function eyeIrisPlan(
   blinkValue: number,
   gazeX: number,
   gazeY: number,
+  apertureOverride?: readonly Vec2[],
 ): IrisMotionPlan | null {
   const deformation = eye.rig.deformation;
   const iris = deformation?.iris;
@@ -173,12 +174,29 @@ export function eyeIrisPlan(
   // translation; feeding it back into these rows would deform the sclera and
   // translate the clip a second time.
   const grids = eyeWarpGrids(eye, imageWidth, imageHeight, blink, 0, 0);
-  const top = grids.destination[2];
-  const bottom = grids.destination[3];
-  if (!top || !bottom) return null;
-  const topLeft = top[1], topCentre = top[2], topRight = top[3];
-  const bottomLeft = bottom[1], bottomCentre = bottom[2], bottomRight = bottom[3];
-  if (!topLeft || !topCentre || !topRight || !bottomLeft || !bottomCentre || !bottomRight) return null;
+  let aperture: Vec2[];
+  let topCentre: Vec2 | undefined;
+  let bottomCentre: Vec2 | undefined;
+  if (apertureOverride) {
+    if (apertureOverride.length < 6 || apertureOverride.length % 2 !== 0) return null;
+    const half = apertureOverride.length / 2;
+    const top = apertureOverride.slice(0, half);
+    const bottomReversed = apertureOverride.slice(half);
+    topCentre = top[Math.floor(top.length / 2)];
+    bottomCentre = bottomReversed[Math.floor(bottomReversed.length / 2)];
+    aperture = [...apertureOverride];
+  } else {
+    const top = grids.destination[2];
+    const bottom = grids.destination[3];
+    if (!top || !bottom) return null;
+    const topLeft = top[1], legacyTopCentre = top[2], topRight = top[3];
+    const bottomLeft = bottom[1], legacyBottomCentre = bottom[2], bottomRight = bottom[3];
+    if (!topLeft || !legacyTopCentre || !topRight || !bottomLeft || !legacyBottomCentre || !bottomRight) return null;
+    topCentre = legacyTopCentre;
+    bottomCentre = legacyBottomCentre;
+    aperture = [topLeft, legacyTopCentre, topRight, bottomRight, legacyBottomCentre, bottomLeft];
+  }
+  if (!topCentre || !bottomCentre) return null;
 
   const gazeSuppression = 1 - blink;
   const shiftX = clamp(gazeX, -1, 1) * eye.rig.maxGazeX * imageWidth * gazeSuppression;
@@ -198,7 +216,7 @@ export function eyeIrisPlan(
       x: deformation.region.x * imageWidth + shiftX,
       y: deformation.region.y * imageHeight + shiftY,
     },
-    aperture: [topLeft, topCentre, topRight, bottomRight, bottomCentre, bottomLeft],
+    aperture,
     // Full close is a semantic endpoint even if an invalid/legacy cage leaves
     // a larger-than-floor numerical gap between its two lid rows.
     alpha: blink >= 1 ? 0 : smoothstep(closeFloor, closeFloor + irisDiameter * 0.35, apertureHeight),

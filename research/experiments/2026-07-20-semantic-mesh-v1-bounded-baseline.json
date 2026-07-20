@@ -1,0 +1,80 @@
+{
+  "experiment": "semantic-mesh-v1",
+  "phase": "bounded-baseline-before-candidate-implementation",
+  "recordedAt": "2026-07-20",
+  "gitHead": "4960ab2",
+  "compilerVersion": "0.4.0",
+  "runtime": {
+    "node": "24.18.0",
+    "npm": "11.16.0",
+    "renderer": "Canvas2D",
+    "eyeMethod": "fixed-boundary-piecewise-affine-v1",
+    "mouthMethod": "bounded-lip-bands-v1"
+  },
+  "detectorModelSha256": {
+    "yolov3": "23bbc708146bcbc1c910f00fe152adbc70d7658d875a0121eaf4ee61d978b2c4",
+    "hrnetv2": "e71271376406a743c01528a0460637fcc06e72aeeea583f85007cc72dc8b7a4a"
+  },
+  "compileCommand": ".venv/bin/python -m compiler.compile_character --offline --output-dir fixtures/validation/artifacts/semantic-mesh-v1-bounded --overlay-dir fixtures/validation/overlays/semantic-mesh-v1-bounded <the six frozen sources in manifest order>",
+  "cases": [
+    {
+      "id": "clean-teal",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2472468,
+      "artifactSha256": "e323dad0eeebbca3dc68fbc8cd58bf349d6099747e7cc55e7d2b92eb2af1ccd4"
+    },
+    {
+      "id": "dark-iris-navy",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2359036,
+      "artifactSha256": "1903cffa2a7d31bbfd77d4519f7162616982b290c9bd9cc3433b7f09361df5b4"
+    },
+    {
+      "id": "glasses-round",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2502792,
+      "artifactSha256": "751ce221010fa14d18a01cdf36dcdc4c1b20c50001f8e6f0102bc97db78912bb"
+    },
+    {
+      "id": "light-iris-silver",
+      "status": "limited",
+      "disabledCapabilities": ["blink", "gaze"],
+      "artifactBytes": 2544099,
+      "artifactSha256": "70daedd77de9b575ea159d905327758ea6bc29f81a4689f9263f9bb264adb963"
+    },
+    {
+      "id": "occluded-left-eye",
+      "status": "limited",
+      "disabledCapabilities": ["blink", "gaze"],
+      "artifactBytes": 2296091,
+      "artifactSha256": "5b73319bb6ac21afe4a77d634bfbd61b9686fcc2a32138f262747a747b344004"
+    },
+    {
+      "id": "three-quarter",
+      "status": "limited",
+      "disabledCapabilities": ["blink"],
+      "artifactBytes": 2586750,
+      "artifactSha256": "35ca239efef7102ff08b33af8dbe2399c719d1303ff9cf74905247f862dd57db"
+    }
+  ],
+  "capabilityContract": {
+    "matched": 6,
+    "total": 6
+  },
+  "browserAnchor": {
+    "command": "nodenv exec npm run test:browser -- --grep automatic rigs keep browser-rendered motion",
+    "status": "passed",
+    "tests": 1,
+    "characters": ["teal-librarian", "copper-courier"],
+    "neutralDifferingPixels": 0,
+    "outsideChangedPixelsAcrossControlledStates": 0,
+    "protectedCoreErrorPixelsAcrossEyeStates": 0,
+    "fullCloseIrisRenderedTexturePixels": 0,
+    "externalRequests": 0,
+    "detailedEvidence": "research/experiments/2026-07-20-browser-locality-validation.md and the Playwright LOCALITY_EVIDENCE log"
+  },
+  "result": "baseline-preserved"
+}

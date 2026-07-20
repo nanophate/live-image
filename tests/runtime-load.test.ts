@@ -4,10 +4,13 @@ import test from "node:test";
 import { LivingImagePlayer } from "../src/runtime.js";
 import { fixtureManifest } from "./fixture.js";
 
+const CLOSED_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAAAAACo4kLRAAAAKklEQVQYGW3BAQEAAABAIP6fdkDJkCFDhgwZMmTIkCFDhgwZMmTIkCFDRhLeABUEcxpKAAAAAElFTkSuQmCC";
+
 class FakeContext {
   imageSmoothingEnabled = false;
   imageSmoothingQuality: ImageSmoothingQuality = "low";
   globalCompositeOperation: GlobalCompositeOperation = "source-over";
+  globalAlpha = 1;
   fillStyle: string | CanvasGradient | CanvasPattern = "#000";
   readonly drawnImages: unknown[] = [];
 
@@ -17,7 +20,11 @@ class FakeContext {
   restore(): void {}
   translate(): void {}
   scale(): void {}
+  transform(): void {}
   beginPath(): void {}
+  moveTo(): void {}
+  lineTo(): void {}
+  closePath(): void {}
   rect(): void {}
   clip(): void {}
   ellipse(): void {}
@@ -43,7 +50,7 @@ class FakeImage {
 
   set src(value: string) {
     this.source = value;
-    if (value.includes("MASK") || value.includes("BASE") || value.includes("IRIS")) {
+    if (value.includes("MASK") || value.includes("BASE") || value.includes("IRIS") || value === CLOSED_PNG) {
       this.naturalWidth = 20;
       this.naturalHeight = 20;
     }
@@ -85,6 +92,46 @@ function addIrisLayers(manifest: ReturnType<typeof fixtureManifest>): void {
       inpaintRadius: 3,
       segmentationConfidence: 0.9,
     },
+  };
+}
+
+function addSemanticMesh(manifest: ReturnType<typeof fixtureManifest>): void {
+  addIrisLayers(manifest);
+  const deformation = manifest.analysis.features.eyes[0]?.rig.deformation;
+  assert.ok(deformation);
+  deformation.semanticMesh = {
+    method: "semantic-weighted-triangle-mesh-v1",
+    vertices: [
+      { x: 0.25, y: 0.38 }, { x: 0.35, y: 0.38 }, { x: 0.45, y: 0.38 },
+      { x: 0.25, y: 0.46 }, { x: 0.35, y: 0.46 }, { x: 0.45, y: 0.46 },
+    ],
+    triangles: [[0, 1, 4], [0, 4, 3], [1, 2, 5], [1, 5, 4]],
+    fields: [{
+      control: "blink",
+      weights: [0, 1, 0, 0, 1, 0],
+      maxDisplacements: [
+        { x: 0, y: 0 }, { x: 0, y: 0.02 }, { x: 0, y: 0 },
+        { x: 0, y: 0 }, { x: 0, y: -0.02 }, { x: 0, y: 0 },
+      ],
+    }],
+    aperture: [0, 1, 2, 5, 4, 3],
+    minimumAreaRatio: 0.5,
+  };
+}
+
+function addClosedEyeCorrective(manifest: ReturnType<typeof fixtureManifest>): void {
+  addSemanticMesh(manifest);
+  const deformation = manifest.analysis.features.eyes[0]?.rig.deformation;
+  assert.ok(deformation);
+  deformation.closedEye = {
+    dataUrl: CLOSED_PNG,
+    width: 20,
+    height: 20,
+    coverage: 0.2,
+    method: "telea-skin-fill-curve-v1",
+    activationStart: 0.55,
+    inpaintRadius: 3,
+    lineThickness: 2,
   };
 }
 
@@ -243,6 +290,90 @@ test("a rejected asset keeps every direct runtime control neutral", async () => 
       mouthOpen: 0,
       breath: 0,
     });
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("semantic mesh mode renders blink from the compiler-authored topology", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const canvas = new FakeCanvas();
+    const player = new LivingImagePlayer(canvas as unknown as HTMLCanvasElement, {
+      eyeDeformation: "semantic-mesh-required",
+    });
+    const manifest = fixtureManifest();
+    addSemanticMesh(manifest);
+    manifest.quality.disabledCapabilities = ["gaze", "mouth"];
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    player.setState({ blinkLeft: 0.5 });
+    player.step(1 / 60);
+    assert.ok(canvas.context.drawnImages.length > 1);
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("semantic mesh mode does not silently fall back when blink topology is absent", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const player = new LivingImagePlayer(new FakeCanvas() as unknown as HTMLCanvasElement, {
+      eyeDeformation: "semantic-mesh-required",
+    });
+    const manifest = fixtureManifest();
+    addIrisLayers(manifest);
+    manifest.quality.disabledCapabilities = ["gaze", "mouth"];
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    player.setState({ blinkLeft: 0.5 });
+    assert.throws(() => player.step(1 / 60), /missing its required semantic mesh/);
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("corrective-required mode draws the closed-eye layer and fails closed when absent", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const canvas = new FakeCanvas();
+    const player = new LivingImagePlayer(canvas as unknown as HTMLCanvasElement, {
+      eyeDeformation: "semantic-mesh-corrective-required",
+    });
+    const manifest = fixtureManifest();
+    addClosedEyeCorrective(manifest);
+    manifest.quality.disabledCapabilities = ["gaze", "mouth"];
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    player.setState({ blinkLeft: 1 });
+    player.step(1 / 60);
+    assert.ok(canvas.context.drawnImages.some((image) => image instanceof FakeImage && image.src === CLOSED_PNG));
+
+    const missing = fixtureManifest();
+    addSemanticMesh(missing);
+    missing.quality.disabledCapabilities = ["gaze", "mouth"];
+    await player.load(missing);
+    player.setAutoIdle(false);
+    player.setState({ blinkLeft: 1 });
+    assert.throws(() => player.step(1 / 60), /missing its required closed-eye corrective/);
   } finally {
     Object.assign(globalThis, { Image: previousImage, document: previousDocument });
   }

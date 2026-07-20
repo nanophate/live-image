@@ -1,0 +1,97 @@
+{
+  "experiment": "semantic-mesh-v1",
+  "phase": "immutable-first-candidate-run-before-visual-tuning",
+  "recordedAt": "2026-07-20",
+  "compilerVersion": "0.5.0",
+  "mesh": {
+    "method": "semantic-weighted-triangle-mesh-v1",
+    "scope": "blink-only eyes",
+    "verticesPerEye": 42,
+    "trianglesPerEye": 60,
+    "minimumCompilerAreaRatioAcrossSixCases": 0.035,
+    "minimumAllowedAreaRatio": 0.02,
+    "runtimeDefault": "row-grid",
+    "candidateMode": "semantic-mesh-required"
+  },
+  "cases": [
+    {
+      "id": "clean-teal",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2481155,
+      "payloadDeltaFromBoundedBytes": 8687,
+      "artifactSha256": "565c9917f27f3edcace5fbb7d4a5391c1c47cd17d737007c156d300f33fa1987"
+    },
+    {
+      "id": "dark-iris-navy",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2367675,
+      "payloadDeltaFromBoundedBytes": 8639,
+      "artifactSha256": "df7d8361a5113074c32034d7855eeb8e45f76c9ea834b93b18b8f07180e40299"
+    },
+    {
+      "id": "glasses-round",
+      "status": "full",
+      "disabledCapabilities": [],
+      "artifactBytes": 2511504,
+      "payloadDeltaFromBoundedBytes": 8712,
+      "artifactSha256": "97fe97df458879da7e76679885f7bb25fa1d3fb1ac9b45ede9917b6f7cc16bdc"
+    },
+    {
+      "id": "light-iris-silver",
+      "status": "limited",
+      "disabledCapabilities": ["blink", "gaze"],
+      "artifactBytes": 2552749,
+      "payloadDeltaFromBoundedBytes": 8650,
+      "artifactSha256": "b9641a4847c61a889a1e8dc9f6a8fa2910c1677493e9a76ff6c8c63dcccc2b56"
+    },
+    {
+      "id": "occluded-left-eye",
+      "status": "limited",
+      "disabledCapabilities": ["blink", "gaze"],
+      "artifactBytes": 2304749,
+      "payloadDeltaFromBoundedBytes": 8658,
+      "artifactSha256": "a370c7b67a55fe4526ac721b476597c040682a94ea8523fbe3eda6d4b18ea3c6"
+    },
+    {
+      "id": "three-quarter",
+      "status": "limited",
+      "disabledCapabilities": ["blink"],
+      "artifactBytes": 2595451,
+      "payloadDeltaFromBoundedBytes": 8701,
+      "artifactSha256": "bf5900825f1bcc383b851adf1bf9e6d4e16304d12f58ce349449a9b450d75596"
+    }
+  ],
+  "automated": {
+    "capabilityContractsMatched": 6,
+    "capabilityContractsTotal": 6,
+    "browserTestsPassed": 3,
+    "browserTestsTotal": 3,
+    "neutralDifferingPixels": 0,
+    "openToReopenedDifferingPixels": 0,
+    "outsideChangedPixels": 0,
+    "protectedCoreErrorPixels": 0,
+    "fullCloseIrisRenderedTexturePixels": 0,
+    "externalRequests": 0,
+    "typescriptTestsPassed": 43,
+    "pythonTestsPassed": 33,
+    "validationMatrixMatched": 12,
+    "validationMatrixTotal": 12,
+    "holdoutMatched": 2,
+    "holdoutTotal": 5,
+    "holdoutChangedFromCompiler04": false
+  },
+  "twoRigBlinkComparison": {
+    "teal-librarian": {
+      "blinkMid": { "boundedChangedPixels": 37179, "semanticChangedPixels": 30787, "deltaPercent": -17.19 },
+      "blinkFull": { "boundedChangedPixels": 41776, "semanticChangedPixels": 36315, "deltaPercent": -13.07 }
+    },
+    "copper-courier": {
+      "blinkMid": { "boundedChangedPixels": 29611, "semanticChangedPixels": 24763, "deltaPercent": -16.37 },
+      "blinkFull": { "boundedChangedPixels": 32391, "semanticChangedPixels": 28130, "deltaPercent": -13.15 }
+    }
+  },
+  "visualReview": "open",
+  "decision": "keep row-grid as default; expose semantic mode for paired visual review before promotion"
+}

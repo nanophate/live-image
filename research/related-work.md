@@ -1,6 +1,10 @@
 # Related-work assessment
 
-Snapshot: 2026-07-19
+Snapshot: 2026-07-20
+
+The focused Hugging Face/application scan, per-surface license findings, and the
+pre-registered semantic mesh experiment are in
+[`hugging-face-and-motion-landscape.md`](hugging-face-and-motion-landscape.md).
 
 ## Result
 
@@ -108,4 +112,3 @@ and procedural state blending in the runtime. The main reusable ideas are:
 - **Open:** An official reusable implementation license was not confirmed.
 - **Decision:** Reference the layered transformation idea, but the input here is
   raster and must remain renderable without vectorisation.
-

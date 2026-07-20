@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "experiment": "semantic-mesh-v1",
+  "frozenAt": "2026-07-20",
+  "cases": [
+    {
+      "id": "clean-teal",
+      "role": "supported",
+      "source": "source/clean-teal.png",
+      "sourceSha256": "4480e53d53959ac7aa8665a91166ec3c5e839bb10bd53aaa96d708607b5798e6",
+      "expectedStatus": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
+    },
+    {
+      "id": "dark-iris-navy",
+      "role": "supported",
+      "source": "source/dark-iris-navy.png",
+      "sourceSha256": "c0bec89d72c9a890bb21eba0c6fedd59770538d50abc85e947049512ece8e1ab",
+      "expectedStatus": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
+    },
+    {
+      "id": "glasses-round",
+      "role": "supported",
+      "source": "source/glasses-round.png",
+      "sourceSha256": "1768a0f572d400100ec15e3a0ab9030e75b6c57ad7f2b979765760d954a01d74",
+      "expectedStatus": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
+    },
+    {
+      "id": "light-iris-silver",
+      "role": "difficult",
+      "source": "source/light-iris-silver.png",
+      "sourceSha256": "45e890d2bc07352e1b363ed27f273c24d4144cf51263f53cfb703044377fb603",
+      "expectedStatus": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
+    },
+    {
+      "id": "occluded-left-eye",
+      "role": "difficult",
+      "source": "source/occluded-left-eye.png",
+      "sourceSha256": "d225d7ae7eb524f7757ce070a5f413cbd3843f74bf9d723de9fed110d67de582",
+      "expectedStatus": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
+    },
+    {
+      "id": "three-quarter",
+      "role": "difficult",
+      "source": "source/three-quarter.png",
+      "sourceSha256": "b7c68c42bfb0ff9aec9477d5802c037f084bdcfc1c5047bc4c7a4b48862e94d9",
+      "expectedStatus": "limited",
+      "expectedEnabledCapabilities": ["gaze", "mouth"],
+      "expectedDisabledCapabilities": ["blink"]
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import numpy as np
 from compiler import __version__
 from compiler.compile_character import (
     assess_quality,
+    closed_eye_corrective_layer,
     compile_eye,
     compile_mouth,
     compile_paths,
@@ -190,6 +191,20 @@ class CompilerGeometryTests(unittest.TestCase):
         local_pupil_y = int(round(eye["pupil"]["y"] * 120 - region["y"] * 120))
         self.assertEqual(int(decoded_mask[local_pupil_y, local_pupil_x, 3]), 0)
 
+        semantic_mesh = deformation["semanticMesh"]
+        self.assertEqual(semantic_mesh["method"], "semantic-weighted-triangle-mesh-v1")
+        self.assertEqual(len(semantic_mesh["vertices"]), 42)
+        self.assertEqual(len(semantic_mesh["triangles"]), 60)
+        self.assertEqual(len(semantic_mesh["aperture"]), 10)
+        self.assertGreaterEqual(semantic_mesh["minimumAreaRatio"], 0.02)
+        blink_field = semantic_mesh["fields"][0]
+        self.assertEqual(blink_field["control"], "blink")
+        self.assertEqual(len(blink_field["weights"]), len(semantic_mesh["vertices"]))
+        self.assertEqual(len(blink_field["maxDisplacements"]), len(semantic_mesh["vertices"]))
+        self.assertTrue(all(0 <= weight <= 1 for weight in blink_field["weights"]))
+        self.assertTrue(all(blink_field["weights"][index] == 0 for index in range(7)))
+        self.assertTrue(all(blink_field["weights"][index] == 0 for index in range(35, 42)))
+
         iris = deformation["iris"]
         self.assertEqual(iris["method"], "ellipse-cage-telea-v1")
         self.assertEqual(iris["texture"]["method"], "source-rgba-ellipse-v1")
@@ -220,6 +235,43 @@ class CompilerGeometryTests(unittest.TestCase):
             iris["centre"]["y"] + iris["radiusY"],
             region["y"] + region["height"],
         )
+
+        closed_eye = deformation["closedEye"]
+        self.assertEqual(closed_eye["method"], "affine-skin-fill-curve-v3")
+        self.assertEqual(closed_eye["width"], expected_width)
+        self.assertEqual(closed_eye["height"], expected_height)
+        self.assertEqual(closed_eye["activationStart"], 0.55)
+        self.assertGreaterEqual(closed_eye["retainedSamplePixels"], 48)
+        self.assertGreaterEqual(closed_eye["medianFitResidual"], 0)
+        self.assertIsInstance(closed_eye["upperSamplesIncluded"], bool)
+        corrective_payload = base64.b64decode(closed_eye["dataUrl"].split(",", 1)[1])
+        corrective = cv2.imdecode(np.frombuffer(corrective_payload, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        self.assertEqual(corrective.shape, (expected_height, expected_width, 4))
+        self.assertGreater(np.count_nonzero(corrective[:, :, 3]), 0)
+        self.assertTrue(np.all(corrective[[0, -1], :, 3] == 0))
+        self.assertTrue(np.all(corrective[:, [0, -1], 3] == 0))
+        self.assertGreater(int(corrective[local_pupil_y, local_pupil_x, 3]), 0)
+
+    def test_closed_eye_corrective_is_deterministic_and_sparse(self) -> None:
+        image = np.full((100, 160, 3), (220, 226, 235), dtype=np.uint8)
+        polygon = np.array(
+            [[42, 48], [72, 32], [118, 47], [108, 68], [76, 72], [48, 67]],
+            dtype=np.float32,
+        )
+        cv2.fillPoly(image, [polygon.astype(np.int32)], (35, 45, 55))
+        region = (30, 10, 130, 98)
+        first = closed_eye_corrective_layer(image, polygon, region, 61.0)
+        second = closed_eye_corrective_layer(image, polygon, region, 61.0)
+        self.assertIsNotNone(first)
+        self.assertEqual(first, second)
+        assert first is not None
+        payload = base64.b64decode(first["dataUrl"].split(",", 1)[1])
+        layer = cv2.imdecode(np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        self.assertGreater(int(layer[42, 50, 3]), 0)
+        self.assertGreater(float(layer[42, 50, :3].mean()), 120)
+        self.assertLess(first["coverage"], 0.60)
+        self.assertTrue(np.all(layer[[0, -1], :, 3] == 0))
+        self.assertTrue(np.all(layer[:, [0, -1], 3] == 0))
 
     def test_compiler_authors_bounded_mouth_line_bands(self) -> None:
         image = np.full((140, 180, 3), 225, dtype=np.uint8)
@@ -341,7 +393,7 @@ class CompilerGeometryTests(unittest.TestCase):
                 results = compile_paths([source], root / "output", None, False, False)
 
             diagnostic = json.loads(results[0][0].read_text(encoding="utf-8"))
-            self.assertEqual(__version__, "0.4.0")
+            self.assertEqual(__version__, "0.8.0")
             self.assertEqual(diagnostic["input"], "portrait.png")
             self.assertEqual(diagnostic["compilerVersion"], __version__)
             self.assertNotIn(str(root), json.dumps(diagnostic))
