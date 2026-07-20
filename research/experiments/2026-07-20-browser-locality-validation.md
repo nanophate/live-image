@@ -77,6 +77,21 @@ archive. Their extracted caches measured approximately `202 MiB` and `3.3 MiB`.
 The direct Playwright npm directories measured approximately `17 MiB` combined.
 These values are platform/version observations, not stable promises.
 
+## GitHub Ubuntu 24.04 CI result
+
+**Confirmed.** Draft PR #5 run
+[`29724437177`](https://github.com/nanophate/live-image/actions/runs/29724437177)
+passed both jobs. The Web job completed in `42 s`: `npm ci` took about `1 s`,
+TypeScript tests `4 s`, the Vite build `2 s`, Chromium/dependency installation
+`18 s`, and the browser-test step `8 s` (`1 passed (7.0s)` in Playwright's own
+report). The separate Compiler job passed in `1 min 16 s`.
+
+**Confirmed.** The cold Linux install downloaded a `114.2 MiB` Chromium
+headless-shell archive and a `2.3 MiB` FFmpeg archive. The runner log confirms
+the same Chromium `149.0.7827.55` / revision `1228` and FFmpeg revision `1011`
+used by the local test. The workflow finished well inside its ten-minute job
+timeout.
+
 **Confirmed.** Playwright is Apache-2.0 with NOTICE; the downloaded headless
 shell carries Chromium's BSD-style license and bundled third-party notices; the
 downloaded FFmpeg cache carries `COPYING.LGPLv2.1`. They are CI/development
@@ -86,8 +101,9 @@ dependencies and are not copied into the Viewer build. Exact entries are in
 
 ## Open limitations
 
-- **Open:** record cold/warm timings and extracted cache size on the actual
-  Ubuntu 24.04 GitHub runner after this branch's CI completes.
+- **Open:** measure the extracted browser-cache size and a deliberately warm
+  cache run on Ubuntu before deciding whether CI caching is worth its own
+  storage and provenance surface.
 - **Open:** calibrate perceptual line/highlight preservation; a nonzero local
   change proves motion, not naturalness.
 - **Open:** measure triangle seams at device scale factors 1.5, 2, and 3.
