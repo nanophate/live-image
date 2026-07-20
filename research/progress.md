@@ -17,7 +17,7 @@ Branch: `codex/protected-local-deformation`
 | PR #3 | local external hold-out motion validation | frozen manifest and hashes without source-media redistribution, preserved 3/5 first run, deterministic comparison Viewer, browser evidence, capability skips, and local SHA-256 preflight |
 | PR #4 / `8c35279` | blink transition and support-domain decision | single-player close/reopen strip with pixel-exact recovery, plus licensed review of deterministic descriptors, CLIP, and WD Tagger |
 | `de8a80b` | validation capability contracts | frozen enabled/disabled capability expectations are now checked in addition to status |
-| current branch | protected local deformation | compiler-authored eye rows and protected-line masks, bounded mouth bands, full-resolution recovery, 12/12 matrix and preserved 3/5 hold-out result |
+| `f0308e4` | protected local deformation | compiler-authored eye rows and protected-line masks, bounded mouth bands, full-resolution recovery, 12/12 matrix and preserved 3/5 hold-out result |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
