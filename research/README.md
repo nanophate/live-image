@@ -11,6 +11,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
 - [`product-studio-and-recording.md`](product-studio-and-recording.md) — local PNG-to-Viewer product flow, capability/reaction API, Canvas WebM review recording, and security/license boundary
+- [`hosting-and-public-deployment.md`](hosting-and-public-deployment.md) — GitHub Pages, Cloudflare Pages/Workers/Containers feasibility, current deployment blockers, and staged public-release gates
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`browser-visual-ci.md`](browser-visual-ci.md) — headless-browser options, minimal Canvas 2D CI decision, cost, compatibility, and license boundaries
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
