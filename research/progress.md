@@ -24,6 +24,7 @@ Branch: `codex/iris-base-eye-layer`
 | `70da748` | source and exact motion contracts | all 12 public quality-calibration inputs pin SHA-256 plus exact blink/gaze/mouth capability partitions; real offline detection remains 12/12 and the tracked report is unit-checked |
 | `c53d241` | report-only support-domain descriptors | deterministic source-bound OpenCV metrics over 12 feasibility cases, explicit contaminated A replay/procedure failure, byte-identical raw reports, malformed-artifact isolation, and no production gate change |
 | `ec0172a` | semantic blink mesh and closed-eye endpoint | Compiler 0.8 explicit 42-vertex blink fields, rigid-iris aperture integration, preserved numeric-only/Telea/upper-band failures, lower-band-first affine corrective, 3/3 supported visual gate, 7/7 Chromium suite, 12/12 public matrix, and unchanged 2/5 hold-out boundary |
+| `6876416` | independent closed-eye alpha audit | preserved hold-out A first-run failure, transparent-source double-alpha correction, unchanged Compiler 0.8 artifacts/capability policy, zero protected-core errors on replay, tracked translucent-source regression, 46/46 TypeScript, 34/34 Python, and 10/10 Chromium checks |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
