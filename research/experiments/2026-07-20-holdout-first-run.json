@@ -1,0 +1,249 @@
+{
+  "cases": [
+    {
+      "artifacts": {
+        "limg": "artifacts/stevenburrow-sample1/stevenburrow-sample1.limg",
+        "overlay": "overlays/stevenburrow-sample1/stevenburrow-sample1.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "clean-frontal-external",
+      "expected": "full",
+      "id": "stevenburrow-sample1",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8313607603311539,
+          "eyeSymmetry": 0.7931141689009195,
+          "faceScale": 0.27098345947265623,
+          "faceScore": 0.999775230884552,
+          "meanLandmarkScore": 0.9164047241210938,
+          "minImageDimensionPixels": 1000,
+          "mouthConfidence": 0.8148298431516257,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.8772929257988081,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/stevenburrow-sample1.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/mcproject-manga-girl/mcproject-manga-girl.limg",
+        "overlay": "overlays/mcproject-manga-girl/mcproject-manga-girl.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "strong-highlight-external",
+      "expected": "full",
+      "id": "mcproject-manga-girl",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8341783945960755,
+          "eyeSymmetry": 0.8624707175538592,
+          "faceScale": 0.4696958368474787,
+          "faceScore": 0.9899850487709045,
+          "meanLandmarkScore": 0.9052454233169556,
+          "minImageDimensionPixels": 832,
+          "mouthConfidence": 0.9250444325677281,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.9138297128222923,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/mcproject-manga-girl.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.limg",
+        "overlay": "overlays/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
+      "category": "one-eye-closed-external",
+      "expected": "limited",
+      "id": "kitsuge-casual-avatar-00",
+      "matched": false,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.5156021010267238,
+          "eyeSymmetry": 0.4594968137849921,
+          "faceScale": 0.4698583781719208,
+          "faceScore": 0.998544454574585,
+          "meanLandmarkScore": 0.268320232629776,
+          "minImageDimensionPixels": 512,
+          "mouthConfidence": 0.29153725504875183,
+          "pupilConfidence": 0.8016325625494441
+        },
+        "rejectionReasons": [
+          "mean landmark confidence below 0.62",
+          "eye geometry is too asymmetric for the near-frontal MVP"
+        ],
+        "score": 0.5639981585618065,
+        "warnings": [
+          "blink and gaze disabled because eye confidence is below 0.70",
+          "mouth control disabled because its region is unreliable"
+        ]
+      },
+      "result": "reject",
+      "source": "source/kitsuge-casual-avatar-00.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.limg",
+        "overlay": "overlays/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
+      "category": "small-face-full-body-external",
+      "expected": "reject",
+      "id": "jupitersdaughter-maid-neutral",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.7678903759588933,
+          "eyeSymmetry": 0.9168838725065006,
+          "faceScale": 0.18348115703226373,
+          "faceScore": 0.9993385672569275,
+          "meanLandmarkScore": 0.8949946165084839,
+          "minImageDimensionPixels": 320,
+          "mouthConfidence": 0.7765403985223058,
+          "pupilConfidence": 0.768975526625979
+        },
+        "rejectionReasons": [
+          "face is too small for stable local deformation"
+        ],
+        "score": 0.8555446129366663,
+        "warnings": []
+      },
+      "result": "reject",
+      "source": "source/jupitersdaughter-maid-neutral.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/zonked-painted-portrait/zonked-painted-portrait.limg",
+        "overlay": "overlays/zonked-painted-portrait/zonked-painted-portrait.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "gaze"
+        ]
+      },
+      "category": "outside-anime-domain-external",
+      "expected": "reject",
+      "id": "zonked-painted-portrait",
+      "matched": false,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.7049771702967736,
+          "eyeSymmetry": 0.7146083734273683,
+          "faceScale": 0.3789817979600694,
+          "faceScore": 0.9977547526359558,
+          "meanLandmarkScore": 0.8814598917961121,
+          "minImageDimensionPixels": 1250,
+          "mouthConfidence": 0.8599012494087219,
+          "pupilConfidence": 0.5999656060616926
+        },
+        "rejectionReasons": [],
+        "score": 0.8502557270014077,
+        "warnings": [
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
+      },
+      "result": "limited",
+      "source": "source/zonked-painted-portrait.png"
+    }
+  ],
+  "generatedAt": "reproducible-validation-does-not-store-wall-clock",
+  "summary": {
+    "categories": {
+      "clean-frontal-external": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 1,
+          "limited": 0,
+          "reject": 0
+        },
+        "total": 1
+      },
+      "one-eye-closed-external": {
+        "matched": 0,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 0,
+          "reject": 1
+        },
+        "total": 1
+      },
+      "outside-anime-domain-external": {
+        "matched": 0,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 1,
+          "reject": 0
+        },
+        "total": 1
+      },
+      "small-face-full-body-external": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 0,
+          "reject": 1
+        },
+        "total": 1
+      },
+      "strong-highlight-external": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 1,
+          "limited": 0,
+          "reject": 0
+        },
+        "total": 1
+      }
+    },
+    "error": 0,
+    "expectations": {
+      "error": 0,
+      "full": 2,
+      "limited": 1,
+      "reject": 2
+    },
+    "full": 2,
+    "limited": 1,
+    "matched": 3,
+    "mismatched": 2,
+    "outcomes": {
+      "error": 0,
+      "full": 2,
+      "limited": 1,
+      "reject": 2
+    },
+    "reject": 2,
+    "total": 5
+  },
+  "version": 1
+}

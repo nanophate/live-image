@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "suite": {
+    "name": "external-licensed-holdout-a",
+    "protocolVersion": "holdout-motion-v1",
+    "frozenAt": "2026-07-20",
+    "expectationBasis": "visual inspection before any detector run on these files",
+    "calibrationPolicy": "do not change expectations, remove cases, or tune thresholds from this run"
+  },
+  "cases": [
+    {
+      "id": "stevenburrow-sample1",
+      "category": "clean-frontal-external",
+      "source": "source/stevenburrow-sample1.png",
+      "sourceSha256": "d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": [],
+      "riskTags": ["flat-colour", "full-bust", "dark-iris"],
+      "expectationReason": "large near-frontal face with two open eyes and a visible mouth"
+    },
+    {
+      "id": "mcproject-manga-girl",
+      "category": "strong-highlight-external",
+      "source": "source/mcproject-manga-girl.png",
+      "sourceSha256": "c724af25f948bc73080b4c94e1f21ebbd1540fdd8f9eb84a9b918c853a9c9b8b",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": [],
+      "riskTags": ["strong-highlight", "large-iris", "transparent-background"],
+      "expectationReason": "large frontal face with two open eyes and visible pupils despite strong highlights"
+    },
+    {
+      "id": "kitsuge-casual-avatar-00",
+      "category": "one-eye-closed-external",
+      "source": "source/kitsuge-casual-avatar-00.png",
+      "sourceSha256": "652ccd346cc96adf42bed09080a92cffb1b50426393921b336729540f590293b",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"],
+      "riskTags": ["one-eye-closed", "large-highlight", "flat-avatar"],
+      "expectationReason": "the face and mouth are usable, but bilateral blink and gaze are unsafe when one source eye is closed"
+    },
+    {
+      "id": "jupitersdaughter-maid-neutral",
+      "category": "small-face-full-body-external",
+      "source": "source/jupitersdaughter-maid-neutral.png",
+      "sourceSha256": "dbcffaae6181bec6035f5729542e0e30c9287d02d4fe55359754b49261606242",
+      "expected": "reject",
+      "expectedEnabledCapabilities": [],
+      "expectedDisabledCapabilities": ["blink", "gaze", "mouth"],
+      "riskTags": ["small-face", "full-body", "transparent-background"],
+      "expectationReason": "the face is below the supported relative-size envelope for stable local deformation"
+    },
+    {
+      "id": "zonked-painted-portrait",
+      "category": "outside-anime-domain-external",
+      "source": "source/zonked-painted-portrait.png",
+      "sourceSha256": "a20340ed563c45e7dee7c35a952a30a8a0bd4540255008779af30f6d4dd0836b",
+      "expected": "reject",
+      "expectedEnabledCapabilities": [],
+      "expectedDisabledCapabilities": ["blink", "gaze", "mouth"],
+      "riskTags": ["painted", "semi-realistic", "hood", "outside-supported-style"],
+      "expectationReason": "semi-realistic painted input is intentionally outside the first anime-style support envelope"
+    }
+  ]
+}

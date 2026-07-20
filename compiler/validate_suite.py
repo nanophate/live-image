@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -22,6 +23,7 @@ from typing import Any
 
 OUTCOMES = ("full", "limited", "reject", "error")
 _SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
+_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class ValidationManifestError(ValueError):
@@ -34,6 +36,7 @@ class ValidationCase:
     category: str
     source: str
     source_path: Path
+    source_sha256: str | None
     expected: str
 
 
@@ -51,6 +54,14 @@ def _require_string(value: Any, label: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValidationManifestError(f"{label} must be a non-empty string")
     return value
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_manifest(manifest_path: Path) -> list[ValidationCase]:
@@ -104,12 +115,33 @@ def load_manifest(manifest_path: Path) -> list[ValidationCase]:
         if not source_path.is_file():
             raise ValidationManifestError(f"{label}.source is not a file: {source}")
 
+        source_sha256_value = raw_case.get("sourceSha256")
+        source_sha256: str | None = None
+        if source_sha256_value is not None:
+            source_sha256 = _require_string(
+                source_sha256_value, f"{label}.sourceSha256"
+            )
+            if not _SHA256.fullmatch(source_sha256):
+                raise ValidationManifestError(
+                    f"{label}.sourceSha256 must be 64 lowercase hexadecimal characters"
+                )
+            actual_sha256 = _sha256_file(source_path)
+            if actual_sha256 != source_sha256:
+                raise ValidationManifestError(
+                    f"{label}.source SHA-256 mismatch: expected {source_sha256}, "
+                    f"got {actual_sha256}"
+                )
+
         expected = _require_string(raw_case.get("expected"), f"{label}.expected")
         if expected not in OUTCOMES:
             raise ValidationManifestError(
                 f"{label}.expected must be one of: {', '.join(OUTCOMES)}"
             )
-        cases.append(ValidationCase(case_id, category, source, source_path, expected))
+        cases.append(
+            ValidationCase(
+                case_id, category, source, source_path, source_sha256, expected
+            )
+        )
     return cases
 
 
@@ -349,12 +381,21 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=Path("validation-output"))
     parser.add_argument("--offline", action="store_true", help="pass --offline to the compiler")
     parser.add_argument("--flip-test", action="store_true", help="pass --flip-test to the compiler")
+    parser.add_argument(
+        "--check-sources",
+        action="store_true",
+        help="verify local source files and optional SHA-256 values without compiling",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
+        if args.check_sources:
+            cases = load_manifest(args.manifest)
+            print(f"{args.manifest}: {len(cases)} local source files verified")
+            return 0
         report = validate_suite(
             args.manifest,
             args.output_dir,

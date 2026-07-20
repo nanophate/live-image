@@ -18,6 +18,7 @@ export default defineConfig({
       input: {
         home: resolve(__dirname, "index.html"),
         inspector: resolve(__dirname, "inspect.html"),
+        comparison: resolve(__dirname, "compare.html"),
         validation: resolve(__dirname, "validate.html"),
         viewer: resolve(__dirname, "viewer.html"),
       },

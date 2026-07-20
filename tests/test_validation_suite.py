@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -131,6 +132,39 @@ class ValidationSuiteTests(unittest.TestCase):
                 load_manifest(unsafe)
         finally:
             outside.unlink()
+
+    def test_verifies_optional_source_sha256(self) -> None:
+        self._source("portrait.png")
+        source = self.sources / "portrait.png"
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        valid = self._manifest(
+            [
+                {
+                    "id": "verified",
+                    "category": "integrity",
+                    "source": "images/portrait.png",
+                    "sourceSha256": digest,
+                    "expected": "full",
+                }
+            ]
+        )
+
+        case = load_manifest(valid)[0]
+        self.assertEqual(case.source_sha256, digest)
+
+        invalid = self._manifest(
+            [
+                {
+                    "id": "modified",
+                    "category": "integrity",
+                    "source": "images/portrait.png",
+                    "sourceSha256": "0" * 64,
+                    "expected": "full",
+                }
+            ]
+        )
+        with self.assertRaisesRegex(ValidationManifestError, "SHA-256 mismatch"):
+            load_manifest(invalid)
 
     def test_default_runner_invokes_existing_compiler_with_passthrough_flags(self) -> None:
         source = self.root / "portrait.png"

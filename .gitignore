@@ -13,3 +13,6 @@ fixtures/compiled/*.json
 fixtures/overlays/*.png
 fixtures/validation/artifacts/
 fixtures/validation/overlays/
+fixtures/holdout/artifacts/
+fixtures/holdout/overlays/
+fixtures/holdout/source/*.png

@@ -1,8 +1,8 @@
 # Progress checkpoints
 
-Branch: `codex/validation-matrix`
+Branch: `codex/holdout-motion-validation`
 
-| Commit | Checkpoint | Evidence |
+| Commit / PR | Checkpoint | Evidence |
 | --- | --- | --- |
 | `f528c15` | research and detector baseline | primary-source references, license matrix, two original fixtures, actual model scores |
 | `2d3f06c` | automatic Compiler | raw 28 points, pupil/mouth derivation, confidence gate, `.limg`, overlays, Python tests |
@@ -14,6 +14,7 @@ Branch: `codex/validation-matrix`
 | `9039aac` | public MVP merged | pull request #1 merged to `main`; validation work branched from the merge commit |
 | `55421e1` | multi-image validation harness | 12-case frozen manifest, public original fixtures, batch compiler, report viewer, and preserved 7/12 first-run result |
 | `cc04001` | quality gate v2 | compiler 0.2.0 confidence/symmetry/resolution gates, 12/12 calibrated result, safety review fixes, tests, and research record |
+| PR #3 | local external hold-out motion validation | frozen manifest and hashes without source-media redistribution, preserved 3/5 first run, deterministic comparison Viewer, browser evidence, capability skips, and local SHA-256 preflight |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results

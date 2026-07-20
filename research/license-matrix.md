@@ -1,6 +1,6 @@
 # Shipped license and provenance matrix
 
-Snapshot: 2026-07-19. This is an engineering record, not legal advice.
+Snapshot: 2026-07-20. This is an engineering record, not legal advice.
 
 Project-authored source code is released under the MIT License. This matrix
 tracks only code, models, data, and assets used by the current MVP. Evaluated
@@ -13,6 +13,7 @@ artifacts are not part of this release.
 | compiler dependency stack | OpenCV Apache-2.0; NumPy BSD-3-Clause; PyTorch/torchvision BSD-style; Hugging Face Hub and safetensors Apache-2.0 | no additional project-owned data | detector execution and checkpoint loading | versions pinned directly or transitively in the compiler environment |
 | web build stack | TypeScript Apache-2.0; Vite and esbuild MIT | none | development, tests, and browser bundle generation | no third-party package is required by the generated runtime at frame time |
 | repository fixtures | n/a | generated specifically for this project with OpenAI image generation, plus one locally downsampled derivative | regression tests, demo, and 12-image validation | prompt/provenance recorded in `fixtures/README.md` and `fixtures/validation/prompts.json` |
+| external hold-out test media | n/a | four CC0 images and one CC BY 3.0 image from five OpenGameArt contributors | independent compiler/runtime validation only | local-only and ignored by Git; exact attribution, hashes, and any derivative obligations are recorded in `fixtures/holdout/ATTRIBUTION.md` |
 
 ## Release checklist
 
@@ -24,3 +25,6 @@ artifacts are not part of this release.
   dated snapshot.
 - Do not add an unreviewed non-commercial, research-only, or unclear-provenance
   artifact to a release bundle.
+- Keep external hold-out media out of Git and outside the MIT-licensed
+  project-artwork claim; preserve the Jupiter's Daughter CC BY 3.0 attribution
+  whenever that portrait or a derivative is distributed.
