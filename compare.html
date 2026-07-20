@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Motion comparison — Living Image</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="wordmark" href="/">Living Image</a>
+        <span class="topbar-label">Runtime / Motion comparison</span>
+        <a class="text-link" href="/viewer.html">Open player</a>
+      </header>
+
+      <section class="comparison-shell" aria-labelledby="comparison-title">
+        <header class="comparison-heading">
+          <div>
+            <p class="eyebrow">Deterministic runtime evidence</p>
+            <h1 id="comparison-title">Motion comparison</h1>
+            <p class="muted">Render the same normalized controls across one or more compiled characters. Local files stay in your browser.</p>
+          </div>
+          <label class="file-button">Load .limg files<input id="comparison-files" type="file" accept=".limg,application/json" multiple /></label>
+        </header>
+
+        <details class="comparison-url-loader">
+          <summary>Load assets by URL</summary>
+          <p class="muted">One URL per line, or use repeated <code>?asset=/path/character.limg</code> query parameters.</p>
+          <textarea id="comparison-urls" rows="3" placeholder="/fixtures/compiled/example.limg"></textarea>
+          <button id="load-comparison-urls" type="button">Load URLs</button>
+        </details>
+
+        <p class="report-notice" id="comparison-status" role="status" aria-live="polite">Load one or more compiled .limg assets.</p>
+        <div id="comparison-output" class="comparison-output"></div>
+      </section>
+    </main>
+    <script type="module" src="/src/ui/compare.ts"></script>
+  </body>
+</html>

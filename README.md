@@ -25,11 +25,13 @@ or capability-limited rather than silently forced through.
 compiler/              Python image compiler
 src/                   TypeScript runtime, warp and UI
 fixtures/source/       two original success fixtures + one no-face reject fixture
+fixtures/holdout/      local-only hold-out manifest, provenance, and results
 research/              findings, primary references, licenses, experiments
 schemas/               .limg v1 JSON schema
 tests/                 Python and TypeScript regression tests
 inspect.html           detection-result viewer
 viewer.html            independent .limg player
+compare.html           deterministic multi-character motion comparison
 ```
 
 ## Setup
@@ -64,6 +66,7 @@ Open:
 - [http://127.0.0.1:5173/inspect.html](http://127.0.0.1:5173/inspect.html) for detector evidence
 - [http://127.0.0.1:5173/viewer.html](http://127.0.0.1:5173/viewer.html) for the separate player
 - [http://127.0.0.1:5173/validate.html](http://127.0.0.1:5173/validate.html) for the multi-image validation report
+- [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons across `.limg` files
 
 The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 `fixtures/overlays/`. Generated outputs are ignored because they are reproducible.
@@ -86,6 +89,24 @@ regenerated locally for the report viewer. The current calibrated result is 7
 full and 5 capability-limited cases with no errors; the initial 7/12 mismatch
 and its limitations are preserved in
 [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
+
+Run the independent external hold-out without network access after the detector
+models are cached:
+
+```bash
+npm run check:holdout:local
+npm run validate:holdout:offline
+```
+
+The externally licensed PNG inputs are deliberately ignored by Git. Place them
+under `fixtures/holdout/source/` using the documented names; the check command
+verifies their presence and frozen SHA-256 values before compilation.
+
+Its frozen first result is 3/5 expected outcomes. That mismatch is intentionally
+not tuned away: the one-eye-closed image was safely rejected, while a painted
+semi-realistic portrait exposed a missing style-domain gate. The full result and
+motion review are in
+[`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md).
 
 ## Compile another image
 
@@ -136,6 +157,8 @@ npm run build
 The animation and multi-image validation results are in
 [`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md)
 and [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
+The independent hold-out and common-state renderer are documented in
+[`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md).
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations

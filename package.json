@@ -17,7 +17,9 @@
     "compile:fixtures": "PYTHONPATH=. .venv/bin/python -m compiler.compile_character fixtures/source/copper-courier.png fixtures/source/teal-librarian.png",
     "compile:fixtures:offline": "PYTHONPATH=. .venv/bin/python -m compiler.compile_character --offline fixtures/source/copper-courier.png fixtures/source/teal-librarian.png",
     "validate:fixtures": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/validation/manifest.json --output-dir fixtures/validation",
-    "validate:fixtures:offline": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/validation/manifest.json --output-dir fixtures/validation --offline"
+    "validate:fixtures:offline": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/validation/manifest.json --output-dir fixtures/validation --offline",
+    "check:holdout:local": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/holdout/manifest.json --check-sources",
+    "validate:holdout:offline": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/holdout/manifest.json --output-dir fixtures/holdout --offline"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

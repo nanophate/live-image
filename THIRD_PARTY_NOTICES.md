@@ -38,3 +38,11 @@ with OpenAI's built-in image-generation tool. The no-face gradient is generated
 locally with ImageMagick, and the low-resolution validation portrait is a local
 192×192 downsample of a generated source. See `fixtures/README.md` and
 `fixtures/validation/prompts.json` for the prompt and provenance records.
+
+The local external hold-out set uses four CC0 portraits and one CC BY 3.0
+portrait from OpenGameArt contributors. The source images are ignored by Git
+and are not distributed in this repository. These test assets and their
+derivatives are not covered by the project MIT License. Exact creators, source
+links, license links, changes, and SHA-256 hashes are recorded in
+`fixtures/holdout/ATTRIBUTION.md`; the CC BY portrait requires credit to
+Jupiter's Daughter whenever it or a derivative is distributed.
