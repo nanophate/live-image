@@ -1,8 +1,10 @@
 import {
+  compareRgbaPixels,
   controlStateMaxError,
   MOTION_SETTLE_DELTA_SECONDS,
   MOTION_SETTLE_FRAMES,
   MOTION_STATE_TOLERANCE,
+  planBlinkTransition,
   planMotionComparison,
   type MotionComparisonCell,
 } from "../motion-comparison.js";
@@ -54,6 +56,22 @@ function releaseFrameUrls(): void {
   frameUrls.clear();
 }
 
+function previewCanvas(source: HTMLCanvasElement, manifest: LivingImageManifest, maxWidth: number, label: string): HTMLCanvasElement {
+  const preview = document.createElement("canvas");
+  const scale = Math.min(1, maxWidth / manifest.image.width);
+  preview.width = Math.max(1, Math.round(manifest.image.width * scale));
+  preview.height = Math.max(1, Math.round(manifest.image.height * scale));
+  preview.setAttribute("aria-label", label);
+  preview.getContext("2d", { willReadFrequently: true })?.drawImage(source, 0, 0, preview.width, preview.height);
+  return preview;
+}
+
+function previewPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("Canvas 2D is not available for transition evidence");
+  return context.getImageData(0, 0, canvas.width, canvas.height).data;
+}
+
 async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCell): Promise<HTMLElement> {
   const article = document.createElement("article");
   article.className = `comparison-cell comparison-cell-${cell.status}`;
@@ -82,13 +100,7 @@ async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCel
   try {
     await player.load(manifest);
     const stateError = settlePlayer(player, cell);
-    const preview = document.createElement("canvas");
-    const scale = Math.min(1, 420 / manifest.image.width);
-    preview.width = Math.max(1, Math.round(manifest.image.width * scale));
-    preview.height = Math.max(1, Math.round(manifest.image.height * scale));
-    preview.setAttribute("aria-label", `${manifest.id}: ${cell.label}`);
-    preview.getContext("2d")?.drawImage(renderCanvas, 0, 0, preview.width, preview.height);
-    article.append(preview);
+    article.append(previewCanvas(renderCanvas, manifest, 420, `${manifest.id}: ${cell.label}`));
 
     const evidence = document.createElement("div");
     evidence.className = "comparison-evidence";
@@ -121,6 +133,87 @@ async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCel
   return article;
 }
 
+async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLElement> {
+  const transition = planBlinkTransition(manifest);
+  const section = document.createElement("section");
+  section.className = "comparison-timeline";
+  section.dataset.transitionStatus = transition.status;
+
+  const heading = document.createElement("header");
+  const title = document.createElement("h3");
+  title.textContent = "Blink close → reopen";
+  const description = document.createElement("p");
+  description.textContent = "Fixed samples from the same runtime pulse curve, rendered sequentially with one player; inspect neighboring frames for seams, flicker, and crushed highlights.";
+  heading.append(title, description);
+  section.append(heading);
+
+  if (transition.status === "skipped") {
+    const skipped = document.createElement("div");
+    skipped.className = "comparison-timeline-skipped";
+    skipped.textContent = `Not rendered — ${transition.reason ?? "blink unavailable"}`;
+    section.append(skipped);
+    return section;
+  }
+
+  const strip = document.createElement("div");
+  strip.className = "comparison-timeline-strip";
+  const renderCanvas = document.createElement("canvas");
+  const player = new LivingImagePlayer(renderCanvas);
+  let openingPixels: Uint8ClampedArray | null = null;
+  let reopenedPixels: Uint8ClampedArray | null = null;
+  try {
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    for (const [index, frame] of transition.frames.entries()) {
+      player.setState(frame.requestedState);
+      // Advance a deterministic tick between each sample. Blink itself is
+      // direct, but this catches rendering changes at adjacent pulse states.
+      player.step(MOTION_SETTLE_DELTA_SECONDS);
+      const stateError = controlStateMaxError(frame.requestedState, player.getState());
+      const cell = document.createElement("figure");
+      cell.className = "comparison-timeline-frame";
+      cell.dataset.blinkAmount = frame.blinkAmount.toFixed(4);
+      const preview = previewCanvas(renderCanvas, manifest, 180, `${manifest.id}: ${frame.label}`);
+      cell.append(preview);
+      if (index === 0) openingPixels = previewPixels(preview);
+      if (index === transition.frames.length - 1) reopenedPixels = previewPixels(preview);
+      const caption = document.createElement("figcaption");
+      caption.textContent = `${frame.label} · ${Math.round(frame.timeSeconds * 1000)}ms`;
+      cell.append(caption);
+      if (stateError > MOTION_STATE_TOLERANCE) {
+        cell.classList.add("comparison-cell-error");
+        const error = document.createElement("span");
+        error.className = "comparison-error-text";
+        error.textContent = `state error ${stateError.toFixed(4)}`;
+        cell.append(error);
+      }
+      strip.append(cell);
+    }
+    if (!openingPixels || !reopenedPixels) throw new Error("Blink transition has no open endpoints");
+    const difference = compareRgbaPixels(openingPixels, reopenedPixels);
+    const evidence = document.createElement("p");
+    evidence.className = "comparison-timeline-evidence";
+    evidence.dataset.differingPixels = String(difference.differingPixels);
+    evidence.textContent = `Open → reopened difference: ${difference.differingPixels} pixels · max channel delta ${difference.maxChannelDelta}`;
+    if (difference.differingPixels > 0) {
+      section.classList.add("comparison-cell-error");
+      evidence.classList.add("comparison-error-text");
+    }
+    section.append(strip, evidence);
+  } catch (error) {
+    section.classList.add("comparison-cell-error");
+    const message = document.createElement("p");
+    message.className = "comparison-render-error";
+    message.textContent = `Blink transition failed: ${(error as Error).message}`;
+    section.append(message);
+  } finally {
+    player.destroy();
+    renderCanvas.width = 1;
+    renderCanvas.height = 1;
+  }
+  return section;
+}
+
 async function renderManifest({ source, manifest }: NamedManifest): Promise<HTMLElement> {
   const section = document.createElement("section");
   section.className = "comparison-character";
@@ -142,7 +235,7 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
   const grid = document.createElement("div");
   grid.className = "comparison-grid";
   for (const cell of planMotionComparison(manifest)) grid.append(await makeCell(manifest, cell));
-  section.append(heading, grid);
+  section.append(heading, grid, await makeBlinkTransition(manifest));
   return section;
 }
 

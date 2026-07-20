@@ -10,6 +10,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
+- [`support-domain-gate.md`](support-domain-gate.md) — compile-time support gate options, separate license/provenance review, and the pre-registered next experiment
 - [`license-matrix.md`](license-matrix.md) — code/model/data/sample-asset licensing separately tracked
 - [`sources.md`](sources.md) — primary references and the exact claims checked
 - [`experiments/2026-07-19-detector-baseline.md`](experiments/2026-07-19-detector-baseline.md) — first local detector measurements
@@ -18,6 +19,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-19-validation-before-quality-gate.json`](experiments/2026-07-19-validation-before-quality-gate.json) — raw 7/12 first-run evidence before gate changes
 - [`experiments/2026-07-20-holdout-motion-validation.md`](experiments/2026-07-20-holdout-motion-validation.md) — independent licensed hold-out result and deterministic blink/gaze/mouth review
 - [`experiments/2026-07-20-holdout-first-run.json`](experiments/2026-07-20-holdout-first-run.json) — unmodified 3/5 first-run evidence before any response to hold-out mismatches
+- [`experiments/2026-07-20-blink-transition-validation.md`](experiments/2026-07-20-blink-transition-validation.md) — sequential close/reopen samples, capability skips, and pixel-exact recovery evidence
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

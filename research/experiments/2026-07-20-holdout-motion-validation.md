@@ -110,6 +110,10 @@ Viewer for human review, but redistributed captures retain the source-image
 license obligations recorded in
 [`../../fixtures/holdout/ATTRIBUTION.md`](../../fixtures/holdout/ATTRIBUTION.md).
 
+**Confirmed follow-up.** A sequential close/reopen strip and pixel-exact open
+endpoint comparison were subsequently added and checked in
+[`2026-07-20-blink-transition-validation.md`](2026-07-20-blink-transition-validation.md).
+
 ## Action
 
 **Decision.** Do not change detector thresholds from hold-out A. The next

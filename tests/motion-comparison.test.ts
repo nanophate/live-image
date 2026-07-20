@@ -2,12 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  BLINK_TRANSITION_TIME_FRACTIONS,
+  compareRgbaPixels,
   controlStateMaxError,
   MOTION_SETTLE_DELTA_SECONDS,
   MOTION_SETTLE_FRAMES,
   MOTION_STATE_TOLERANCE,
+  planBlinkTransition,
   planMotionComparison,
 } from "../src/motion-comparison.js";
+import {
+  blinkPulseAmount,
+  BLINK_PULSE_CLOSE_FRACTION,
+  DEFAULT_BLINK_PULSE_DURATION_SECONDS,
+} from "../src/runtime.js";
 import { fixtureManifest } from "./fixture.js";
 
 test("comparison plan exposes fixed normalized runtime states", () => {
@@ -51,6 +59,60 @@ test("rejected assets retain a neutral reference but skip every motion", () => {
   assert.equal(plan[0]?.status, "available");
   assert.ok(plan.slice(1).every((cell) => cell.status === "skipped"));
   assert.ok(plan.slice(1).every((cell) => cell.reason === "Asset rejected by compiler"));
+});
+
+test("blink transition samples the runtime pulse through its close and reopen peak", () => {
+  const transition = planBlinkTransition(fixtureManifest());
+
+  assert.equal(transition.status, "available");
+  assert.equal(transition.frames.length, BLINK_TRANSITION_TIME_FRACTIONS.length);
+  assert.equal(transition.frames[0]?.blinkAmount, 0);
+  assert.equal(transition.frames.at(-1)?.blinkAmount, 0);
+  const peak = transition.frames.find((frame) => frame.blinkAmount === 1);
+  assert.ok(peak);
+  assert.equal(peak?.label, "close 100%");
+  assert.ok(transition.frames.some((frame) => frame.label.startsWith("reopen")));
+  assert.ok(transition.frames.every((frame) => frame.requestedState.blinkLeft === frame.blinkAmount));
+  assert.ok(transition.frames.every((frame) => frame.requestedState.blinkRight === frame.blinkAmount));
+});
+
+test("runtime blink pulse has stable boundaries and a single close peak", () => {
+  const duration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
+  assert.equal(blinkPulseAmount(-0.001, duration), 0);
+  assert.equal(blinkPulseAmount(0, duration), 0);
+  assert.equal(blinkPulseAmount(duration * BLINK_PULSE_CLOSE_FRACTION, duration), 1);
+  assert.equal(blinkPulseAmount(duration, duration), 0);
+  assert.equal(blinkPulseAmount(duration + 0.001, duration), 0);
+  assert.equal(blinkPulseAmount(duration / 2, duration), (1 - 0.5) / (1 - BLINK_PULSE_CLOSE_FRACTION));
+  assert.equal(blinkPulseAmount(0.1, 0), 0);
+  assert.equal(blinkPulseAmount(0.1, -1), 0);
+});
+
+test("blink transition skips rejected and blink-disabled assets without allocating frames", () => {
+  const disabled = fixtureManifest();
+  disabled.quality.disabledCapabilities = ["blink"];
+  const rejected = fixtureManifest();
+  rejected.quality.status = "reject";
+
+  assert.deepEqual(planBlinkTransition(disabled), {
+    status: "skipped", reason: "blink disabled by compiler", frames: [],
+  });
+  assert.deepEqual(planBlinkTransition(rejected), {
+    status: "skipped", reason: "Asset rejected by compiler", frames: [],
+  });
+});
+
+test("RGBA comparison counts changed pixels and their maximum channel delta", () => {
+  const first = new Uint8ClampedArray([10, 20, 30, 255, 40, 50, 60, 255]);
+  const same = new Uint8ClampedArray(first);
+  const changed = new Uint8ClampedArray([10, 20, 30, 255, 40, 80, 55, 255]);
+
+  assert.deepEqual(compareRgbaPixels(first, same), { differingPixels: 0, maxChannelDelta: 0 });
+  assert.deepEqual(compareRgbaPixels(first, changed), { differingPixels: 1, maxChannelDelta: 30 });
+  assert.throws(
+    () => compareRgbaPixels(first, new Uint8ClampedArray(4)),
+    /same pixel dimensions/,
+  );
 });
 
 test("state error checks every normalized control", () => {
