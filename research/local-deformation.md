@@ -274,14 +274,22 @@ patent question.
 
 ## Open validation questions
 
+**Confirmed implementation checkpoint.** The current mask-capable rigs now
+have a real-browser protected-core gate: fully opaque mask pixels retain RGB
+within one 8-bit level, clear-mask pixels must still change, and bypassing
+the protected composite reproduces a failure. Exact formulas, two-rig results,
+and the current iris/highlight claim boundary are in
+[`experiments/2026-07-20-eye-preservation-metrics.md`](experiments/2026-07-20-eye-preservation-metrics.md).
+
 - **Open.** Calibrate the edge percentiles, corridor widths, 2% area floor,
   iris overlap gate, inpaint radius, and motion caps on a newly frozen set; the
   numbers above are pre-registered starting values, not measured quality claims.
 - **Open.** Determine whether boundary-connected components reliably separate
   bangs/accessories from eyelids across the supported anime domain.
-- **Open.** Measure Canvas 2D triangle seams at device-pixel ratios 1, 1.5, 2,
-  and 3. If the one-pixel bound fails, use a small triangle clip overlap or move
-  the same stored mesh to WebGL2 without changing the `.limg` semantics.
+- **Decision.** The current Canvas backing store is fixed to manifest pixels,
+  so changing browser DPR does not change triangle rasterization. Measure
+  ratios 1, 1.5, 2, and 3 after introducing an explicit DPR/render-scale mode;
+  until then a DPR matrix would cover only CSS compositing.
 - **Open.** Compare blink frames with and without the iris/base split. Adoption
   requires less highlight crushing without a worse pasted-patch or inpainting
   artifact rate.

@@ -24,6 +24,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-blink-transition-validation.md`](experiments/2026-07-20-blink-transition-validation.md) — sequential close/reopen samples, capability skips, and pixel-exact recovery evidence
 - [`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md) — compiler-authored eye mesh, protected-line mask, bounded mouth bands, reproduced mask failure, and multi-image results
 - [`experiments/2026-07-20-browser-locality-validation.md`](experiments/2026-07-20-browser-locality-validation.md) — actual Chromium Canvas locality counts, endpoint recovery, fault-injection failure, CI dependency cost, and license evidence
+- [`experiments/2026-07-20-eye-preservation-metrics.md`](experiments/2026-07-20-eye-preservation-metrics.md) — protected-core RGB invariance, clear-mask motion evidence, mask-bypass failure, current iris/highlight claim boundary, and DPR decision
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

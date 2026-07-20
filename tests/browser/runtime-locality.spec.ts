@@ -9,6 +9,23 @@ interface CellMetrics {
   outside: number;
   maxChannelDelta: number;
   visible: boolean;
+  protection: {
+    corePixels: number;
+    coreErrorPixels: number;
+    coreMaxRgbDelta: number;
+    clearMaskPixels: number;
+    clearMaskChangedPixels: number;
+    eyes: Array<{
+      side: "left" | "right";
+      metrics: {
+        corePixels: number;
+        coreErrorPixels: number;
+        coreMaxRgbDelta: number;
+        clearMaskPixels: number;
+        clearMaskChangedPixels: number;
+      };
+    }>;
+  } | null;
 }
 
 function compiledRig(name: "teal-librarian" | "copper-courier"): Buffer {
@@ -26,13 +43,32 @@ function compiledRig(name: "teal-librarian" | "copper-courier"): Buffer {
 
 async function cellMetrics(character: Locator, state: string): Promise<CellMetrics> {
   const cell = character.locator(`[data-state="${state}"]`);
-  await expect(cell).toHaveAttribute("data-visible-effect", /^(true|false)$/);
-  return cell.evaluate((element) => ({
-    inside: Number((element as HTMLElement).dataset.insideChangedPixels),
-    outside: Number((element as HTMLElement).dataset.outsideChangedPixels),
-    maxChannelDelta: Number((element as HTMLElement).dataset.maxChannelDelta),
-    visible: (element as HTMLElement).dataset.visibleEffect === "true",
-  }));
+  await expect(cell).toBeAttached();
+  const visibleEffect = await cell.getAttribute("data-visible-effect");
+  if (visibleEffect === null) {
+    const renderedErrors = await cell.locator(".comparison-render-error, .comparison-error-text").allTextContents();
+    throw new Error(`${state} did not produce pixel evidence: ${renderedErrors.join(" · ") || "unknown render error"}`);
+  }
+  expect(visibleEffect).toMatch(/^(true|false)$/);
+  return cell.evaluate((element) => {
+    const dataset = (element as HTMLElement).dataset;
+    return {
+      inside: Number(dataset.insideChangedPixels),
+      outside: Number(dataset.outsideChangedPixels),
+      maxChannelDelta: Number(dataset.maxChannelDelta),
+      visible: dataset.visibleEffect === "true",
+      protection: dataset.protectedCorePixels === undefined
+        ? null
+        : {
+          corePixels: Number(dataset.protectedCorePixels),
+          coreErrorPixels: Number(dataset.protectedCoreErrorPixels),
+          coreMaxRgbDelta: Number(dataset.protectedCoreMaxRgbDelta),
+          clearMaskPixels: Number(dataset.clearMaskPixels),
+          clearMaskChangedPixels: Number(dataset.clearMaskChangedPixels),
+          eyes: JSON.parse(dataset.protectionByEye ?? "[]"),
+        },
+    };
+  });
 }
 
 test("automatic rigs keep browser-rendered motion inside compiler feature regions", async ({ page }) => {
@@ -66,18 +102,23 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
     "mouth-small", "mouth-open", "stress-gaze-left", "stress-gaze-right",
     "stress-mouth",
   ];
+  const eyeStates = new Set([
+    "blink-mid", "blink-full", "wink-left", "wink-right",
+    "gaze-left", "gaze-right", "gaze-up", "gaze-down",
+    "stress-gaze-left", "stress-gaze-right",
+  ]);
   for (const characterId of ["teal-librarian", "copper-courier"]) {
     const character = page.locator(`[data-character-id="${characterId}"]`);
     const characterEvidence: Record<string, CellMetrics> = {};
     evidence[characterId] = characterEvidence;
     await expect(character).toBeVisible();
-    await expect(character.locator(".comparison-cell-error")).toHaveCount(0);
     characterEvidence.neutral = await cellMetrics(character, "neutral");
     expect(characterEvidence.neutral).toEqual({
       inside: 0,
       outside: 0,
       maxChannelDelta: 0,
       visible: false,
+      protection: null,
     });
     for (const state of controlledStates) {
       const metrics = await cellMetrics(character, state);
@@ -86,11 +127,27 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
       expect(metrics.inside, `${characterId}/${state} should change at least one allowed pixel`).toBeGreaterThan(0);
       expect(metrics.outside, `${characterId}/${state} leaked outside its allowed ROI`).toBe(0);
       expect(metrics.maxChannelDelta, `${characterId}/${state} should have a non-zero channel delta`).toBeGreaterThan(0);
+      if (eyeStates.has(state)) {
+        expect(metrics.protection, `${characterId}/${state} should expose protected-mask evidence`).not.toBeNull();
+        const expectedEyeCount = state.startsWith("wink-") ? 1 : 2;
+        expect(metrics.protection!.eyes, `${characterId}/${state} should report every selected eye`).toHaveLength(expectedEyeCount);
+        for (const eye of metrics.protection!.eyes) {
+          const label = `${characterId}/${state}/${eye.side}`;
+          expect(eye.metrics.corePixels, `${label} needs a non-empty protected core`).toBeGreaterThan(0);
+          expect(eye.metrics.coreErrorPixels, `${label} changed protected core pixels`).toBe(0);
+          expect(eye.metrics.coreMaxRgbDelta, `${label} exceeded protected RGB tolerance`).toBeLessThanOrEqual(1);
+          expect(eye.metrics.clearMaskPixels, `${label} needs non-empty clear-mask evidence`).toBeGreaterThan(0);
+          expect(eye.metrics.clearMaskChangedPixels, `${label} should move clear-mask pixels`).toBeGreaterThan(0);
+        }
+      } else {
+        expect(metrics.protection, `${characterId}/${state} should not report eye-mask evidence`).toBeNull();
+      }
     }
     await expect(character.locator(".comparison-timeline-evidence")).toHaveAttribute(
       "data-differing-pixels",
       "0",
     );
+    await expect(character.locator(".comparison-cell-error")).toHaveCount(0);
   }
 
   expect(browserErrors).toEqual([]);

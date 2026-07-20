@@ -63,6 +63,29 @@ export interface RgbaLocalityMetrics {
   visibleEffect: boolean;
 }
 
+export interface ProtectedMaskQualityMetrics {
+  corePixels: number;
+  coreErrorPixels: number;
+  coreMaxRgbDelta: number;
+  clearMaskPixels: number;
+  clearMaskChangedPixels: number;
+}
+
+export interface ProtectedMaskQualityOptions {
+  coreAlphaThreshold?: number;
+  clearAlphaThreshold?: number;
+  coreRgbTolerance?: number;
+  regionInsetPixels?: number;
+}
+
+export interface AlignedAlphaMask {
+  data: Uint8ClampedArray;
+  width: number;
+  height: number;
+  originX: number;
+  originY: number;
+}
+
 const SCENARIOS: readonly MotionScenario[] = [
   { id: "neutral", label: "Neutral", capability: null, phase: "reference", patch: {} },
   { id: "blink-mid", label: "Blink 0.50", capability: "blink", phase: "acceptance", patch: { blinkLeft: 0.5, blinkRight: 0.5 } },
@@ -256,6 +279,114 @@ export function measureRgbaLocality(
     maxChannelDelta,
     visibleEffect: insideChangedPixels > 0,
   };
+}
+
+/**
+ * Measure the two complementary contracts of a compiler-authored eye mask.
+ * Opaque protected-core pixels must retain their canonical RGB, while
+ * clear-mask pixels must still show the requested motion. Sampling is performed
+ * in full-resolution destination pixels so the result covers the same mask
+ * scaling and placement used by Canvas.
+ */
+export function measureProtectedMaskQuality(
+  baseline: Uint8ClampedArray,
+  frame: Uint8ClampedArray,
+  width: number,
+  height: number,
+  mask: Readonly<AlignedAlphaMask>,
+  region: Rect,
+  options: Readonly<ProtectedMaskQualityOptions> = {},
+): ProtectedMaskQualityMetrics {
+  if (!Number.isSafeInteger(width) || width <= 0 || !Number.isSafeInteger(height) || height <= 0) {
+    throw new Error("RGBA frame width and height must be positive safe integers");
+  }
+  const expectedLength = width * height * 4;
+  if (!Number.isSafeInteger(expectedLength) || baseline.length !== expectedLength || frame.length !== expectedLength) {
+    throw new Error(`RGBA frames must each contain exactly ${expectedLength} channels`);
+  }
+  if (!Number.isSafeInteger(mask.width) || mask.width <= 0 || !Number.isSafeInteger(mask.height) || mask.height <= 0) {
+    throw new Error("Aligned mask width and height must be positive safe integers");
+  }
+  if (!Number.isSafeInteger(mask.originX) || !Number.isSafeInteger(mask.originY)) {
+    throw new Error("Aligned mask origin must contain safe integers");
+  }
+  if (mask.data.length !== mask.width * mask.height) {
+    throw new Error(`Aligned mask alpha must contain exactly ${mask.width * mask.height} values`);
+  }
+  if (
+    !Number.isFinite(region.x) || !Number.isFinite(region.y)
+    || !Number.isFinite(region.width) || !Number.isFinite(region.height)
+    || region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0
+    || region.x + region.width > 1 || region.y + region.height > 1
+  ) {
+    throw new Error("Mask region must be a positive normalized rectangle");
+  }
+
+  const coreAlphaThreshold = options.coreAlphaThreshold ?? 255;
+  const clearAlphaThreshold = options.clearAlphaThreshold ?? 0;
+  const coreRgbTolerance = options.coreRgbTolerance ?? 1;
+  const regionInsetPixels = options.regionInsetPixels ?? 1;
+  for (const [label, value] of [
+    ["core alpha threshold", coreAlphaThreshold],
+    ["clear alpha threshold", clearAlphaThreshold],
+    ["core RGB tolerance", coreRgbTolerance],
+  ] as const) {
+    if (!Number.isSafeInteger(value) || value < 0 || value > 255) {
+      throw new Error(`${label} must be an 8-bit safe integer`);
+    }
+  }
+  if (clearAlphaThreshold >= coreAlphaThreshold) {
+    throw new Error("Clear alpha threshold must be lower than core alpha threshold");
+  }
+  if (!Number.isSafeInteger(regionInsetPixels) || regionInsetPixels < 0) {
+    throw new Error("Region inset must be a non-negative safe integer");
+  }
+
+  const left = region.x * width;
+  const top = region.y * height;
+  const regionWidth = region.width * width;
+  const regionHeight = region.height * height;
+  const x0 = Math.max(0, Math.floor(left) + regionInsetPixels);
+  const y0 = Math.max(0, Math.floor(top) + regionInsetPixels);
+  const x1 = Math.min(width, Math.ceil(left + regionWidth) - regionInsetPixels);
+  const y1 = Math.min(height, Math.ceil(top + regionHeight) - regionInsetPixels);
+  if (
+    Math.floor(left) < mask.originX || Math.floor(top) < mask.originY
+    || Math.ceil(left + regionWidth) > mask.originX + mask.width
+    || Math.ceil(top + regionHeight) > mask.originY + mask.height
+  ) {
+    throw new Error("Aligned mask does not cover its normalized region");
+  }
+
+  let corePixels = 0;
+  let coreErrorPixels = 0;
+  let coreMaxRgbDelta = 0;
+  let clearMaskPixels = 0;
+  let clearMaskChangedPixels = 0;
+  for (let y = y0; y < y1; y += 1) {
+    for (let x = x0; x < x1; x += 1) {
+      const alpha = mask.data[(y - mask.originY) * mask.width + (x - mask.originX)] ?? 0;
+      if (alpha < coreAlphaThreshold && alpha > clearAlphaThreshold) continue;
+      const offset = (y * width + x) * 4;
+      let maxRgbDelta = 0;
+      for (let channel = 0; channel < 3; channel += 1) {
+        maxRgbDelta = Math.max(
+          maxRgbDelta,
+          Math.abs((baseline[offset + channel] ?? 0) - (frame[offset + channel] ?? 0)),
+        );
+      }
+      if (alpha >= coreAlphaThreshold) {
+        corePixels += 1;
+        coreMaxRgbDelta = Math.max(coreMaxRgbDelta, maxRgbDelta);
+        if (maxRgbDelta > coreRgbTolerance) coreErrorPixels += 1;
+      } else {
+        clearMaskPixels += 1;
+        if (maxRgbDelta > 0) clearMaskChangedPixels += 1;
+      }
+    }
+  }
+
+  return { corePixels, coreErrorPixels, coreMaxRgbDelta, clearMaskPixels, clearMaskChangedPixels };
 }
 
 export function controlStateMaxError(expected: ControlState, actual: Readonly<ControlState>): number {
