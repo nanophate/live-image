@@ -26,6 +26,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-browser-locality-validation.md`](experiments/2026-07-20-browser-locality-validation.md) — actual Chromium Canvas locality counts, endpoint recovery, fault-injection failure, CI dependency cost, and license evidence
 - [`experiments/2026-07-20-eye-preservation-metrics.md`](experiments/2026-07-20-eye-preservation-metrics.md) — protected-core RGB invariance, clear-mask motion evidence, mask-bypass failure, current iris/highlight claim boundary, and DPR decision
 - [`experiments/2026-07-20-iris-base-eye-validation.md`](experiments/2026-07-20-iris-base-eye-validation.md) — Compiler 0.4 rigid iris/highlight texture, Telea base eye, fail-closed gates, two-rig browser evidence, 12-image matrix, and hold-out result
+- [`experiments/2026-07-20-validation-contract-hardening.md`](experiments/2026-07-20-validation-contract-hardening.md) — source SHA-256 and exact blink/gaze/mouth contracts for all 12 public validation cases
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

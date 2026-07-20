@@ -52,6 +52,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "clean-teal",
       "matched": true,
       "quality": {
@@ -127,6 +135,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "clean-copper",
       "matched": true,
       "quality": {
@@ -202,6 +218,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "clean-coral",
       "matched": true,
       "quality": {
@@ -277,6 +301,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "clean-lavender",
       "matched": true,
       "quality": {
@@ -352,6 +384,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "dark-iris-navy",
       "matched": true,
       "quality": {
@@ -427,6 +467,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "dark-iris-auburn",
       "matched": true,
       "quality": {
@@ -493,6 +541,15 @@
         }
       },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ],
+        "enabled": [
+          "mouth"
+        ]
+      },
       "id": "light-iris-silver",
       "matched": true,
       "quality": {
@@ -562,6 +619,15 @@
         }
       },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ],
+        "enabled": [
+          "mouth"
+        ]
+      },
       "id": "light-iris-peach",
       "matched": true,
       "quality": {
@@ -636,6 +702,15 @@
         }
       },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ],
+        "enabled": [
+          "mouth"
+        ]
+      },
       "id": "occluded-left-eye",
       "matched": true,
       "quality": {
@@ -716,6 +791,14 @@
         }
       },
       "expected": "full",
+      "expectedCapabilities": {
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "glasses-round",
       "matched": true,
       "quality": {
@@ -792,6 +875,15 @@
         }
       },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink"
+        ],
+        "enabled": [
+          "gaze",
+          "mouth"
+        ]
+      },
       "id": "three-quarter",
       "matched": true,
       "quality": {
@@ -870,6 +962,15 @@
         }
       },
       "expected": "limited",
+      "expectedCapabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ],
+        "enabled": [
+          "mouth"
+        ]
+      },
       "id": "low-resolution-192",
       "matched": true,
       "quality": {

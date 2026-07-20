@@ -436,6 +436,35 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(report["cases"][0]["message"], "compiler exited with status 1")
         self.assertNotIn("/private/cache", json.dumps(report))
 
+    def test_tracked_validation_contract_pins_sources_and_capabilities(self) -> None:
+        repository_root = Path(__file__).resolve().parents[1]
+        manifest_path = repository_root / "fixtures" / "validation" / "manifest.json"
+        report_path = repository_root / "fixtures" / "validation" / "report.json"
+
+        cases = load_manifest(manifest_path)
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        reported_by_id = {item["id"]: item for item in report["cases"]}
+
+        self.assertEqual(set(reported_by_id), {case.id for case in cases})
+        for case in cases:
+            with self.subTest(case=case.id):
+                self.assertIsNotNone(case.source_sha256)
+                self.assertIsNotNone(case.expected_enabled_capabilities)
+                self.assertIsNotNone(case.expected_disabled_capabilities)
+
+                reported = reported_by_id[case.id]
+                self.assertEqual(reported["sourceSha256"], case.source_sha256)
+                self.assertEqual(reported["expected"], case.expected)
+                self.assertEqual(
+                    reported["expectedCapabilities"],
+                    {
+                        "enabled": list(case.expected_enabled_capabilities or ()),
+                        "disabled": list(case.expected_disabled_capabilities or ()),
+                    },
+                )
+                self.assertEqual(reported["capabilities"], reported["expectedCapabilities"])
+                self.assertTrue(reported["matched"])
+
 
 if __name__ == "__main__":
     unittest.main()
