@@ -5,73 +5,109 @@
       "id": "clean-teal",
       "category": "clean-frontal",
       "source": "source/clean-teal.png",
-      "expected": "full"
+      "sourceSha256": "4480e53d53959ac7aa8665a91166ec3c5e839bb10bd53aaa96d708607b5798e6",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "clean-copper",
       "category": "clean-frontal",
       "source": "source/clean-copper.png",
-      "expected": "full"
+      "sourceSha256": "440b6c5625ed15549243bd9b979f88dbb6c0cb10a64b9415acec4a7b80918dd4",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "clean-coral",
       "category": "clean-frontal",
       "source": "source/clean-coral.png",
-      "expected": "full"
+      "sourceSha256": "d180bd1a2afa8dff22a0a55f722c36cd981383f0f5acdc29809b581bf891dc59",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "clean-lavender",
       "category": "clean-frontal",
       "source": "source/clean-lavender.png",
-      "expected": "full"
+      "sourceSha256": "1b38643b433f1c609a8595a25a92e52e953c8ce88142c9a964b11ca43bf12069",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "dark-iris-navy",
       "category": "dark-iris",
       "source": "source/dark-iris-navy.png",
-      "expected": "full"
+      "sourceSha256": "c0bec89d72c9a890bb21eba0c6fedd59770538d50abc85e947049512ece8e1ab",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "dark-iris-auburn",
       "category": "dark-iris",
       "source": "source/dark-iris-auburn.png",
-      "expected": "full"
+      "sourceSha256": "509b20244aec20d421f531da05344c3773340957eef792270fda0be77cffd49d",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "light-iris-silver",
       "category": "light-low-contrast-iris",
       "source": "source/light-iris-silver.png",
-      "expected": "limited"
+      "sourceSha256": "45e890d2bc07352e1b363ed27f273c24d4144cf51263f53cfb703044377fb603",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
     },
     {
       "id": "light-iris-peach",
       "category": "light-low-contrast-iris",
       "source": "source/light-iris-peach.png",
-      "expected": "limited"
+      "sourceSha256": "72a85ef3b23e0301c5ff99e2971a9531d2dcc83204275aa77d56aee1a03b1807",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
     },
     {
       "id": "occluded-left-eye",
       "category": "eye-occlusion",
       "source": "source/occluded-left-eye.png",
-      "expected": "limited"
+      "sourceSha256": "d225d7ae7eb524f7757ce070a5f413cbd3843f74bf9d723de9fed110d67de582",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
     },
     {
       "id": "glasses-round",
       "category": "glasses",
       "source": "source/glasses-round.png",
-      "expected": "full"
+      "sourceSha256": "1768a0f572d400100ec15e3a0ab9030e75b6c57ad7f2b979765760d954a01d74",
+      "expected": "full",
+      "expectedEnabledCapabilities": ["blink", "gaze", "mouth"],
+      "expectedDisabledCapabilities": []
     },
     {
       "id": "three-quarter",
       "category": "three-quarter-pose",
       "source": "source/three-quarter.png",
-      "expected": "limited"
+      "sourceSha256": "b7c68c42bfb0ff9aec9477d5802c037f084bdcfc1c5047bc4c7a4b48862e94d9",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["gaze", "mouth"],
+      "expectedDisabledCapabilities": ["blink"]
     },
     {
       "id": "low-resolution-192",
       "category": "low-resolution",
       "source": "source/low-resolution-192.png",
-      "expected": "limited"
+      "sourceSha256": "677220439c0c6c7da693a05241c9626fa712023d2e9e2d4893398c84718e4705",
+      "expected": "limited",
+      "expectedEnabledCapabilities": ["mouth"],
+      "expectedDisabledCapabilities": ["blink", "gaze"]
     }
   ]
 }

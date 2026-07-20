@@ -11,12 +11,62 @@ export interface ProtectedLineArtMask {
   cannyHigh: number;
 }
 
+/** A compact PNG layer authored in an eye deformation region's pixel space. */
+export interface EmbeddedRgbaLayer {
+  dataUrl: string;
+  width: number;
+  height: number;
+  coverage: number;
+  method: "source-rgba-ellipse-v1" | "telea-inpaint-v1" | "telea-skin-fill-curve-v1" | "affine-skin-fill-curve-v2" | "affine-skin-fill-curve-v3";
+}
+
+export interface ClosedEyeCorrectiveRig extends EmbeddedRgbaLayer {
+  method: "telea-skin-fill-curve-v1" | "affine-skin-fill-curve-v2" | "affine-skin-fill-curve-v3";
+  activationStart: number;
+  inpaintRadius?: number;
+  lineThickness: number;
+  sampleExclusionRadius?: number;
+  retainedSamplePixels?: number;
+  medianFitResidual?: number;
+  upperSamplesIncluded?: boolean;
+}
+
+export interface IrisDeformationRig {
+  method: "ellipse-cage-telea-v1";
+  texture: EmbeddedRgbaLayer;
+  baseEye: EmbeddedRgbaLayer;
+  centre: Point;
+  radiusX: number;
+  radiusY: number;
+  inpaintRadius: number;
+  segmentationConfidence: number;
+}
+
+export interface SemanticControlField {
+  control: "blink";
+  weights: number[];
+  maxDisplacements: Point[];
+}
+
+/** Optional compiler-authored explicit mesh used by the bounded A/B renderer. */
+export interface EyeSemanticMeshRig {
+  method: "semantic-weighted-triangle-mesh-v1";
+  vertices: Point[];
+  triangles: Array<[number, number, number]>;
+  fields: [SemanticControlField];
+  aperture: number[];
+  minimumAreaRatio: number;
+}
+
 export interface EyeDeformationRig {
   method: string;
   sourceRows: number[];
   closedRows: number[];
   gazeRowWeights: number[];
   protectedLineArtMask: ProtectedLineArtMask;
+  iris?: IrisDeformationRig;
+  semanticMesh?: EyeSemanticMeshRig;
+  closedEye?: ClosedEyeCorrectiveRig;
   region: Rect;
 }
 
@@ -100,6 +150,7 @@ export const MAX_IMAGE_DIMENSION = 8192;
 export const MAX_IMAGE_PIXELS = 33_554_432;
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+const PNG_DATA_URL = /^data:image\/png;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
 
 function assertPoint(value: unknown, label: string): asserts value is Point {
   if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
@@ -137,6 +188,66 @@ function assertPointInsideRect(point: Point, outer: Rect, label: string): void {
     || point.x > outer.x + outer.width + epsilon
     || point.y > outer.y + outer.height + epsilon
   ) throw new Error(`${label} must stay inside its feature region`);
+}
+
+function signedArea(first: Point, second: Point, third: Point): number {
+  return ((second.x - first.x) * (third.y - first.y) - (second.y - first.y) * (third.x - first.x)) * 0.5;
+}
+
+function assertEyeSemanticMesh(value: unknown, featureRegion: Rect, label: string): void {
+  if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
+  const mesh = value as Partial<EyeSemanticMeshRig>;
+  if (mesh.method !== "semantic-weighted-triangle-mesh-v1") throw new Error(`${label}.method is unsupported`);
+  if (!Array.isArray(mesh.vertices) || mesh.vertices.length < 3 || mesh.vertices.length > 128) {
+    throw new Error(`${label}.vertices must contain 3..128 points`);
+  }
+  mesh.vertices.forEach((point, index) => {
+    assertPoint(point, `${label}.vertices[${index}]`);
+    assertPointInsideRect(point, featureRegion, `${label}.vertices[${index}]`);
+  });
+  if (!Array.isArray(mesh.triangles) || mesh.triangles.length < 1 || mesh.triangles.length > 256) {
+    throw new Error(`${label}.triangles must contain 1..256 triangles`);
+  }
+  let winding = 0;
+  mesh.triangles.forEach((triangle, triangleIndex) => {
+    if (
+      !Array.isArray(triangle)
+      || triangle.length !== 3
+      || !triangle.every((index) => Number.isSafeInteger(index) && index >= 0 && index < mesh.vertices!.length)
+      || new Set(triangle).size !== 3
+    ) throw new Error(`${label}.triangles[${triangleIndex}] contains invalid indices`);
+    const first = mesh.vertices![triangle[0]!];
+    const second = mesh.vertices![triangle[1]!];
+    const third = mesh.vertices![triangle[2]!];
+    if (!first || !second || !third) throw new Error(`${label}.triangles[${triangleIndex}] is incomplete`);
+    const area = signedArea(first, second, third);
+    if (Math.abs(area) <= 1e-12) throw new Error(`${label}.triangles[${triangleIndex}] has zero source area`);
+    const direction = Math.sign(area);
+    if (winding === 0) winding = direction;
+    else if (direction !== winding) throw new Error(`${label}.triangles must use one source winding`);
+  });
+  if (!Array.isArray(mesh.fields) || mesh.fields.length !== 1 || mesh.fields[0]?.control !== "blink") {
+    throw new Error(`${label}.fields must contain exactly one blink field`);
+  }
+  const field = mesh.fields[0];
+  assertFiniteArray(field.weights, `${label}.fields[0].weights`);
+  if (field.weights.length !== mesh.vertices.length || !field.weights.every((weight) => weight >= 0 && weight <= 1)) {
+    throw new Error(`${label}.fields[0].weights must match vertices and stay in [0,1]`);
+  }
+  if (!Array.isArray(field.maxDisplacements) || field.maxDisplacements.length !== mesh.vertices.length) {
+    throw new Error(`${label}.fields[0].maxDisplacements must match vertices`);
+  }
+  field.maxDisplacements.forEach((point, index) => assertPoint(point, `${label}.fields[0].maxDisplacements[${index}]`));
+  if (
+    !Array.isArray(mesh.aperture)
+    || mesh.aperture.length < 6
+    || mesh.aperture.length > mesh.vertices.length
+    || !mesh.aperture.every((index) => Number.isSafeInteger(index) && index >= 0 && index < mesh.vertices!.length)
+    || new Set(mesh.aperture).size !== mesh.aperture.length
+  ) throw new Error(`${label}.aperture contains invalid indices`);
+  if (!finite(mesh.minimumAreaRatio) || mesh.minimumAreaRatio < 0.02 || mesh.minimumAreaRatio > 1) {
+    throw new Error(`${label}.minimumAreaRatio must stay in [0.02,1]`);
+  }
 }
 
 function assertEyeGeometry(eye: EyeFeature, label: string): void {
@@ -260,6 +371,135 @@ function assertEyeDeformation(
   }
   if (!finite(mask.cannyLow) || !finite(mask.cannyHigh) || mask.cannyLow < 0 || mask.cannyHigh < mask.cannyLow) {
     throw new Error(`${label}.protectedLineArtMask Canny thresholds are invalid`);
+  }
+  if (deformation.iris !== undefined) {
+    assertIrisDeformation(
+      deformation.iris,
+      deformation.region,
+      imageWidth,
+      imageHeight,
+      `${label}.iris`,
+    );
+  }
+  if (deformation.semanticMesh !== undefined) {
+    assertEyeSemanticMesh(deformation.semanticMesh, deformation.region, `${label}.semanticMesh`);
+  }
+  if (deformation.closedEye !== undefined) {
+    assertClosedEyeCorrective(
+      deformation.closedEye,
+      expectedWidth,
+      expectedHeight,
+      `${label}.closedEye`,
+    );
+  }
+}
+
+function assertEmbeddedRgbaLayer(
+  value: unknown,
+  expectedWidth: number,
+  expectedHeight: number,
+  expectedMethod: EmbeddedRgbaLayer["method"],
+  label: string,
+): void {
+  if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
+  const layer = value as Partial<EmbeddedRgbaLayer>;
+  if (typeof layer.dataUrl !== "string" || !PNG_DATA_URL.test(layer.dataUrl)) {
+    throw new Error(`${label} must contain an embedded PNG`);
+  }
+  if (!Number.isInteger(layer.width) || layer.width !== expectedWidth || !Number.isInteger(layer.height) || layer.height !== expectedHeight) {
+    throw new Error(`${label} dimensions must match its deformation region`);
+  }
+  if (!finite(layer.coverage) || layer.coverage < 0 || layer.coverage > 1) {
+    throw new Error(`${label} coverage must stay in [0,1]`);
+  }
+  if (layer.method !== expectedMethod) throw new Error(`${label}.method is unsupported`);
+}
+
+function assertIrisDeformation(
+  value: unknown,
+  region: Rect,
+  imageWidth: number,
+  imageHeight: number,
+  label: string,
+): void {
+  if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
+  const iris = value as Partial<IrisDeformationRig>;
+  if (iris.method !== "ellipse-cage-telea-v1") throw new Error(`${label}.method is unsupported`);
+  const expectedWidth = Math.max(1, Math.round(region.width * imageWidth));
+  const expectedHeight = Math.max(1, Math.round(region.height * imageHeight));
+  assertEmbeddedRgbaLayer(iris.texture, expectedWidth, expectedHeight, "source-rgba-ellipse-v1", `${label}.texture`);
+  assertEmbeddedRgbaLayer(iris.baseEye, expectedWidth, expectedHeight, "telea-inpaint-v1", `${label}.baseEye`);
+  assertPoint(iris.centre, `${label}.centre`);
+  if (
+    !finite(iris.radiusX)
+    || !finite(iris.radiusY)
+    || iris.radiusX <= 0
+    || iris.radiusY <= 0
+    || iris.radiusX > 1
+    || iris.radiusY > 1
+    || iris.centre.x < 0
+    || iris.centre.x > 1
+    || iris.centre.y < 0
+    || iris.centre.y > 1
+  ) throw new Error(`${label} ellipse geometry is invalid`);
+  assertInsideRect({
+    x: iris.centre.x - iris.radiusX,
+    y: iris.centre.y - iris.radiusY,
+    width: iris.radiusX * 2,
+    height: iris.radiusY * 2,
+  }, region, `${label} ellipse`);
+  if (typeof iris.inpaintRadius !== "number" || !Number.isInteger(iris.inpaintRadius) || iris.inpaintRadius <= 0) {
+    throw new Error(`${label}.inpaintRadius must be a positive integer`);
+  }
+  if (!finite(iris.segmentationConfidence) || iris.segmentationConfidence < 0 || iris.segmentationConfidence > 1) {
+    throw new Error(`${label}.segmentationConfidence must stay in [0,1]`);
+  }
+}
+
+function assertClosedEyeCorrective(
+  value: unknown,
+  expectedWidth: number,
+  expectedHeight: number,
+  label: string,
+): void {
+  const corrective = value as Partial<ClosedEyeCorrectiveRig>;
+  if (
+    corrective.method !== "telea-skin-fill-curve-v1"
+    && corrective.method !== "affine-skin-fill-curve-v2"
+    && corrective.method !== "affine-skin-fill-curve-v3"
+  ) {
+    throw new Error(`${label}.method is unsupported`);
+  }
+  assertEmbeddedRgbaLayer(value, expectedWidth, expectedHeight, corrective.method, label);
+  if (!finite(corrective.activationStart) || corrective.activationStart < 0.5 || corrective.activationStart >= 1) {
+    throw new Error(`${label}.activationStart must stay in [0.5,1)`);
+  }
+  const lineThickness = corrective.lineThickness;
+  if (!finite(lineThickness) || !Number.isInteger(lineThickness) || lineThickness <= 0 || lineThickness > 8) {
+    throw new Error(`${label}.lineThickness must be an integer in [1,8]`);
+  }
+  if (corrective.method === "telea-skin-fill-curve-v1") {
+    const inpaintRadius = corrective.inpaintRadius;
+    if (!finite(inpaintRadius) || !Number.isInteger(inpaintRadius) || inpaintRadius <= 0 || inpaintRadius > 16) {
+      throw new Error(`${label}.inpaintRadius must be an integer in [1,16]`);
+    }
+  } else if (corrective.method === "affine-skin-fill-curve-v2" || corrective.method === "affine-skin-fill-curve-v3") {
+    const sampleExclusionRadius = corrective.sampleExclusionRadius;
+    const retainedSamplePixels = corrective.retainedSamplePixels;
+    if (!finite(sampleExclusionRadius) || !Number.isInteger(sampleExclusionRadius) || sampleExclusionRadius <= 0 || sampleExclusionRadius > 32) {
+      throw new Error(`${label}.sampleExclusionRadius must be an integer in [1,32]`);
+    }
+    if (!finite(retainedSamplePixels) || !Number.isInteger(retainedSamplePixels) || retainedSamplePixels < 48) {
+      throw new Error(`${label}.retainedSamplePixels must be an integer of at least 48`);
+    }
+    if (!finite(corrective.medianFitResidual) || corrective.medianFitResidual < 0) {
+      throw new Error(`${label}.medianFitResidual must be finite and non-negative`);
+    }
+    if (corrective.method === "affine-skin-fill-curve-v3" && typeof corrective.upperSamplesIncluded !== "boolean") {
+      throw new Error(`${label}.upperSamplesIncluded must be boolean`);
+    }
+  } else {
+    throw new Error(`${label}.method is unsupported`);
   }
 }
 

@@ -53,13 +53,24 @@ band. Player loads are transactional: a failed replacement image or mask keeps
 the last playable character. See
 [`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md).
 
+**Confirmed update (2026-07-20):** Compiler `0.4.0` adds an optional paired
+rigid iris/highlight RGBA texture and Telea-inpainted base-eye texture to the
+same `.limg` v1 deformation object. The Runtime loads the pair transactionally,
+warps the compact base eye, translates the iris without changing its cage
+dimensions, clips it to the current eyelid aperture, and sets iris alpha to zero
+at full close. New Compiler output disables blink/gaze when either eye cannot
+author a fully contained geometric pair; this is not a semantic-confidence or
+inpaint-quality claim. Older v1 manifests retain the 0.3 fallback. See
+[`experiments/2026-07-20-iris-base-eye-validation.md`](experiments/2026-07-20-iris-base-eye-validation.md).
+
 **Decision:** The JSON Schema is the portable structural contract. Cross-field
 constraints that JSON Schema cannot express directly—strict row ordering,
-feature-region containment, matching declared mask dimensions, and ordered Canny
-thresholds—are enforced by `validateManifest` before runtime allocation or
-drawing. The player then verifies the decoded PNG's natural dimensions before
-allocating its protection layer. Both validation layers reject unsupported
-deformation method identifiers.
+feature-region containment, matching declared layer dimensions, iris-ellipse
+containment, and ordered Canny thresholds—are enforced by `validateManifest`
+before runtime allocation or drawing. The player then verifies every decoded
+PNG's natural dimensions before allocating its protection and eye-detail
+layers. Both validation layers reject unsupported deformation method
+identifiers.
 
 **Decision:** Version-1 source images are limited to 8192 pixels per side and
 33,554,432 total pixels. The player verifies the decoded source image's natural

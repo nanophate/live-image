@@ -283,6 +283,56 @@ def _extract_build_evidence(document: Any) -> dict[str, Any]:
                     item["protectedLineCoverage"] = coverage
                 if isinstance(mask.get("method"), str):
                     item["protectedLineMethod"] = mask["method"]
+            iris = eye_deformation.get("iris")
+            if isinstance(iris, dict):
+                if isinstance(iris.get("method"), str):
+                    item["irisMethod"] = iris["method"]
+                confidence = iris.get("segmentationConfidence")
+                if isinstance(confidence, (int, float)) and not isinstance(confidence, bool) and math.isfinite(confidence):
+                    item["irisSegmentationConfidence"] = confidence
+                texture = iris.get("texture")
+                if isinstance(texture, dict):
+                    coverage = texture.get("coverage")
+                    if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+                        item["irisCoverage"] = coverage
+                    if isinstance(texture.get("method"), str):
+                        item["irisTextureMethod"] = texture["method"]
+                base_eye = iris.get("baseEye")
+                if isinstance(base_eye, dict) and isinstance(base_eye.get("method"), str):
+                    item["baseEyeMethod"] = base_eye["method"]
+            semantic_mesh = eye_deformation.get("semanticMesh")
+            if isinstance(semantic_mesh, dict):
+                if isinstance(semantic_mesh.get("method"), str):
+                    item["semanticMeshMethod"] = semantic_mesh["method"]
+                vertices = semantic_mesh.get("vertices")
+                triangles = semantic_mesh.get("triangles")
+                if isinstance(vertices, list):
+                    item["semanticMeshVertices"] = len(vertices)
+                if isinstance(triangles, list):
+                    item["semanticMeshTriangles"] = len(triangles)
+                minimum_area_ratio = semantic_mesh.get("minimumAreaRatio")
+                if (
+                    isinstance(minimum_area_ratio, (int, float))
+                    and not isinstance(minimum_area_ratio, bool)
+                    and math.isfinite(minimum_area_ratio)
+                ):
+                    item["semanticMeshMinimumAreaRatio"] = minimum_area_ratio
+            closed_eye = eye_deformation.get("closedEye")
+            if isinstance(closed_eye, dict):
+                if isinstance(closed_eye.get("method"), str):
+                    item["closedEyeMethod"] = closed_eye["method"]
+                coverage = closed_eye.get("coverage")
+                if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+                    item["closedEyeCoverage"] = coverage
+                retained = closed_eye.get("retainedSamplePixels")
+                if isinstance(retained, int) and not isinstance(retained, bool) and retained >= 0:
+                    item["closedEyeRetainedSamplePixels"] = retained
+                residual = closed_eye.get("medianFitResidual")
+                if isinstance(residual, (int, float)) and not isinstance(residual, bool) and math.isfinite(residual):
+                    item["closedEyeMedianFitResidual"] = residual
+                upper_included = closed_eye.get("upperSamplesIncluded")
+                if isinstance(upper_included, bool):
+                    item["closedEyeUpperSamplesIncluded"] = upper_included
             if item:
                 eye_evidence.append(item)
     if eye_evidence:

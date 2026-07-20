@@ -26,6 +26,15 @@ interface CellMetrics {
       };
     }>;
   } | null;
+  iris: Array<{
+    side: "left" | "right";
+    alpha: number;
+    shiftX: number;
+    shiftY: number;
+    radiusX: number;
+    radiusY: number;
+    renderedTexturePixels: number;
+  }>;
 }
 
 function compiledRig(name: "teal-librarian" | "copper-courier"): Buffer {
@@ -67,11 +76,13 @@ async function cellMetrics(character: Locator, state: string): Promise<CellMetri
           clearMaskChangedPixels: Number(dataset.clearMaskChangedPixels),
           eyes: JSON.parse(dataset.protectionByEye ?? "[]"),
         },
+      iris: JSON.parse(dataset.irisByEye ?? "[]"),
     };
   });
 }
 
-test("automatic rigs keep browser-rendered motion inside compiler feature regions", async ({ page }) => {
+for (const eyeMode of ["row-grid", "semantic-mesh-required", "semantic-mesh-corrective-required"] as const) {
+test(`automatic rigs keep browser-rendered motion inside compiler feature regions (${eyeMode})`, async ({ page }) => {
   const browserErrors: string[] = [];
   const externalRequests: string[] = [];
   const evidence: Record<string, Record<string, CellMetrics>> = {};
@@ -87,6 +98,7 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
   });
 
   await page.goto("/compare.html");
+  await page.locator("#comparison-eye-deformation").selectOption(eyeMode);
   await page.locator("#comparison-files").setInputFiles([
     { name: "teal-librarian.limg", mimeType: "application/json", buffer: compiledRig("teal-librarian") },
     { name: "copper-courier.limg", mimeType: "application/json", buffer: compiledRig("copper-courier") },
@@ -110,6 +122,7 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
   for (const characterId of ["teal-librarian", "copper-courier"]) {
     const character = page.locator(`[data-character-id="${characterId}"]`);
     const characterEvidence: Record<string, CellMetrics> = {};
+    const irisGeometry = new Map<string, { radiusX: number; radiusY: number }>();
     evidence[characterId] = characterEvidence;
     await expect(character).toBeVisible();
     characterEvidence.neutral = await cellMetrics(character, "neutral");
@@ -119,6 +132,7 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
       maxChannelDelta: 0,
       visible: false,
       protection: null,
+      iris: [],
     });
     for (const state of controlledStates) {
       const metrics = await cellMetrics(character, state);
@@ -131,6 +145,7 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
         expect(metrics.protection, `${characterId}/${state} should expose protected-mask evidence`).not.toBeNull();
         const expectedEyeCount = state.startsWith("wink-") ? 1 : 2;
         expect(metrics.protection!.eyes, `${characterId}/${state} should report every selected eye`).toHaveLength(expectedEyeCount);
+        expect(metrics.iris, `${characterId}/${state} should report every selected iris`).toHaveLength(expectedEyeCount);
         for (const eye of metrics.protection!.eyes) {
           const label = `${characterId}/${state}/${eye.side}`;
           expect(eye.metrics.corePixels, `${label} needs a non-empty protected core`).toBeGreaterThan(0);
@@ -139,8 +154,37 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
           expect(eye.metrics.clearMaskPixels, `${label} needs non-empty clear-mask evidence`).toBeGreaterThan(0);
           expect(eye.metrics.clearMaskChangedPixels, `${label} should move clear-mask pixels`).toBeGreaterThan(0);
         }
+        for (const iris of metrics.iris) {
+          const label = `${characterId}/${state}/${iris.side}`;
+          expect(iris.alpha, `${label} alpha should stay normalized`).toBeGreaterThanOrEqual(0);
+          expect(iris.alpha, `${label} alpha should stay normalized`).toBeLessThanOrEqual(1);
+          expect(iris.radiusX, `${label} needs a horizontal cage radius`).toBeGreaterThan(0);
+          expect(iris.radiusY, `${label} needs a vertical cage radius`).toBeGreaterThan(0);
+          const canonical = irisGeometry.get(iris.side);
+          if (canonical) {
+            expect(iris.radiusX, `${label} changed rigid cage width`).toBe(canonical.radiusX);
+            expect(iris.radiusY, `${label} changed rigid cage height`).toBe(canonical.radiusY);
+          } else {
+            irisGeometry.set(iris.side, { radiusX: iris.radiusX, radiusY: iris.radiusY });
+          }
+          const closed = state === "blink-full" || state.startsWith("wink-");
+          if (closed) {
+            expect(iris.alpha, `${label} must be invisible at full close`).toBe(0);
+            expect(iris.renderedTexturePixels, `${label} rendered texture must vanish at full close`).toBe(0);
+            expect(Math.abs(iris.shiftX), `${label} should return horizontal gaze at close`).toBeLessThan(1e-9);
+            expect(Math.abs(iris.shiftY), `${label} should return vertical gaze at close`).toBeLessThan(1e-9);
+          } else {
+            expect(iris.alpha, `${label} should remain visible before full close`).toBeGreaterThan(0);
+            expect(iris.renderedTexturePixels, `${label} must contain direct rendered-texture pixels`).toBeGreaterThan(0);
+          }
+          if (state.includes("gaze-left")) expect(iris.shiftX, `${label} should translate left`).toBeLessThan(0);
+          if (state.includes("gaze-right")) expect(iris.shiftX, `${label} should translate right`).toBeGreaterThan(0);
+          if (state === "gaze-up") expect(iris.shiftY, `${label} should translate up`).toBeLessThan(0);
+          if (state === "gaze-down") expect(iris.shiftY, `${label} should translate down`).toBeGreaterThan(0);
+        }
       } else {
         expect(metrics.protection, `${characterId}/${state} should not report eye-mask evidence`).toBeNull();
+        expect(metrics.iris, `${characterId}/${state} should not report iris evidence`).toEqual([]);
       }
     }
     await expect(character.locator(".comparison-timeline-evidence")).toHaveAttribute(
@@ -152,5 +196,54 @@ test("automatic rigs keep browser-rendered motion inside compiler feature region
 
   expect(browserErrors).toEqual([]);
   expect(externalRequests).toEqual([]);
-  console.log(`LOCALITY_EVIDENCE ${JSON.stringify(evidence)}`);
+  console.log(`LOCALITY_EVIDENCE ${eyeMode} ${JSON.stringify(evidence)}`);
+});
+}
+
+test("protected cores remain exact when the embedded source contains transparency", async ({ page }) => {
+  const manifest = JSON.parse(compiledRig("teal-librarian").toString("utf8")) as {
+    id: string;
+    image: { dataUrl: string; sha256: string };
+  };
+  await page.goto("/compare.html");
+  const translucentDataUrl = await page.evaluate(async (sourceDataUrl) => {
+    const source = new Image();
+    await new Promise<void>((resolve, reject) => {
+      source.onload = () => resolve();
+      source.onerror = () => reject(new Error("tracked source image could not be decoded"));
+      source.src = sourceDataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = source.naturalWidth;
+    canvas.height = source.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas 2D is unavailable for the transparency regression fixture");
+    context.globalAlpha = 0.5;
+    context.drawImage(source, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, manifest.image.dataUrl);
+  const encoded = Buffer.from(translucentDataUrl.split(",", 2)[1] ?? "", "base64");
+  manifest.id = "transparent-source-regression";
+  manifest.image.dataUrl = translucentDataUrl;
+  manifest.image.sha256 = createHash("sha256").update(encoded).digest("hex");
+
+  await page.locator("#comparison-eye-deformation").selectOption("semantic-mesh-corrective-required");
+  await page.locator("#comparison-files").setInputFiles({
+    name: "transparent-source-regression.limg",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(manifest)),
+  });
+  await expect(page.locator("#comparison-status")).toHaveText(
+    "Rendered 1 character in fixed deterministic states.",
+    { timeout: 120_000 },
+  );
+
+  const character = page.locator('[data-character-id="transparent-source-regression"]');
+  for (const state of ["blink-mid", "blink-full", "wink-left", "wink-right", "gaze-left", "gaze-right"]) {
+    const metrics = await cellMetrics(character, state);
+    expect(metrics.protection, `${state} should expose protection evidence`).not.toBeNull();
+    expect(metrics.protection!.coreErrorPixels, `${state} double-composited protected source alpha`).toBe(0);
+    expect(metrics.protection!.coreMaxRgbDelta, `${state} changed a protected core channel`).toBeLessThanOrEqual(1);
+  }
+  await expect(character.locator(".comparison-cell-error")).toHaveCount(0);
 });

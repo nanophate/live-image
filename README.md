@@ -11,6 +11,8 @@ This repository now proves the first vertical slice:
 PNG
   → anime-specific face + 28-point automatic detection
   → deterministic eye/pupil/mouth derivation + confidence gate
+  → rigid iris/highlight texture + inpainted base eye when geometrically eligible
+  → optional compiler-authored semantic blink mesh and weight field
   → one self-contained .limg file
   → separate Inspector and Player
   → blink, gaze, mouth and breath through a common API
@@ -66,7 +68,7 @@ Open:
 - [http://127.0.0.1:5173/inspect.html](http://127.0.0.1:5173/inspect.html) for detector evidence
 - [http://127.0.0.1:5173/viewer.html](http://127.0.0.1:5173/viewer.html) for the separate player
 - [http://127.0.0.1:5173/validate.html](http://127.0.0.1:5173/validate.html) for the multi-image validation report
-- [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons plus a sequential blink close/reopen strip
+- [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons plus a sequential blink close/reopen strip; use its Eye renderer selector to compare the bounded baseline, required semantic mesh, and experimental semantic mesh + closed-eye corrective
 
 The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 `fixtures/overlays/`. Generated outputs are ignored because they are reproducible.
@@ -102,11 +104,28 @@ The externally licensed PNG inputs are deliberately ignored by Git. Place them
 under `fixtures/holdout/source/` using the documented names; the check command
 verifies their presence and frozen SHA-256 values before compilation.
 
-Its frozen first result is 3/5 expected outcomes. That mismatch is intentionally
-not tuned away: the one-eye-closed image was safely rejected, while a painted
-semi-realistic portrait exposed a missing style-domain gate. The full result and
-motion review are in
-[`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md).
+Its frozen first result was 3/5 expected outcomes. The stricter Compiler 0.4
+full-ellipse containment gate now records 2/5: the prior strong-highlight full
+case is capability-limited rather than moving an eyelid-clipped iris texture.
+The mismatch is intentionally not tuned away; the one-eye-closed image remains
+a safe-side reject, while a painted semi-realistic portrait exposes a missing
+style-domain gate. The frozen baseline and motion review are in
+[`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md),
+and the stricter Compiler 0.4 result is in
+[`research/experiments/2026-07-20-iris-base-eye-validation.md`](research/experiments/2026-07-20-iris-base-eye-validation.md).
+
+Measure the fixed report-only support-domain descriptors after regenerating the
+artifacts. These commands do not change compiler acceptance or capabilities:
+
+```bash
+nodenv exec npm run probe:support-domain:validation
+```
+
+Hold-out A was accidentally probed before the pre-registered hold-out B order;
+that replay is retained only as explicitly contaminated failure evidence and is
+not part of the normal command path. The implementation, raw reports, observed
+descriptor ranges, and current false-positive boundary are documented in
+[`research/experiments/2026-07-20-support-domain-descriptor-probe.md`](research/experiments/2026-07-20-support-domain-descriptor-probe.md).
 
 ## Compile another image
 
@@ -156,13 +175,21 @@ npx playwright install --only-shell chromium
 npm run test:browser
 ```
 
-The browser suite uses the Compiler 0.3.0 automatic rigs for both primary
-fixtures, reads the real full-resolution Canvas, and requires every enabled
+The browser suite uses the Compiler 0.8.0 automatic rigs for both primary
+fixtures in bounded-row, required-semantic-mesh, and required-corrective modes, reads the real
+full-resolution Canvas, and requires every enabled
 blink, wink, gaze, and mouth state to change pixels only inside its
 compiler-authored feature region. Eye states additionally require every opaque
 protected-mask core pixel to preserve RGB within one level while clear-mask
-pixels still move. It also requires exact open-state recovery and makes no
-external page requests. Playwright's browser and FFmpeg downloads are
+pixels still move. Browser-executed motion-plan evidence additionally requires
+each selected Compiler 0.8 iris cage to retain its dimensions, translate in the
+requested gaze direction, and reach zero alpha at full blink/wink. A second
+render with transparent iris textures provides direct Canvas evidence: every
+visible selected iris must contribute pixels, while full blink/wink must
+contribute zero. The suite also requires exact open-state recovery and makes no
+external page requests. After
+regenerating `fixtures/browser` rigs, run `npm run build` before the
+preview-backed browser test. Playwright's browser and FFmpeg downloads are
 development/CI-only and are not bundled into the Viewer.
 
 The animation and multi-image validation results are in
@@ -174,17 +201,28 @@ The real-browser locality gate is documented in
 [`research/experiments/2026-07-20-browser-locality-validation.md`](research/experiments/2026-07-20-browser-locality-validation.md).
 The protected-pixel gate and current DPR/iris claim boundary are documented in
 [`research/experiments/2026-07-20-eye-preservation-metrics.md`](research/experiments/2026-07-20-eye-preservation-metrics.md).
+The Compiler 0.4 iris/base-eye implementation and cross-image evidence are in
+[`research/experiments/2026-07-20-iris-base-eye-validation.md`](research/experiments/2026-07-20-iris-base-eye-validation.md).
+The explicit semantic mesh and deterministic closed-eye corrective experiments
+are indexed in [`research/README.md`](research/README.md), including the two
+preserved failed endpoint methods before the lower-band-first v3 result.
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
 
 - Compiler-authored Canvas 2D piecewise-affine feature meshes with protected
-  eye-line masks, not a full WebGL2 semantic mesh yet.
+  eye-line masks, optional rigid iris/base-eye layers, and an experimental
+  explicit 42-vertex blink weight field. An opt-in high-blink corrective fits
+  nearby skin and a closed-lid curve automatically; it has only passed the
+  frozen three-image visual gate and is not the default. This is not yet a full
+  face/hair WebGL2 mesh.
 - Mouth motion is deliberately small because a closed source image has no real
   teeth or oral cavity to reveal.
-- Pupil location is deterministic local image analysis seeded by eye landmarks;
-  it is not an iris-specific trained detector.
-- No hair separation/lag, rigid iris/highlight layer, TPS/ARAP, or head rotation yet.
+- Pupil/iris extraction is deterministic local image analysis seeded by eye
+  landmarks; the fitted contained ellipse is not a semantic iris detector, and
+  geometrically ineligible cases disable blink/gaze.
+- The inpainted base eye is a small deterministic fill, not recovered hidden
+  sclera. No hair separation/lag, TPS/ARAP, or head rotation exists yet.
 - The detector/model cards say MIT, but do not warrant training-data provenance;
   a commercial compiler bundle still needs the review recorded in
   `research/license-matrix.md`.

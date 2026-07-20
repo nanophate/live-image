@@ -217,3 +217,21 @@ gitignored, following the same policy as `fixtures/holdout/source/*.png`. Do not
 copy them into research screenshots or generated render artifacts unless their
 individual redistribution terms permit it and the required attribution is
 preserved.
+
+## Implementation checkpoint
+
+**Confirmed locally — 2026-07-20.** The descriptor candidates are implemented
+as a report-only probe and have been replayed over the existing 12-image quality-
+gate calibration suite. This does not satisfy the new support-domain calibration
+set requirement because it lacks unsupported-domain hard negatives. No compiler
+decision was changed and no threshold was selected.
+
+**Procedure failure.** The new descriptors were also opened on hold-out A before
+hold-out B was immutable, violating step 6 above. Preserve that raw result as
+`contaminated-exploratory-replay`, but never use it to select metrics, thresholds,
+or stopping criteria. The raw reports, fixed processing contract, binding checks,
+and reproduced connected-edge false positive are recorded in
+[`experiments/2026-07-20-support-domain-descriptor-probe.md`](experiments/2026-07-20-support-domain-descriptor-probe.md).
+
+**Decision.** The remaining calibration-set and unseen hold-out B protocol above
+is still required before any descriptor can enter the production quality gate.

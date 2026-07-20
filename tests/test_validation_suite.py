@@ -71,7 +71,7 @@ class ValidationSuiteTests(unittest.TestCase):
                     {
                         "compiler": {
                             "name": "fake-compiler",
-                            "version": "0.3.0",
+                            "version": "0.4.0",
                             "detectorVersion": "test",
                         },
                         "analysis": {
@@ -85,6 +85,28 @@ class ValidationSuiteTests(unittest.TestCase):
                                                 "protectedLineArtMask": {
                                                     "method": "canny-active-aperture-v1",
                                                     "coverage": 0.25,
+                                                },
+                                                "iris": {
+                                                    "method": "ellipse-cage-telea-v1",
+                                                    "segmentationConfidence": 0.85,
+                                                    "texture": {
+                                                        "method": "source-rgba-ellipse-v1",
+                                                        "coverage": 0.07,
+                                                    },
+                                                    "baseEye": {"method": "telea-inpaint-v1"},
+                                                },
+                                                "semanticMesh": {
+                                                    "method": "semantic-weighted-triangle-mesh-v1",
+                                                    "vertices": [{}, {}, {}],
+                                                    "triangles": [[0, 1, 2]],
+                                                    "minimumAreaRatio": 0.35,
+                                                },
+                                                "closedEye": {
+                                                    "method": "affine-skin-fill-curve-v3",
+                                                    "coverage": 0.2,
+                                                    "retainedSamplePixels": 128,
+                                                    "medianFitResidual": 2.5,
+                                                    "upperSamplesIncluded": False,
                                                 },
                                             }
                                         },
@@ -132,10 +154,46 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(first["cases"][0]["artifacts"]["limg"], "artifacts/normal/full.limg")
         self.assertEqual(first["cases"][0]["artifacts"]["overlay"], "overlays/normal/full.png")
         self.assertEqual(first["cases"][0]["quality"]["metrics"], {"faceScore": 0.9})
-        self.assertEqual(first["cases"][0]["compiler"]["version"], "0.3.0")
+        self.assertEqual(first["cases"][0]["compiler"]["version"], "0.4.0")
         self.assertEqual(
             first["cases"][0]["deformation"]["eyes"][0]["protectedLineCoverage"],
             0.25,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["irisMethod"],
+            "ellipse-cage-telea-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["irisCoverage"],
+            0.07,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["baseEyeMethod"],
+            "telea-inpaint-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshMethod"],
+            "semantic-weighted-triangle-mesh-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshVertices"],
+            3,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["semanticMeshMinimumAreaRatio"],
+            0.35,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeMethod"],
+            "affine-skin-fill-curve-v3",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeRetainedSamplePixels"],
+            128,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["closedEyeUpperSamplesIncluded"],
+            False,
         )
         self.assertEqual(first["cases"][0]["deformation"]["mouth"]["lineConfidence"], 0.8)
         self.assertRegex(first["cases"][0]["sourceSha256"], r"^[0-9a-f]{64}$")
@@ -414,6 +472,35 @@ class ValidationSuiteTests(unittest.TestCase):
 
         self.assertEqual(report["cases"][0]["message"], "compiler exited with status 1")
         self.assertNotIn("/private/cache", json.dumps(report))
+
+    def test_tracked_validation_contract_pins_sources_and_capabilities(self) -> None:
+        repository_root = Path(__file__).resolve().parents[1]
+        manifest_path = repository_root / "fixtures" / "validation" / "manifest.json"
+        report_path = repository_root / "fixtures" / "validation" / "report.json"
+
+        cases = load_manifest(manifest_path)
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        reported_by_id = {item["id"]: item for item in report["cases"]}
+
+        self.assertEqual(set(reported_by_id), {case.id for case in cases})
+        for case in cases:
+            with self.subTest(case=case.id):
+                self.assertIsNotNone(case.source_sha256)
+                self.assertIsNotNone(case.expected_enabled_capabilities)
+                self.assertIsNotNone(case.expected_disabled_capabilities)
+
+                reported = reported_by_id[case.id]
+                self.assertEqual(reported["sourceSha256"], case.source_sha256)
+                self.assertEqual(reported["expected"], case.expected)
+                self.assertEqual(
+                    reported["expectedCapabilities"],
+                    {
+                        "enabled": list(case.expected_enabled_capabilities or ()),
+                        "disabled": list(case.expected_disabled_capabilities or ()),
+                    },
+                )
+                self.assertEqual(reported["capabilities"], reported["expectedCapabilities"])
+                self.assertTrue(reported["matched"])
 
 
 if __name__ == "__main__":

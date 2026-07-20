@@ -1,6 +1,6 @@
 # Primary references
 
-Snapshot: 2026-07-19
+Snapshot: 2026-07-20
 
 Links below are the references actually used for the first architecture and
 dependency decisions.
@@ -32,6 +32,15 @@ dependency decisions.
 - [Thin-Plate Spline Motion Model code](https://github.com/yoyo-nb/Thin-Plate-Spline-Motion-Model)
 - [LivePortrait paper](https://arxiv.org/abs/2407.03168)
 - [LivePortrait code and license](https://github.com/KlingAIResearch/LivePortrait)
+- [LivePortrait official Hugging Face model](https://huggingface.co/KlingTeam/LivePortrait)
+- [LivePortrait official Hugging Face Space](https://huggingface.co/spaces/KlingTeam/LivePortrait)
+- [LivePortrait license file](https://github.com/KlingAIResearch/LivePortrait/blob/main/LICENSE) — separate InsightFace model restriction
+- [FacePoke](https://github.com/jbilcke-hf/FacePoke) — archived LivePortrait interaction reference
+- [AniPortrait code](https://github.com/Zejun-Yang/AniPortrait)
+- [AniPortrait paper](https://arxiv.org/abs/2403.17694)
+- [CelebV-HQ terms](https://celebv-hq.github.io/) — non-commercial training-data boundary
+- [VFHQ terms](https://liangbinxie.github.io/projects/vfhq/) — non-commercial training-data boundary
+- [Snap MRAA license](https://github.com/snap-research/articulated-animation/blob/main/LICENSE.md) — upstream code boundary relevant to TPSMM's stated derivation
 - [AnimeCeleb paper](https://arxiv.org/abs/2111.07640)
 - [AnimeCeleb repository](https://github.com/kangyeolk/AnimeCeleb)
 - [SPRITETOMESH paper](https://arxiv.org/abs/2602.21153)
@@ -39,10 +48,13 @@ dependency decisions.
 - [Animated Drawings paper page](https://people.csail.mit.edu/liyifei/publication/children-animated-drawings/)
 - [See-through code](https://github.com/shitagaki-lab/see-through)
 - [See-through paper](https://arxiv.org/abs/2602.03749)
+- [See-through official-linked Hugging Face Space](https://huggingface.co/spaces/24yearsold/see-through-demo)
 - [MG-Gen code](https://github.com/CyberAgentAILab/MG-GEN)
 - [MG-Gen paper](https://arxiv.org/abs/2504.02361)
 - [LiveSVG project](https://levymsn.github.io/LiveSVG/)
 - [LiveSVG paper](https://arxiv.org/abs/2605.30174)
+- [LiveSVG Google Research page](https://research.google/pubs/livesvg-zero-shot-svg-animation-via-video-generation/)
+- [TPSMM Hugging Face Space](https://huggingface.co/spaces/CVPR/Image-Animation-using-Thin-Plate-Spline-Motion-Model) — server-side demo wrapper, not browser-runtime evidence
 
 ## What was not treated as confirmation
 

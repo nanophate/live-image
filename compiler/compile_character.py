@@ -152,22 +152,248 @@ def detect_pupil(image: np.ndarray, polygon: np.ndarray) -> dict[str, float | Po
     }
 
 
+def _rgba_data_url(rgba: np.ndarray, label: str) -> str:
+    """Encode one deterministic compiler-authored RGBA layer."""
+
+    encoded, payload = cv2.imencode(".png", rgba)
+    if not encoded:
+        raise RuntimeError(f"could not encode {label}")
+    return "data:image/png;base64," + base64.b64encode(payload.tobytes()).decode("ascii")
+
+
 def _alpha_mask_data_url(mask: np.ndarray) -> str:
     """Encode one deterministic alpha mask without adding a runtime dependency."""
 
     rgba = np.full((*mask.shape, 4), 255, dtype=np.uint8)
     rgba[:, :, 3] = mask
-    encoded, payload = cv2.imencode(".png", rgba)
-    if not encoded:
-        raise RuntimeError("could not encode protected line-art mask")
-    return "data:image/png;base64," + base64.b64encode(payload.tobytes()).decode("ascii")
+    return _rgba_data_url(rgba, "protected line-art mask")
+
+
+def iris_base_eye_layers(
+    image: np.ndarray,
+    polygon: np.ndarray,
+    pupil: dict[str, float | Point],
+    region: tuple[int, int, int, int],
+    image_width: int,
+    image_height: int,
+) -> tuple[dict[str, Any] | None, np.ndarray | None]:
+    """Extract one rigid iris/highlight texture and its inpainted base eye.
+
+    The conservative ellipse is compiler-authored from the automatic pupil and
+    eyelid landmarks. Its full source colour is retained so highlights remain
+    attached to the iris instead of being rediscovered from brightness at run
+    time. Unreliable or eyelid-crossing ellipses are omitted.
+    """
+
+    pupil_confidence = float(pupil["confidence"])
+    if pupil_confidence < MIN_FULL_PUPIL_CONFIDENCE:
+        return None, None
+    point = pupil["point"]
+    if not isinstance(point, tuple) or len(point) != 2:
+        return None, None
+    centre_x, centre_y = float(point[0]), float(point[1])
+    if cv2.pointPolygonTest(polygon.astype(np.float32), (centre_x, centre_y), False) < 0:
+        return None, None
+
+    x0, y0, x1, y1 = region
+    crop = image[y0:y1, x0:x1]
+    if crop.size == 0:
+        return None, None
+    crop_height, crop_width = crop.shape[:2]
+    eye_width = max(2.0, float(polygon[:, 0].max() - polygon[:, 0].min()))
+    eye_height = max(2.0, float(polygon[:, 1].max() - polygon[:, 1].min()))
+    target_radius_x = max(2, int(round(min(eye_width * 0.20, eye_height * 0.72))))
+    target_radius_y = max(2, int(round(eye_height * 0.40)))
+    local_centre = (int(round(centre_x - x0)), int(round(centre_y - y0)))
+    # Emit the exact geometry used to rasterize the layer. Otherwise a rounded
+    # PNG can pass this crop check while its unrounded manifest ellipse crosses
+    # the deformation region by a subpixel and is rejected by the Viewer.
+    centre_x = float(x0 + local_centre[0])
+    centre_y = float(y0 + local_centre[1])
+    polygon_mask = np.zeros((crop_height, crop_width), dtype=np.uint8)
+    local_polygon = np.rint(polygon - np.array([x0, y0])).astype(np.int32)
+    cv2.fillPoly(polygon_mask, [local_polygon], 255)
+    # Never move a source-eyelid-shaped cutout with the iris. The entire
+    # ellipse support must be inside the detected open-eye polygon. Adapt the
+    # initial cage down slightly rather than translating a clipped source shape;
+    # omit it if no cage at least 75% of the initial radii is fully contained.
+    ellipse: np.ndarray | None = None
+    local_radius: tuple[int, int] | None = None
+    seen_radii: set[tuple[int, int]] = set()
+    for scale in np.linspace(1.0, 0.75, 11):
+        candidate_radius = (
+            max(2, int(round(target_radius_x * float(scale)))),
+            max(2, int(round(target_radius_y * float(scale)))),
+        )
+        if candidate_radius in seen_radii:
+            continue
+        seen_radii.add(candidate_radius)
+        radius_x, radius_y = float(candidate_radius[0]), float(candidate_radius[1])
+        if (
+            centre_x - radius_x < x0
+            or centre_y - radius_y < y0
+            or centre_x + radius_x >= x1
+            or centre_y + radius_y >= y1
+        ):
+            continue
+        candidate = np.zeros_like(polygon_mask)
+        # A hard compiler-authored alpha edge keeps containment exact; Canvas
+        # performs the final subpixel sampling when the rigid layer moves.
+        cv2.ellipse(candidate, local_centre, candidate_radius, 0, 0, 360, 255, -1, cv2.LINE_8)
+        support = candidate > 0
+        full_area = int(np.count_nonzero(support))
+        if full_area >= 12 and np.all(polygon_mask[support] > 0):
+            ellipse = candidate
+            local_radius = candidate_radius
+            break
+    if ellipse is None or local_radius is None:
+        return None, None
+    radius_x, radius_y = float(local_radius[0]), float(local_radius[1])
+    iris_mask = ellipse
+
+    inpaint_radius = int(clamp(round(0.06 * eye_width), 2, 6))
+    inpaint_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    inpaint_mask = cv2.dilate((iris_mask >= 128).astype(np.uint8) * 255, inpaint_kernel)
+    base_bgr = cv2.inpaint(crop, inpaint_mask, inpaint_radius, cv2.INPAINT_TELEA)
+    texture = cv2.cvtColor(crop, cv2.COLOR_BGR2BGRA)
+    texture[:, :, 3] = iris_mask
+    base_eye = cv2.cvtColor(base_bgr, cv2.COLOR_BGR2BGRA)
+    base_eye[:, :, 3] = 255
+    retained_scale = (radius_x * radius_y) / max(1.0, target_radius_x * target_radius_y)
+    segmentation_confidence = clamp(pupil_confidence * retained_scale, 0.0, 1.0)
+    return {
+        "method": "ellipse-cage-telea-v1",
+        "texture": {
+            "dataUrl": _rgba_data_url(texture, "iris texture"),
+            "width": int(crop_width),
+            "height": int(crop_height),
+            "coverage": float(np.count_nonzero(iris_mask) / iris_mask.size),
+            "method": "source-rgba-ellipse-v1",
+        },
+        "baseEye": {
+            "dataUrl": _rgba_data_url(base_eye, "base-eye texture"),
+            "width": int(crop_width),
+            "height": int(crop_height),
+            "coverage": 1.0,
+            "method": "telea-inpaint-v1",
+        },
+        "centre": normalise_point((centre_x, centre_y), image_width, image_height),
+        "radiusX": radius_x / image_width,
+        "radiusY": radius_y / image_height,
+        "inpaintRadius": inpaint_radius,
+        "segmentationConfidence": segmentation_confidence,
+    }, iris_mask
+
+
+def ellipse_inside_polygon(
+    polygon: np.ndarray,
+    centre_x: float,
+    centre_y: float,
+    radius_x: float,
+    radius_y: float,
+    shift_x: float = 0.0,
+    shift_y: float = 0.0,
+) -> bool:
+    """Sample a rigid ellipse boundary against one detected eye polygon."""
+
+    contour = polygon.astype(np.float32)
+    for angle in np.linspace(0.0, 2.0 * np.pi, 73, endpoint=False):
+        point = (
+            centre_x + shift_x + radius_x * float(np.cos(angle)),
+            centre_y + shift_y + radius_y * float(np.sin(angle)),
+        )
+        if cv2.pointPolygonTest(contour, point, False) < 0:
+            return False
+    return True
+
+
+def safe_symmetric_ellipse_shift(
+    polygon: np.ndarray,
+    centre_x: float,
+    centre_y: float,
+    radius_x: float,
+    radius_y: float,
+    requested: float,
+    axis: str,
+) -> float:
+    """Bound a rigid gaze shift so the complete ellipse stays in the eye."""
+
+    if requested <= 0:
+        return 0.0
+    def contained(distance: float) -> bool:
+        for direction in (-1.0, 1.0):
+            shift_x = direction * distance if axis == "x" else 0.0
+            shift_y = direction * distance if axis == "y" else 0.0
+            if not ellipse_inside_polygon(
+                polygon,
+                centre_x,
+                centre_y,
+                radius_x,
+                radius_y,
+                shift_x,
+                shift_y,
+            ):
+                return False
+        return True
+
+    if contained(requested):
+        return requested
+    low, high = 0.0, requested
+    for _ in range(20):
+        middle = (low + high) * 0.5
+        if contained(middle):
+            low = middle
+        else:
+            high = middle
+    # Preserve a small subpixel margin from the sampled landmark boundary.
+    return max(0.0, low - 0.25)
+
+
+def safe_diagonal_ellipse_shifts(
+    polygon: np.ndarray,
+    centre_x: float,
+    centre_y: float,
+    radius_x: float,
+    radius_y: float,
+    max_x: float,
+    max_y: float,
+) -> tuple[float, float]:
+    """Jointly scale gaze axes until every diagonal endpoint is contained."""
+
+    def contained(scale: float) -> bool:
+        return all(
+            ellipse_inside_polygon(
+                polygon,
+                centre_x,
+                centre_y,
+                radius_x,
+                radius_y,
+                direction_x * max_x * scale,
+                direction_y * max_y * scale,
+            )
+            for direction_x in (-1.0, 1.0)
+            for direction_y in (-1.0, 1.0)
+        )
+
+    if contained(1.0):
+        return max_x, max_y
+    low, high = 0.0, 1.0
+    for _ in range(20):
+        middle = (low + high) * 0.5
+        if contained(middle):
+            low = middle
+        else:
+            high = middle
+    scale = max(0.0, low - 0.01)
+    return max_x * scale, max_y * scale
 
 
 def protected_line_art_mask(
     image: np.ndarray,
     polygon: np.ndarray,
     region: tuple[int, int, int, int],
-) -> dict[str, Any]:
+    excluded_iris_mask: np.ndarray | None = None,
+) -> tuple[dict[str, Any], np.ndarray]:
     """Protect strong unrelated strokes while leaving the eyelid corridor movable.
 
     The mask is generated once by the compiler. White alpha restores original
@@ -227,6 +453,9 @@ def protected_line_art_mask(
     dilation = int(clamp(round((polygon[:, 0].max() - polygon[:, 0].min()) * 0.02), 1, 3))
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation * 2 + 1, dilation * 2 + 1))
     hard_core = cv2.dilate(protected, kernel)
+    if excluded_iris_mask is not None:
+        excluded = cv2.dilate((excluded_iris_mask > 0).astype(np.uint8) * 255, kernel)
+        hard_core[excluded > 0] = 0
     feather = cv2.GaussianBlur(hard_core, (3, 3), 0.8)
     mask = np.maximum(hard_core, feather)
     return {
@@ -237,12 +466,287 @@ def protected_line_art_mask(
         "method": "canny-active-aperture-v1",
         "cannyLow": low,
         "cannyHigh": high,
+    }, mask
+
+
+def closed_eye_corrective_layer(
+    image: np.ndarray,
+    polygon: np.ndarray,
+    region: tuple[int, int, int, int],
+    close_centre: float,
+    protected_mask: np.ndarray | None = None,
+) -> dict[str, Any] | None:
+    """Author a deterministic high-blink affine skin fill and lid stroke.
+
+    Collapsing an open-eye texture cannot create the missing skin and lid line
+    at the endpoint. The fill is fitted from low-edge pixels outside the eye;
+    sampling from the open aperture itself would propagate iris/eyelash colour.
+    """
+
+    x0, y0, x1, y1 = region
+    crop = image[y0:y1, x0:x1]
+    if crop.size == 0:
+        return None
+    crop_height, crop_width = crop.shape[:2]
+    local_polygon = np.rint(polygon - np.array([x0, y0])).astype(np.int32)
+    eye_width = max(2.0, float(polygon[:, 0].max() - polygon[:, 0].min()))
+    eye_height = max(2.0, float(polygon[:, 1].max() - polygon[:, 1].min()))
+
+    eye_core = np.zeros((crop_height, crop_width), dtype=np.uint8)
+    cv2.fillPoly(eye_core, [local_polygon], 255)
+    dilation = int(clamp(round(eye_height * 0.08), 1, 4))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation * 2 + 1, dilation * 2 + 1))
+    aperture = cv2.dilate(eye_core, kernel)
+
+    sample_exclusion_radius = int(clamp(round(eye_height * 0.20), 2, 10))
+    sample_exclusion_kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE,
+        (sample_exclusion_radius * 2 + 1, sample_exclusion_radius * 2 + 1),
+    )
+    sample_exclusion = cv2.dilate(eye_core, sample_exclusion_kernel)
+
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 0.8)
+    edges = cv2.Canny(blurred, 32, 96, L2gradient=True)
+    edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)))
+
+    # A required corrective is never allowed to paint at the crop boundary.
+    aperture[[0, -1], :] = 0
+    aperture[:, [0, -1]] = 0
+    opaque_pixels = int(np.count_nonzero(aperture))
+    coverage = opaque_pixels / aperture.size
+    if opaque_pixels < 12 or coverage > 0.45:
+        return None
+
+    yy, xx = np.mgrid[0:crop_height, 0:crop_width]
+    local_eye_left = float(polygon[:, 0].min() - x0)
+    local_eye_right = float(polygon[:, 0].max() - x0)
+    local_eye_top = float(polygon[:, 1].min() - y0)
+    local_eye_bottom = float(polygon[:, 1].max() - y0)
+    horizontal = (
+        (xx >= local_eye_left - 0.10 * eye_width)
+        & (xx <= local_eye_right + 0.10 * eye_width)
+    )
+    upper = yy <= local_eye_top - 0.20 * eye_height
+    lower = yy >= local_eye_bottom + 0.20 * eye_height
+    valid_sample = horizontal & (sample_exclusion == 0) & (edges == 0)
+    if protected_mask is not None:
+        if protected_mask.shape != valid_sample.shape:
+            return None
+        valid_sample &= protected_mask < 128
+    lower_mask = valid_sample & lower
+    upper_mask = valid_sample & upper
+    lower_y, lower_x = np.nonzero(lower_mask)
+    minimum_samples = max(48, int(math.ceil(opaque_pixels * 0.20)))
+    if len(lower_x) < minimum_samples:
+        return None
+    if float(lower_x.max() - lower_x.min()) < eye_width * 0.65:
+        return None
+    upper_samples_included = False
+    upper_y, upper_x = np.nonzero(upper_mask)
+    if len(upper_x) >= 12:
+        lower_median = np.median(crop[lower_y, lower_x].astype(np.float64), axis=0)
+        upper_median = np.median(crop[upper_y, upper_x].astype(np.float64), axis=0)
+        upper_samples_included = float(np.linalg.norm(lower_median - upper_median)) <= 12.0
+    sample_mask = lower_mask | upper_mask if upper_samples_included else lower_mask
+    sample_y, sample_x = np.nonzero(sample_mask)
+    if len(sample_x) < minimum_samples:
+        return None
+    if int(np.count_nonzero(lower & sample_mask)) < math.ceil(len(sample_x) * 0.25):
+        return None
+    if float(sample_x.max() - sample_x.min()) < eye_width * 0.65:
+        return None
+
+    def design_matrix(x_values: np.ndarray, y_values: np.ndarray) -> np.ndarray:
+        normalised_x = (x_values.astype(np.float64) - crop_width * 0.5) / max(1.0, crop_width * 0.5)
+        normalised_y = (y_values.astype(np.float64) - crop_height * 0.5) / max(1.0, crop_height * 0.5)
+        return np.column_stack((np.ones_like(normalised_x), normalised_x, normalised_y))
+
+    samples = crop[sample_y, sample_x].astype(np.float64)
+    design = design_matrix(sample_x, sample_y)
+    coefficients, _, _, _ = np.linalg.lstsq(design, samples, rcond=None)
+    predicted_samples = design @ coefficients
+    residuals = np.linalg.norm(samples - predicted_samples, axis=1)
+    median_residual = float(np.median(residuals))
+    mad = float(np.median(np.abs(residuals - median_residual)))
+    retained = residuals <= median_residual + 3.0 * max(1.0, mad)
+    if int(np.count_nonzero(retained)) < minimum_samples:
+        return None
+    retained_x = sample_x[retained]
+    retained_y = sample_y[retained]
+    if int(np.count_nonzero(lower[retained_y, retained_x])) < math.ceil(len(retained_x) * 0.25):
+        return None
+    if float(retained_x.max() - retained_x.min()) < eye_width * 0.65:
+        return None
+    retained_design = design_matrix(retained_x, retained_y)
+    retained_samples = crop[retained_y, retained_x].astype(np.float64)
+    coefficients, _, _, _ = np.linalg.lstsq(retained_design, retained_samples, rcond=None)
+    retained_residuals = np.linalg.norm(retained_samples - retained_design @ coefficients, axis=1)
+    median_residual = float(np.median(retained_residuals))
+    full_design = design_matrix(xx.ravel(), yy.ravel())
+    filled = np.clip(full_design @ coefficients, 0, 255).reshape(crop_height, crop_width, 3).astype(np.uint8)
+
+    source_pixels = crop[aperture > 0]
+    source_gray = gray[aperture > 0]
+    if len(source_pixels) < 12:
+        return None
+    dark_threshold = float(np.quantile(source_gray, 0.08))
+    dark_pixels = source_pixels[source_gray <= dark_threshold]
+    if len(dark_pixels) == 0:
+        dark_pixels = source_pixels
+    line_colour = tuple(int(value) for value in np.median(dark_pixels, axis=0))
+
+    left = polygon[int(np.argmin(polygon[:, 0]))] - np.array([x0, y0])
+    right = polygon[int(np.argmax(polygon[:, 0]))] - np.array([x0, y0])
+    endpoint_mean_y = (float(left[1]) + float(right[1])) * 0.5
+    target_centre_y = float(close_centre - y0)
+    control_y = 2.0 * target_centre_y - endpoint_mean_y
+    control = np.array([(float(left[0]) + float(right[0])) * 0.5, control_y])
+    points: list[list[int]] = []
+    for t in np.linspace(0.0, 1.0, 25):
+        point = (1.0 - t) ** 2 * left + 2.0 * (1.0 - t) * t * control + t**2 * right
+        points.append([
+            int(clamp(round(float(point[0])), 1, crop_width - 2)),
+            int(clamp(round(float(point[1])), 1, crop_height - 2)),
+        ])
+    line_thickness = int(clamp(round(eye_height * 0.045), 1, 3))
+    curve = np.asarray(points, dtype=np.int32)
+    cv2.polylines(filled, [curve], False, line_colour, line_thickness, cv2.LINE_AA)
+
+    alpha = np.maximum(aperture, cv2.GaussianBlur(aperture, (3, 3), 0.8))
+    # Ensure the authored line is never clipped by a one-pixel aperture gap.
+    cv2.polylines(alpha, [curve], False, 255, line_thickness + 2, cv2.LINE_AA)
+    alpha[[0, -1], :] = 0
+    alpha[:, [0, -1]] = 0
+    layer = cv2.cvtColor(filled, cv2.COLOR_BGR2BGRA)
+    layer[:, :, 3] = alpha
+    return {
+        "dataUrl": _rgba_data_url(layer, "closed-eye corrective"),
+        "width": int(crop_width),
+        "height": int(crop_height),
+        "coverage": float(np.count_nonzero(alpha) / alpha.size),
+        "method": "affine-skin-fill-curve-v3",
+        "activationStart": 0.55,
+        "lineThickness": line_thickness,
+        "sampleExclusionRadius": sample_exclusion_radius,
+        "retainedSamplePixels": int(len(retained_x)),
+        "medianFitResidual": median_residual,
+        "upperSamplesIncluded": upper_samples_included,
+    }
+
+
+def _triangle_signed_area(
+    first: Sequence[float],
+    second: Sequence[float],
+    third: Sequence[float],
+) -> float:
+    return 0.5 * (
+        (float(second[0]) - float(first[0])) * (float(third[1]) - float(first[1]))
+        - (float(second[1]) - float(first[1])) * (float(third[0]) - float(first[0]))
+    )
+
+
+def _build_eye_semantic_mesh(
+    polygon: np.ndarray,
+    region: tuple[int, int, int, int],
+    source_rows: Sequence[float],
+    closed_rows: Sequence[float],
+    protected_mask: np.ndarray,
+    image_width: int,
+    image_height: int,
+) -> dict[str, Any] | None:
+    """Build a deterministic blink-only mesh with an explicit mobility field.
+
+    The regular topology intentionally isolates the semantic-field experiment
+    from adaptive vertex placement. Its outer boundary is fixed, lid mobility
+    peaks near the eye centre, and compiler-authored protected pixels suppress
+    nearby vertex motion. The existing protected overlay remains the final
+    pixel-preservation contract in the Runtime.
+    """
+
+    x0, y0, x1, _ = region
+    eye_left = float(polygon[:, 0].min())
+    eye_right = float(polygon[:, 0].max())
+    inner_xs = np.linspace(eye_left, eye_right, 5, dtype=np.float64)
+    source_xs = [float(x0), *(float(value) for value in inner_xs), float(x1)]
+    horizontal_mobility = [0.0, 0.5, 0.82, 1.0, 0.82, 0.5, 0.0]
+    columns = len(source_xs)
+    rows = len(source_rows)
+    vertices: list[dict[str, float]] = []
+    weights: list[float] = []
+    max_displacements: list[dict[str, float]] = []
+
+    mask_height, mask_width = protected_mask.shape
+    for row_index, source_y in enumerate(source_rows):
+        row_displacement = float(closed_rows[row_index] - source_y)
+        for column_index, source_x in enumerate(source_xs):
+            local_x = int(clamp(round(source_x - x0), 0, mask_width - 1))
+            local_y = int(clamp(round(float(source_y) - y0), 0, mask_height - 1))
+            protection = float(protected_mask[local_y, local_x]) / 255.0
+            mobility = horizontal_mobility[column_index] * (1.0 - protection)
+            if row_index in (0, rows - 1) or column_index in (0, columns - 1):
+                mobility = 0.0
+            vertices.append(normalise_point((source_x, source_y), image_width, image_height))
+            weights.append(clamp(mobility, 0.0, 1.0))
+            max_displacements.append({"x": 0.0, "y": row_displacement / image_height})
+
+    triangles: list[list[int]] = []
+    for row_index in range(rows - 1):
+        for column_index in range(columns - 1):
+            top_left = row_index * columns + column_index
+            top_right = top_left + 1
+            bottom_left = (row_index + 1) * columns + column_index
+            bottom_right = bottom_left + 1
+            triangles.append([top_left, top_right, bottom_right])
+            triangles.append([top_left, bottom_right, bottom_left])
+
+    source_points = [
+        (vertex["x"], vertex["y"])
+        for vertex in vertices
+    ]
+    minimum_area_ratio = 1.0
+    for blink in (0.0, 0.25, 0.5, 0.75, 1.0):
+        destination = [
+            (
+                point[0] + blink * weights[index] * max_displacements[index]["x"],
+                point[1] + blink * weights[index] * max_displacements[index]["y"],
+            )
+            for index, point in enumerate(source_points)
+        ]
+        for triangle in triangles:
+            source_area = _triangle_signed_area(*(source_points[index] for index in triangle))
+            destination_area = _triangle_signed_area(*(destination[index] for index in triangle))
+            if abs(source_area) <= 1e-12 or source_area * destination_area <= 0:
+                return None
+            area_ratio = abs(destination_area / source_area)
+            minimum_area_ratio = min(minimum_area_ratio, area_ratio)
+            if area_ratio < 0.02:
+                return None
+
+    upper_row = 2
+    lower_row = 3
+    aperture = [
+        *(upper_row * columns + column for column in range(1, columns - 1)),
+        *(lower_row * columns + column for column in range(columns - 2, 0, -1)),
+    ]
+    return {
+        "method": "semantic-weighted-triangle-mesh-v1",
+        "vertices": vertices,
+        "triangles": triangles,
+        "fields": [{
+            "control": "blink",
+            "weights": weights,
+            "maxDisplacements": max_displacements,
+        }],
+        "aperture": aperture,
+        "minimumAreaRatio": minimum_area_ratio,
     }
 
 
 def _eye_deformation(
     image: np.ndarray,
     polygon: np.ndarray,
+    pupil: dict[str, float | Point],
     region: tuple[int, int, int, int],
     image_width: int,
     image_height: int,
@@ -266,14 +770,51 @@ def _eye_deformation(
         guard_bottom + (closed_bottom - eye_bottom) * 0.18,
         float(y1),
     ]
-    return {
+    iris, iris_mask = iris_base_eye_layers(
+        image,
+        polygon,
+        pupil,
+        region,
+        image_width,
+        image_height,
+    )
+    protection_definition, protection_mask = protected_line_art_mask(
+        image,
+        polygon,
+        region,
+        iris_mask,
+    )
+    semantic_mesh = _build_eye_semantic_mesh(
+        polygon,
+        region,
+        source_rows,
+        closed_rows,
+        protection_mask,
+        image_width,
+        image_height,
+    )
+    closed_eye = closed_eye_corrective_layer(
+        image,
+        polygon,
+        region,
+        close_centre,
+        protection_mask,
+    )
+    deformation = {
         "method": "fixed-boundary-piecewise-affine-v1",
         "sourceRows": [value / image_height for value in source_rows],
         "closedRows": [value / image_height for value in closed_rows],
         "gazeRowWeights": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
-        "protectedLineArtMask": protected_line_art_mask(image, polygon, region),
+        "protectedLineArtMask": protection_definition,
         "region": normalise_box(region, image_width, image_height),
     }
+    if iris is not None:
+        deformation["iris"] = iris
+    if semantic_mesh is not None:
+        deformation["semanticMesh"] = semantic_mesh
+    if closed_eye is not None:
+        deformation["closedEye"] = closed_eye
+    return deformation
 
 
 def compile_eye(
@@ -310,6 +851,51 @@ def compile_eye(
 
     gaze_scale = 0.35 + 0.65 * pupil_confidence
     blink_floor_pixels = max(0.8, eye_height * 0.035)
+    deformation = _eye_deformation(
+        image,
+        polygon,
+        pupil,
+        (x0, y0, x1, y1),
+        image_width,
+        image_height,
+        blink_floor_pixels,
+    )
+    max_gaze_x_pixels = eye_width * 0.075 * gaze_scale
+    max_gaze_y_pixels = eye_height * 0.075 * gaze_scale
+    iris = deformation.get("iris")
+    if isinstance(iris, dict):
+        centre = iris["centre"]
+        iris_x = float(centre["x"]) * image_width
+        iris_y = float(centre["y"]) * image_height
+        radius_x = float(iris["radiusX"]) * image_width
+        radius_y = float(iris["radiusY"]) * image_height
+        max_gaze_x_pixels = safe_symmetric_ellipse_shift(
+            polygon,
+            iris_x,
+            iris_y,
+            radius_x,
+            radius_y,
+            max_gaze_x_pixels,
+            "x",
+        )
+        max_gaze_y_pixels = safe_symmetric_ellipse_shift(
+            polygon,
+            iris_x,
+            iris_y,
+            radius_x,
+            radius_y,
+            max_gaze_y_pixels,
+            "y",
+        )
+        max_gaze_x_pixels, max_gaze_y_pixels = safe_diagonal_ellipse_shifts(
+            polygon,
+            iris_x,
+            iris_y,
+            radius_x,
+            radius_y,
+            max_gaze_x_pixels,
+            max_gaze_y_pixels,
+        )
     return {
         "side": side,
         "landmarkIndices": list(indices),
@@ -330,17 +916,10 @@ def compile_eye(
             "method": "local-darkness-saturation-centre-prior-v1",
         },
         "rig": {
-            "maxGazeX": (eye_width * 0.075 * gaze_scale) / image_width,
-            "maxGazeY": (eye_height * 0.075 * gaze_scale) / image_height,
+            "maxGazeX": max_gaze_x_pixels / image_width,
+            "maxGazeY": max_gaze_y_pixels / image_height,
             "blinkFloor": blink_floor_pixels / image_height,
-            "deformation": _eye_deformation(
-                image,
-                polygon,
-                (x0, y0, x1, y1),
-                image_width,
-                image_height,
-                blink_floor_pixels,
-            ),
+            "deformation": deformation,
         },
         "confidence": confidence,
         "landmarkConfidence": landmark_confidence,
@@ -471,6 +1050,20 @@ def assess_quality(
     eye_widths = [float(eye["anchors"]["right"] - eye["anchors"]["left"]) for eye in eyes]
     eye_symmetry = min(eye_widths) / max(1e-6, max(eye_widths))
     pupil_confidence = min(float(eye["pupil"]["confidence"]) for eye in eyes)
+    layered_eye_rigs: list[Any] = []
+    for eye in eyes:
+        rig = eye.get("rig")
+        deformation = rig.get("deformation") if isinstance(rig, dict) else None
+        layered_eye_rigs.append(deformation.get("iris") if isinstance(deformation, dict) else None)
+    iris_segmentation_confidence = min(
+        (
+            float(iris.get("segmentationConfidence", 0.0))
+            if isinstance(iris, dict)
+            else 0.0
+            for iris in layered_eye_rigs
+        ),
+        default=0.0,
+    )
 
     if detection_count > 1:
         warnings.append(f"{detection_count} faces detected; the strongest face was selected")
@@ -501,6 +1094,18 @@ def assess_quality(
         disabled.append("gaze")
         warnings.append(
             f"gaze disabled because pupil confidence is below {MIN_FULL_PUPIL_CONFIDENCE:.2f}"
+        )
+    if not all(isinstance(iris, dict) for iris in layered_eye_rigs):
+        disabled.extend(("blink", "gaze"))
+        warnings.append("blink and gaze disabled because one or both iris/base-eye layers are unreliable")
+    elif any(
+        float(eye.get("rig", {}).get("maxGazeX", 0.0)) * image_width < 1.0
+        or float(eye.get("rig", {}).get("maxGazeY", 0.0)) * image_height < 0.25
+        for eye in eyes
+    ):
+        disabled.append("gaze")
+        warnings.append(
+            "gaze disabled because an iris lacks one horizontal or one quarter vertical pixel of safe clearance"
         )
     if min_image_dimension < MIN_FULL_IMAGE_DIMENSION:
         disabled.extend(("blink", "gaze"))
@@ -539,6 +1144,7 @@ def assess_quality(
             "mouthConfidence": mouth_confidence,
             "mouthLineConfidence": mouth_line_confidence,
             "pupilConfidence": pupil_confidence,
+            "irisSegmentationConfidence": iris_segmentation_confidence,
             "eyeSymmetry": eye_symmetry,
             "faceScale": face_scale,
             "minImageDimensionPixels": min_image_dimension,

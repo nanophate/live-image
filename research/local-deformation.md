@@ -6,12 +6,16 @@ Scope: the next deformation layer after the current fixed-boundary Canvas 2D
 grid. This note covers only deterministic, compiler-authored local motion. It
 does not select a new detector or introduce a learned runtime component.
 
-Status: **design target, not a claim that every item below is implemented.**
-The first implemented subset is Compiler `0.3.0`'s six-row eye cage,
-protected-line mask, and bounded mouth bands. Explicit triangle lists,
-per-vertex mobility, rigid iris/highlight extraction, inpainting, and
-signed-area guards remain open. The implemented subset and its failures are in
-[`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md).
+Status: **design target with two implemented subsets.** Compiler `0.3.0` added
+the six-row eye cage, protected-line mask, and bounded mouth bands. Compiler
+`0.4.0` now adds the automatically extracted rigid iris/highlight texture,
+Telea-inpainted base eye, aperture clipping, and fail-closed layer gate.
+Explicit triangle lists, per-vertex mobility, calibrated semantic iris
+segmentation, dense aperture curves, and signed-area guards remain open. The
+implementation evidence is in
+[`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md)
+and
+[`experiments/2026-07-20-iris-base-eye-validation.md`](experiments/2026-07-20-iris-base-eye-validation.md).
 
 ## Target recommendation
 
@@ -161,11 +165,11 @@ than animate through it.
 ### 3. Iris and highlight preservation
 
 **Decision.** Extend the existing deterministic pupil estimate into an iris
-ellipse/cage. The RGBA extraction mask covers the full ellipse, not only dark
-pixels, so highlights inside it remain part of the same texture. Reject the
-layer if its centre is outside the eye polygon, it intersects an eyelid by more
-than 25% of its minor radius, or its segmentation confidence is below the
-calibrated gaze threshold.
+ellipse/cage. The compiler-authored alpha mask covers the full ellipse, not only
+dark pixels, so highlights inside it remain part of the same texture. Never
+translate a source-eyelid-clipped alpha shape: reduce both initial radii only as
+far as 75%, accept the first cage whose complete raster support is inside the
+detected eye polygon, and otherwise omit the layer.
 
 Create a base-eye patch by inpainting the iris mask from its boundary with
 OpenCV Telea inpainting and
@@ -185,8 +189,12 @@ At runtime:
 5. reduce gaze displacement by `(1 - blink)` and return it to zero as the lid
    closes.
 
-The maximum gaze translation is compiler-capped to the smaller of
-`0.10 * eyeWidth` and the measured aperture clearance minus one pixel. A full
+The initial maximum gaze translation is `0.075 * eyeWidth/eyeHeight`, scaled by
+pupil confidence, then reduced until the complete ellipse remains inside the
+detected eye polygon in both cardinal directions. The two maxima are then
+jointly scaled until all four diagonal endpoints are contained as well. Gaze is
+disabled if either eye retains less than 1 horizontal pixel or 0.25 vertical
+pixels at the maximum. A full
 blink moves the upper lid farther: start the close seam at
 `topY + 0.70 * apertureHeight`, with a stored full-close floor of
 `max(1 px, 0.035 * eyeHeight)`. Interpolate with smoothstep. These are initial
@@ -202,8 +210,9 @@ under the translated layer.
 fill used only behind a small moving/occluded layer. Large irises, patterned
 sclera, gradients, or unreliable masks can expose obvious invented texture.
 
-**Decision.** Gate on extraction and inpaint boundary error, cap motion, and
-disable gaze or blink when the patch is not credible.
+**Decision.** Gate on complete geometric containment, cap motion, and disable
+gaze or blink when the layer cannot be authored. **Open:** add an independently
+calibrated inpaint-boundary and semantic iris-confidence gate.
 
 ### 4. Mouth motion
 
@@ -293,3 +302,11 @@ and the current iris/highlight claim boundary are in
 - **Open.** Compare blink frames with and without the iris/base split. Adoption
   requires less highlight crushing without a worse pasted-patch or inpainting
   artifact rate.
+
+**Confirmed implementation checkpoint.** Compiler `0.4.0` now implements the
+initial iris/base split, rigid gaze translation, aperture clipping, and exact
+full-close iris alpha zero. Two primary rigs, the 12-image matrix, and the
+independent hold-out results are recorded in
+[`experiments/2026-07-20-iris-base-eye-validation.md`](experiments/2026-07-20-iris-base-eye-validation.md).
+The remaining comparison above is specifically the frozen perceptual artifact
+rate across a new hold-out, not whether the split exists.

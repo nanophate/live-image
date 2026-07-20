@@ -91,6 +91,131 @@
         "cannyHigh": { "type": "number", "minimum": 0 }
       }
     },
+    "embeddedRgbaLayer": {
+      "type": "object",
+      "required": ["dataUrl", "width", "height", "coverage", "method"],
+      "properties": {
+        "dataUrl": { "type": "string", "pattern": "^data:image/png;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "method": { "enum": ["source-rgba-ellipse-v1", "telea-inpaint-v1", "telea-skin-fill-curve-v1", "affine-skin-fill-curve-v2", "affine-skin-fill-curve-v3"] }
+      }
+    },
+    "closedEyeCorrective": {
+      "allOf": [
+        { "$ref": "#/$defs/embeddedRgbaLayer" },
+        {
+          "type": "object",
+          "required": ["activationStart", "lineThickness"],
+          "properties": {
+            "activationStart": { "type": "number", "minimum": 0.5, "exclusiveMaximum": 1 },
+            "lineThickness": { "type": "integer", "minimum": 1, "maximum": 8 },
+            "inpaintRadius": { "type": "integer", "minimum": 1, "maximum": 16 },
+            "sampleExclusionRadius": { "type": "integer", "minimum": 1, "maximum": 32 },
+            "retainedSamplePixels": { "type": "integer", "minimum": 48 },
+            "medianFitResidual": { "type": "number", "minimum": 0 },
+            "upperSamplesIncluded": { "type": "boolean" }
+          },
+          "oneOf": [
+            {
+              "required": ["inpaintRadius"],
+              "properties": { "method": { "const": "telea-skin-fill-curve-v1" } }
+            },
+            {
+              "required": ["sampleExclusionRadius", "retainedSamplePixels", "medianFitResidual"],
+              "properties": { "method": { "const": "affine-skin-fill-curve-v2" } }
+            },
+            {
+              "required": ["sampleExclusionRadius", "retainedSamplePixels", "medianFitResidual", "upperSamplesIncluded"],
+              "properties": { "method": { "const": "affine-skin-fill-curve-v3" } }
+            }
+          ]
+        }
+      ]
+    },
+    "irisDeformation": {
+      "type": "object",
+      "required": ["method", "texture", "baseEye", "centre", "radiusX", "radiusY", "inpaintRadius", "segmentationConfidence"],
+      "properties": {
+        "method": { "const": "ellipse-cage-telea-v1" },
+        "texture": {
+          "allOf": [
+            { "$ref": "#/$defs/embeddedRgbaLayer" },
+            { "type": "object", "properties": { "method": { "const": "source-rgba-ellipse-v1" } } }
+          ]
+        },
+        "baseEye": {
+          "allOf": [
+            { "$ref": "#/$defs/embeddedRgbaLayer" },
+            { "type": "object", "properties": { "method": { "const": "telea-inpaint-v1" } } }
+          ]
+        },
+        "centre": { "$ref": "#/$defs/point" },
+        "radiusX": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "radiusY": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "inpaintRadius": { "type": "integer", "minimum": 1 },
+        "segmentationConfidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "semanticControlField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "weights", "maxDisplacements"],
+      "properties": {
+        "control": { "const": "blink" },
+        "weights": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 128,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "maxDisplacements": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 128,
+          "items": { "$ref": "#/$defs/point" }
+        }
+      }
+    },
+    "eyeSemanticMesh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "vertices", "triangles", "fields", "aperture", "minimumAreaRatio"],
+      "properties": {
+        "method": { "const": "semantic-weighted-triangle-mesh-v1" },
+        "vertices": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 128,
+          "items": { "$ref": "#/$defs/point" }
+        },
+        "triangles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": { "type": "integer", "minimum": 0, "maximum": 127 }
+          }
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/$defs/semanticControlField" }
+        },
+        "aperture": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 128,
+          "items": { "type": "integer", "minimum": 0, "maximum": 127 }
+        },
+        "minimumAreaRatio": { "type": "number", "minimum": 0.02, "maximum": 1 }
+      }
+    },
     "eyeFeature": {
       "type": "object",
       "required": ["side", "region", "anchors", "pupil", "rig"],
@@ -139,6 +264,9 @@
                 "closedRows": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number" } },
                 "gazeRowWeights": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number", "minimum": 0, "maximum": 1 } },
                 "protectedLineArtMask": { "$ref": "#/$defs/protectedLineArtMask" },
+                "iris": { "$ref": "#/$defs/irisDeformation" },
+                "semanticMesh": { "$ref": "#/$defs/eyeSemanticMesh" },
+                "closedEye": { "$ref": "#/$defs/closedEyeCorrective" },
                 "region": { "$ref": "#/$defs/rect" }
               }
             }

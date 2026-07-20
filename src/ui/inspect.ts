@@ -62,6 +62,31 @@ async function draw(manifest: LivingImageManifest): Promise<void> {
     context.beginPath();
     context.arc(pupilX, pupilY, Math.max(5, eye.pupil.radius * Math.min(width, height)), 0, Math.PI * 2);
     context.stroke();
+    const mesh = eye.rig.deformation?.semanticMesh;
+    const blinkField = mesh?.fields[0];
+    if (mesh && blinkField) {
+      context.lineWidth = Math.max(0.65, width / 1400);
+      context.strokeStyle = "rgba(255,167,64,.52)";
+      for (const triangle of mesh.triangles) {
+        const points = triangle.map((vertexIndex) => mesh.vertices[vertexIndex]);
+        if (points.some((point) => !point)) continue;
+        context.beginPath();
+        points.forEach((point, index) => {
+          const [meshX, meshY] = toPixel(point!, width, height);
+          if (index === 0) context.moveTo(meshX, meshY); else context.lineTo(meshX, meshY);
+        });
+        context.closePath();
+        context.stroke();
+      }
+      for (const [vertexIndex, vertex] of mesh.vertices.entries()) {
+        const [meshX, meshY] = toPixel(vertex, width, height);
+        const weight = blinkField.weights[vertexIndex] ?? 0;
+        context.fillStyle = `rgba(255,${Math.round(88 + weight * 150)},64,${0.25 + weight * 0.75})`;
+        context.beginPath();
+        context.arc(meshX, meshY, Math.max(1.5, width / 360), 0, Math.PI * 2);
+        context.fill();
+      }
+    }
   }
   strokeRect(manifest.analysis.features.mouth.region, width, height, "#ff55d7", 2.2);
 }
