@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "living-image",
+  "main": "./deploy/cloudflare/worker.ts",
+  "compatibility_date": "2026-07-21",
+  "workers_dev": false,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "none",
+    "not_found_handling": "none",
+    "run_worker_first": ["/api/*"]
+  },
+  "containers": [
+    {
+      "class_name": "CompilerContainer",
+      "image": "./Dockerfile",
+      "instance_type": "standard-1",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "COMPILER",
+        "class_name": "CompilerContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CompilerContainer"]
+    }
+  ],
+  "vars": {
+    "HOSTED_COMPILER_ENABLED": "false",
+    "REQUIRE_ACCESS_JWT": "true"
+  }
+}

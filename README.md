@@ -25,6 +25,7 @@ or capability-limited rather than silently forced through.
 
 ```text
 compiler/              Python image compiler
+deploy/cloudflare/     Worker gateway for the private Container alpha
 src/                   TypeScript runtime, warp and UI
 fixtures/source/       two original success fixtures + one no-face reject fixture
 fixtures/holdout/      local-only hold-out manifest, provenance, and results
@@ -86,6 +87,32 @@ nodenv exec npm run studio:offline
 The Viewer still accepts an existing `.limg` without the Python compile
 endpoint. Details and the verified security/recording boundary are in
 [`research/product-studio-and-recording.md`](research/product-studio-and-recording.md).
+
+## Validate the hosted compiler scaffold
+
+The hosted design keeps the Viewer and upload flow on one origin: Worker Assets
+serve the browser build, while only `/api/compile` reaches a private Python
+Container. Hosted compilation is disabled by default in `wrangler.jsonc`; no
+deployment or billing is triggered by these checks.
+
+```bash
+nodenv exec npm run build:worker
+nodenv exec npm run check:cloudflare
+
+docker build --platform linux/amd64 -t living-image-compiler:local .
+docker run --rm -p 8788:8080 living-image-compiler:local
+```
+
+The image downloads the reviewed detector weights during the build, verifies
+their frozen SHA-256 values, then starts offline as a non-root user. Check its
+readiness at [http://127.0.0.1:8788/healthz](http://127.0.0.1:8788/healthz).
+The checked-in deployment is deliberately inaccessible: `workers_dev` is off,
+there is no public route, the compile flag is false, and the gateway expects a
+Cloudflare Access assertion. Do not run `npm run deploy:cloudflare` until a
+custom route protected by Cloudflare Access, the Workers Paid account, quotas,
+privacy copy, cost alerts, and the enable flag are configured.
+The implementation and Cloudflare/Hugging Face comparison are recorded in
+[`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
 
 ## Run the engineering proof
 

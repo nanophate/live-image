@@ -43,6 +43,10 @@ MIN_FULL_EYE_SYMMETRY = 0.70
 MIN_FULL_IMAGE_DIMENSION = 256
 MAX_IMAGE_DIMENSION = 8192
 MAX_IMAGE_PIXELS = 33_554_432
+EXPECTED_MODEL_SHA256 = {
+    "yolov3": "23bbc708146bcbc1c910f00fe152adbc70d7658d875a0121eaf4ee61d978b2c4",
+    "hrnetv2": "e71271376406a743c01528a0460637fcc06e72aeeea583f85007cc72dc8b7a4a",
+}
 
 
 @dataclass(frozen=True)
@@ -58,10 +62,15 @@ def load_detector_runtime(offline: bool, flip_test: bool) -> DetectorRuntime:
         os.environ["HF_HUB_OFFLINE"] = "1"
     detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
     model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
-    return DetectorRuntime(
-        detector=detector,
-        digests={name: sha256_file(path) for name, path in model_paths.items()},
-    )
+    digests = {name: sha256_file(path) for name, path in model_paths.items()}
+    mismatches = {
+        name: {"expected": EXPECTED_MODEL_SHA256[name], "actual": digest}
+        for name, digest in digests.items()
+        if digest != EXPECTED_MODEL_SHA256[name]
+    }
+    if mismatches:
+        raise RuntimeError(f"detector weight digest mismatch: {mismatches}")
+    return DetectorRuntime(detector=detector, digests=digests)
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:

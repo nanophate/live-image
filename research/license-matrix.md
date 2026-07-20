@@ -1,6 +1,6 @@
 # Shipped license and provenance matrix
 
-Snapshot: 2026-07-20. This is an engineering record, not legal advice.
+Snapshot: 2026-07-21. This is an engineering record, not legal advice.
 
 Project-authored source code is released under the MIT License. This matrix
 tracks only code, models, data, and assets used by the current MVP. Evaluated
@@ -13,12 +13,16 @@ artifacts are not part of this release.
 | compiler dependency stack | OpenCV Apache-2.0; NumPy BSD-3-Clause; PyTorch/torchvision BSD-style; Hugging Face Hub and safetensors Apache-2.0 | no additional project-owned data | detector execution and checkpoint loading | versions pinned directly or transitively in the compiler environment |
 | web build stack | TypeScript Apache-2.0; Vite and esbuild MIT | none | development, tests, and browser bundle generation | no third-party package is required by the generated runtime at frame time |
 | browser validation stack | @playwright/test / Playwright 1.61.1 Apache-2.0; Chromium BSD-style plus bundled third-party notices; Playwright FFmpeg LGPL-2.1-or-later | Chromium headless shell revision 1228 / 149.0.7827.55 and FFmpeg revision 1011, downloaded to an ephemeral developer or CI cache | full-resolution Canvas 2D locality and recovery tests only | exact npm version locked; browser/FFmpeg are not shipped in Viewer artifacts; preserve bundled notices before any cache, image, or test-appliance redistribution |
+| Cloudflare deployment stack | @cloudflare/containers 0.3.0 ISC; Wrangler 4.112.0 and Workers types 5.20260719.1 MIT OR Apache-2.0 | no data or sample media | build-time Worker gateway, static asset upload, and private Container lifecycle | development/deployment only; not required by the browser runtime; hosted compiler remains disabled by default |
+| compiler container base | Python 3.12.10 slim-bookworm base, Debian packages, libgomp1, and the existing compiler dependency/weight stack | reviewed detector weights are baked into the private image cache and verified by SHA-256 | private hosted-compiler alpha image | base tag is version-pinned but its digest and generated package-notice inventory remain open until the first successful linux/amd64 build; do not publish the image as a redistributable appliance before that audit |
 | repository fixtures | n/a | generated specifically for this project with OpenAI image generation, plus one locally downsampled derivative | regression tests, demo, and 12-image validation | prompt/provenance recorded in `fixtures/README.md` and `fixtures/validation/prompts.json` |
 | external hold-out test media | n/a | four CC0 images and one CC BY 3.0 image from five OpenGameArt contributors | independent compiler/runtime validation only | local-only and ignored by Git; exact attribution, hashes, and any derivative obligations are recorded in `fixtures/holdout/ATTRIBUTION.md` |
 
 ## Release checklist
 
 - Freeze exact detector and weight digests inside released `.limg` provenance.
+- Pin the Python base image digest and capture the Debian/Python package notices
+  from the first successful container build before distributing that image.
 - Preserve MIT/Apache notices for redistributed detector code or weights.
 - Obtain a product/legal decision on training-data provenance before declaring a
   commercial-safe compiler path.

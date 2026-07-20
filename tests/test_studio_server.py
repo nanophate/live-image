@@ -7,15 +7,15 @@ import struct
 import unittest
 
 from compiler.compile_character import DetectorRuntime
-from compiler.studio_server import (
+from compiler.compiler_service import (
     CompilerService,
     MAX_UPLOAD_BYTES,
     UploadError,
-    is_local_host,
     safe_upload_name,
     validate_image_payload,
     validate_upload,
 )
+from compiler.studio_server import is_local_host
 
 
 def png_header(width: int = 100, height: int = 100) -> bytes:

@@ -33,6 +33,10 @@ jobs:
         run: npm run test:ts
       - name: Build browser viewers
         run: npm run build
+      - name: Type-check Cloudflare gateway
+        run: npm run build:worker
+      - name: Validate Cloudflare bindings and assets
+        run: npm run check:cloudflare-config
       - name: Install Chromium headless shell
         run: npx playwright install --with-deps --only-shell chromium
       - name: Run browser Canvas tests

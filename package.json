@@ -14,6 +14,10 @@
     "studio": "npm run build && PYTHONPATH=. .venv/bin/python -m compiler.studio_server --root dist",
     "studio:offline": "npm run build && PYTHONPATH=. .venv/bin/python -m compiler.studio_server --root dist --offline",
     "build": "tsc --noEmit && vite build",
+    "build:worker": "tsc -p tsconfig.worker.json",
+    "check:cloudflare-config": "WRANGLER_WRITE_LOGS=0 wrangler deploy --dry-run --containers-rollout=none",
+    "check:cloudflare": "npm run build && npm run build:worker && npm run check:cloudflare-config",
+    "deploy:cloudflare": "npm run build && npm run build:worker && wrangler deploy",
     "test:ts": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
     "test:browser": "playwright test",
     "test:py": "PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v",
@@ -28,9 +32,12 @@
     "probe:support-domain:holdout-a-contaminated": "PYTHONPATH=. .venv/bin/python -m compiler.probe_support_domain fixtures/holdout/manifest.json --evidence-status contaminated-exploratory-replay --output research/experiments/2026-07-20-support-domain-probe-holdout-a.json"
   },
   "devDependencies": {
+    "@cloudflare/containers": "0.3.0",
+    "@cloudflare/workers-types": "5.20260719.1",
     "@playwright/test": "1.61.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.8.3",
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "wrangler": "4.112.0"
   }
 }

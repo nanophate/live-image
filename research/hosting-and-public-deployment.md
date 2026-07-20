@@ -2,8 +2,9 @@
 
 Reviewed: 2026-07-21
 
-Status: deployment feasibility review; no hosted service has been approved or
-implemented by this document
+Status: feasibility review updated after the owner selected the end-to-end
+hosted product direction; the private-alpha scaffold is recorded separately in
+[`hosted-compiler-platforms.md`](hosted-compiler-platforms.md)
 
 ## Question
 
@@ -130,6 +131,18 @@ They should not be treated as one hosting target.
 
 ## Recommended rollout
 
+### Decision update — 2026-07-21
+
+- **Decision:** the earlier static-first recommendation remains a useful
+  fallback but is no longer the primary product-review path. The intended
+  review experience is now same-origin PNG/JPEG upload, automatic compilation,
+  and immediate Viewer playback.
+- **Decision:** implement and measure the authenticated Cloudflare Container
+  alpha before publishing a standalone static Viewer. Keep Hugging Face Docker
+  Space as the provider-neutral image benchmark and fallback.
+- **Confirmed:** this update does not authorize Cloudflare billing, public
+  anonymous compilation, or sample-media publication.
+
 ### Phase 1 — static review deployment
 
 - Merge and tag the current local product slice.
@@ -188,11 +201,11 @@ They should not be treated as one hosting target.
 
 ## Recommendation
 
-- **Decision:** deploy the static Viewer to Cloudflare Pages first after the
-  small deployment-hardening slice above.
-- **Decision:** keep PNG compilation local during that phase.
-- **Decision:** prototype Cloudflare Containers only as an authenticated private
-  alpha. Do not make the current compiler anonymously public yet.
+- **Decision:** prototype Cloudflare Worker Assets plus the compiler Container
+  as an authenticated private alpha. Do not make the current compiler
+  anonymously public yet.
+- **Decision:** retain a static Viewer-only deployment as a fallback, not as the
+  final judged workflow.
 - **Open:** GitHub Pages remains a reasonable documentation/static fallback,
   but Cloudflare is the more coherent path if the project intends to add a
   hosted compiler later.

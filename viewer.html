@@ -11,7 +11,7 @@
     <main class="app-shell">
       <header class="topbar">
         <a class="wordmark" href="/">Living Image</a>
-        <span class="topbar-label">Local Studio / Runtime</span>
+        <span class="topbar-label" id="deployment-label">Studio / Runtime</span>
         <a class="text-link" href="/inspect.html">Open inspector</a>
       </header>
       <section class="workspace">
@@ -21,17 +21,17 @@
         </div>
         <aside class="control-panel">
           <div>
-            <p class="eyebrow">PNG → portable character → runtime</p>
+            <p class="eyebrow">Portable character → deterministic runtime</p>
             <h1 id="character-name">Load a character</h1>
-            <p class="muted" id="character-meta">Open a PNG in the local Studio, or load an existing .limg. Character images are not uploaded.</p>
+            <p class="muted" id="character-meta">Load an existing .limg character file while compiler availability is checked.</p>
           </div>
           <div class="load-row">
-            <label class="file-button">Open PNG or .limg<input id="file-input" type="file" accept=".png,.jpg,.jpeg,.limg,image/png,image/jpeg,application/json" /></label>
+            <label class="file-button"><span id="file-button-label">Open .limg</span><input id="file-input" type="file" accept=".limg,application/json" /></label>
             <a class="button-link secondary" id="download-limg" hidden>Download .limg</a>
-            <button class="secondary" id="sample-teal" type="button">Teal sample</button>
-            <button class="secondary" id="sample-copper" type="button">Copper sample</button>
+            <button class="secondary" id="sample-teal" type="button" hidden>Teal sample</button>
+            <button class="secondary" id="sample-copper" type="button" hidden>Copper sample</button>
           </div>
-          <p class="local-note">PNG compilation requires <code>nodenv exec npm run studio</code>. The first online run may download the reviewed detector weights; <code>studio:offline</code> requires them to be cached.</p>
+          <p class="local-note" id="compiler-note">Checking compiler availability…</p>
           <div class="quick-actions">
             <button id="blink-button" type="button">Blink</button>
             <button id="talk-button" type="button">Talk</button>
@@ -42,7 +42,7 @@
           <div class="showcase-card">
             <div class="showcase-head"><strong>Review showcase</strong><output id="showcase-label">Ready</output></div>
             <progress id="showcase-progress" max="1" value="0"></progress>
-            <p>Runs the same capability-gated sequence for every character. Recording is local, silent, and downloads as WebM when supported.</p>
+            <p>Runs the same capability-gated sequence for every character. Silent WebM recording stays in this browser and downloads when supported.</p>
             <div class="quick-actions">
               <button id="demo-button" type="button">Play demo</button>
               <button id="record-button" class="secondary" type="button">Record WebM</button>

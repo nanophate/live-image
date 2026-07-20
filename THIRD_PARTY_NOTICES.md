@@ -20,6 +20,23 @@ No third-party package is required by the generated browser runtime at frame
 time. Playwright, Chromium, and FFmpeg are development/CI-only and are not
 copied into the Viewer build or release artifacts.
 
+## Hosted deployment tooling
+
+- @cloudflare/containers 0.3.0 — ISC License —
+  <https://github.com/cloudflare/containers>
+- Wrangler 4.112.0 — MIT OR Apache License 2.0 —
+  <https://github.com/cloudflare/workers-sdk>
+- @cloudflare/workers-types 5.20260719.1 — MIT OR Apache License 2.0 —
+  <https://github.com/cloudflare/workerd>
+
+Wrangler and the Workers type package are development/deployment tools.
+`@cloudflare/containers` is bundled into the deployed Worker gateway, but none
+of these packages are copied into the browser Runtime. The private compiler
+image uses Python 3.12 slim-bookworm,
+Debian packages, `libgomp1`, and the compiler stack below. Capture the exact
+base-image digest and generated OS/Python package notices before distributing
+the image itself; the current scaffold is not such a notice-complete appliance.
+
 ## Compiler
 
 - anime-face-detector — MIT; vendored portions derived from mmcv, mmdetection,

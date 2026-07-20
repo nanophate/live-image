@@ -20,6 +20,7 @@ from compiler.compile_character import (
     compile_paths,
     detect_pupil,
     ellipse_inside_polygon,
+    load_detector_runtime,
     normalise_box,
     safe_diagonal_ellipse_shifts,
     safe_symmetric_ellipse_shift,
@@ -27,6 +28,17 @@ from compiler.compile_character import (
 
 
 class CompilerGeometryTests(unittest.TestCase):
+    def test_detector_runtime_rejects_unreviewed_weight_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            checkpoint = Path(temporary) / "model.safetensors"
+            checkpoint.write_bytes(b"unreviewed-model")
+            with (
+                mock.patch("compiler.compile_character.create_detector", return_value=object()),
+                mock.patch("compiler.compile_character.get_checkpoint_path", return_value=checkpoint),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "detector weight digest mismatch"):
+                    load_detector_runtime(False, False)
+
     def quality_with(
         self,
         *,
@@ -384,14 +396,9 @@ class CompilerGeometryTests(unittest.TestCase):
             source_dir.mkdir()
             source = source_dir / "portrait.png"
             self.assertTrue(cv2.imwrite(str(source), np.zeros((32, 32, 3), dtype=np.uint8)))
-            checkpoint = root / "model.bin"
-            checkpoint.write_bytes(b"model")
             detector = mock.Mock(return_value=[])
-            with (
-                mock.patch("compiler.compile_character.create_detector", return_value=detector),
-                mock.patch("compiler.compile_character.get_checkpoint_path", return_value=checkpoint),
-            ):
-                results = compile_paths([source], root / "output", None, False, False)
+            runtime = DetectorRuntime(detector=detector, digests={"test": "hash"})
+            results = compile_paths([source], root / "output", None, False, False, runtime)
 
             diagnostic = json.loads(results[0][0].read_text(encoding="utf-8"))
             self.assertEqual(__version__, "0.8.0")

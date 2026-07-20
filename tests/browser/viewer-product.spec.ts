@@ -77,3 +77,64 @@ test("product Viewer runs capability-gated reactions, showcase, and local WebM r
   expect(await canvasChecksum()).toBe(neutralChecksum);
   expect(browserErrors).toEqual([]);
 });
+
+test("viewer-only mode keeps the loaded character when PNG compilation is unavailable", async ({ page }) => {
+  const compileRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/compile") {
+      compileRequests.push(request.url());
+    }
+  });
+
+  await page.goto("/viewer.html");
+  await expect(page.locator("#file-button-label")).toHaveText("Open .limg");
+  await expect(page.locator("#sample-teal")).toBeHidden();
+  await page.locator("#file-input").setInputFiles({
+    name: "teal-librarian.limg",
+    mimeType: "application/json",
+    buffer: compiledRig(),
+  });
+  await expect(page.locator("#character-name")).toHaveText("teal librarian");
+  await expect(page.locator("#blink-button")).toBeEnabled();
+
+  await page.locator("#file-input").setInputFiles({
+    name: "should-not-upload.png",
+    mimeType: "image/png",
+    buffer: readFileSync(resolve("fixtures/source/teal-librarian.png")),
+  });
+
+  await expect(page.locator("#render-status")).toHaveText("PNG compilation unavailable");
+  await expect(page.locator("#character-name")).toHaveText("teal librarian");
+  await expect(page.locator("#blink-button")).toBeEnabled();
+  await expect(page.locator("#character-meta")).toContainText("currently loaded .limg remains playable");
+  expect(compileRequests).toEqual([]);
+});
+
+test("hosted mode explains a non-JSON access-gateway rejection", async ({ page }) => {
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ compiler: "hosted", enabled: true, samplesAvailable: false }),
+    });
+  });
+  await page.route("**/api/compile", async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: "text/html",
+      headers: { "X-Request-Id": "access-test-1" },
+      body: "<html><body>Cloudflare Access</body></html>",
+    });
+  });
+
+  await page.goto("/viewer.html");
+  await expect(page.locator("#file-button-label")).toHaveText("Open PNG or .limg");
+  await page.locator("#file-input").setInputFiles({
+    name: "portrait.png",
+    mimeType: "image/png",
+    buffer: readFileSync(resolve("fixtures/source/teal-librarian.png")),
+  });
+
+  await expect(page.locator("#render-status")).toHaveText("Compilation unavailable");
+  await expect(page.locator("#character-meta")).toContainText("Hosted compiler returned HTTP 401");
+  await expect(page.locator("#character-meta")).toContainText("request access-test-1");
+});

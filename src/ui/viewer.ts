@@ -18,6 +18,9 @@ const status = requireElement<HTMLElement>("render-status");
 const name = requireElement<HTMLElement>("character-name");
 const meta = requireElement<HTMLElement>("character-meta");
 const qualityCard = requireElement<HTMLElement>("quality-card");
+const compilerNote = requireElement<HTMLElement>("compiler-note");
+const deploymentLabel = requireElement<HTMLElement>("deployment-label");
+const fileButtonLabel = requireElement<HTMLElement>("file-button-label");
 const downloadLimg = requireElement<HTMLAnchorElement>("download-limg");
 const demoButton = requireElement<HTMLButtonElement>("demo-button");
 const recordButton = requireElement<HTMLButtonElement>("record-button");
@@ -41,6 +44,45 @@ let showcaseAnimation: number | null = null;
 let finishShowcase: (() => void) | null = null;
 let restoreAutoIdleAfterShowcase: boolean | null = null;
 let busy = false;
+let compilerMode: "local" | "hosted" | "unavailable" = "unavailable";
+let compilerEnabled = false;
+let compilerConfigReady: Promise<void>;
+
+interface CompilerConfig {
+  compiler: "local" | "hosted";
+  enabled: boolean;
+  samplesAvailable: boolean;
+}
+
+async function loadCompilerConfig(): Promise<void> {
+  try {
+    const response = await fetch("/api/config", { cache: "no-store" });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const config = await response.json() as CompilerConfig;
+    compilerMode = config.compiler;
+    compilerEnabled = config.enabled;
+    for (const button of sampleButtons) button.hidden = !config.samplesAvailable;
+    if (!config.enabled) {
+      deploymentLabel.textContent = "Hosted Viewer";
+      compilerNote.textContent = "Hosted compilation is disabled for this deployment. Existing .limg files still play entirely in the browser.";
+      return;
+    }
+    fileInput.accept = ".png,.jpg,.jpeg,.limg,image/png,image/jpeg,application/json";
+    fileButtonLabel.textContent = "Open PNG or .limg";
+    if (config.compiler === "hosted") {
+      deploymentLabel.textContent = "Hosted Compiler / Runtime";
+      compilerNote.textContent = "PNG and JPEG files are sent to the private alpha compiler. The app does not save source images or .limg files to application storage; use only approved test images during alpha.";
+    } else {
+      deploymentLabel.textContent = "Local Studio / Runtime";
+      compilerNote.innerHTML = "PNG compilation runs on this machine. The first online run may download reviewed detector weights; <code>studio:offline</code> requires them to be cached.";
+    }
+  } catch {
+    compilerMode = "unavailable";
+    compilerEnabled = false;
+    deploymentLabel.textContent = "Portable Runtime";
+    compilerNote.innerHTML = "This deployment is a .limg Viewer. For local PNG compilation, run <code>nodenv exec npm run studio</code>.";
+  }
+}
 
 function setDownload(payload: Blob | null, filename = "character.limg"): void {
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
@@ -196,13 +238,23 @@ async function showSourcePreview(file: File): Promise<void> {
 }
 
 async function compileImage(file: File): Promise<void> {
+  await compilerConfigReady;
+  if (!compilerEnabled) {
+    status.textContent = "PNG compilation unavailable";
+    meta.textContent = compilerMode === "hosted"
+      ? "Hosted compilation is disabled for this deployment. The currently loaded .limg remains playable."
+      : "Run nodenv exec npm run studio for local PNG compilation. The currently loaded .limg remains playable.";
+    return;
+  }
   stopShowcase();
   currentManifest = null;
   setDownload(null);
   setBusy(true);
   await showSourcePreview(file);
   name.textContent = file.name.replace(/\.[^.]+$/u, "");
-  meta.textContent = "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
+  meta.textContent = compilerMode === "hosted"
+    ? "Uploading for automatic face, eye, iris, mouth, mesh, and quality analysis…"
+    : "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
   status.textContent = "Compiling · first model load can take a while";
   qualityCard.hidden = true;
   try {
@@ -215,8 +267,13 @@ async function compileImage(file: File): Promise<void> {
       body: file,
     });
     const payload = await response.text();
-    const parsed = JSON.parse(payload) as unknown;
-    if (response.status === 422) {
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(payload) as unknown;
+    } catch {
+      // Access gateways and upstream failures may return HTML or plain text.
+    }
+    if (response.status === 422 && parsed !== null) {
       renderRejectDiagnostic(qualityCard, parsed as { rejectionReasons?: string[]; warnings?: string[] });
       status.textContent = "Not supported · no character file created";
       meta.textContent = "Try a near-frontal anime portrait with a larger unobstructed face and both eyes visible.";
@@ -225,9 +282,11 @@ async function compileImage(file: File): Promise<void> {
     if (!response.ok) {
       const message = typeof parsed === "object" && parsed && "message" in parsed
         ? String((parsed as { message: unknown }).message)
-        : `Local compiler returned HTTP ${response.status}`;
-      throw new Error(message);
+        : `${compilerMode === "hosted" ? "Hosted" : "Local"} compiler returned HTTP ${response.status}`;
+      const requestId = response.headers.get("X-Request-Id");
+      throw new Error(requestId ? message + " (request " + requestId + ")" : message);
     }
+    if (parsed === null) throw new Error("Compiler returned an invalid character response");
     const manifest = parseLivingImage(payload);
     const filename = `${manifest.id}.limg`;
     await useManifest(manifest, { blob: new Blob([payload], { type: "application/json" }), filename });
@@ -236,7 +295,9 @@ async function compileImage(file: File): Promise<void> {
       : "Compiled · ready to review";
   } catch (error) {
     status.textContent = "Compilation unavailable";
-    meta.textContent = `${(error as Error).message}. Start this page with nodenv exec npm run studio.`;
+    meta.textContent = compilerMode === "hosted"
+      ? (error as Error).message
+      : (error as Error).message + ". Start this page with nodenv exec npm run studio.";
   } finally {
     setBusy(false);
     refreshCapabilityControls();
@@ -323,4 +384,4 @@ window.addEventListener("beforeunload", () => {
 });
 
 refreshCapabilityControls();
-void loadSample(SAMPLE_URLS.teal);
+compilerConfigReady = loadCompilerConfig();
