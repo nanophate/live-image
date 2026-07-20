@@ -1,0 +1,483 @@
+{
+  "cases": [
+    {
+      "artifacts": {
+        "limg": "artifacts/clean-teal/clean-teal.limg",
+        "overlay": "overlays/clean-teal/clean-teal.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "clean-frontal",
+      "expected": "full",
+      "id": "clean-teal",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.9127571873377045,
+          "eyeSymmetry": 0.9894489158806269,
+          "faceScale": 0.40165941642992425,
+          "faceScore": 0.9994938373565674,
+          "meanLandmarkScore": 0.9598621726036072,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8665257055899411,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.9468676410668629,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/clean-teal.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/clean-copper/clean-copper.limg",
+        "overlay": "overlays/clean-copper/clean-copper.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "clean-frontal",
+      "expected": "full",
+      "id": "clean-copper",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.9017044695712132,
+          "eyeSymmetry": 0.9729999977841146,
+          "faceScale": 0.3880760521409614,
+          "faceScore": 0.9989290833473206,
+          "meanLandmarkScore": 0.9580478072166443,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.9774035960435867,
+          "pupilConfidence": 0.8535084078799204
+        },
+        "rejectionReasons": [],
+        "score": 0.9551012345597317,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/clean-copper.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/clean-coral/clean-coral.limg",
+        "overlay": "overlays/clean-coral/clean-coral.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "clean-frontal",
+      "expected": "full",
+      "id": "clean-coral",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.915364212225787,
+          "eyeSymmetry": 0.9829077438201885,
+          "faceScale": 0.42911579430198366,
+          "faceScore": 0.985558032989502,
+          "meanLandmarkScore": 0.964948832988739,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8626856397194316,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.9471262834299987,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/clean-coral.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/clean-lavender/clean-lavender.limg",
+        "overlay": "overlays/clean-lavender/clean-lavender.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "clean-frontal",
+      "expected": "full",
+      "id": "clean-lavender",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.9294623597665679,
+          "eyeSymmetry": 0.9940694183322782,
+          "faceScale": 0.4477387204694976,
+          "faceScore": 0.9749826788902283,
+          "meanLandmarkScore": 0.9386937022209167,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8694293082521667,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.9450823130512739,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/clean-lavender.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/dark-iris-navy/dark-iris-navy.limg",
+        "overlay": "overlays/dark-iris-navy/dark-iris-navy.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "dark-iris",
+      "expected": "full",
+      "id": "dark-iris-navy",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.9251515122465003,
+          "eyeSymmetry": 0.9396275618329888,
+          "faceScale": 0.4620896724232456,
+          "faceScore": 0.9986550211906433,
+          "meanLandmarkScore": 0.8780241012573242,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8841284016436788,
+          "pupilConfidence": 0.8698913800008405
+        },
+        "rejectionReasons": [],
+        "score": 0.9316025617031992,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/dark-iris-navy.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/dark-iris-auburn/dark-iris-auburn.limg",
+        "overlay": "overlays/dark-iris-auburn/dark-iris-auburn.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "dark-iris",
+      "expected": "full",
+      "id": "dark-iris-auburn",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8887662055706622,
+          "eyeSymmetry": 0.9567365355247397,
+          "faceScale": 0.45155599737091306,
+          "faceScore": 0.9989126324653625,
+          "meanLandmarkScore": 0.892257571220398,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.9267698039164387,
+          "pupilConfidence": 0.6921205006499968
+        },
+        "rejectionReasons": [],
+        "score": 0.9344748442085968,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/dark-iris-auburn.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/light-iris-silver/light-iris-silver.limg",
+        "overlay": "overlays/light-iris-silver/light-iris-silver.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "gaze"
+        ]
+      },
+      "category": "light-low-contrast-iris",
+      "expected": "limited",
+      "id": "light-iris-silver",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8418164484229812,
+          "eyeSymmetry": 0.9757384846103176,
+          "faceScale": 0.4983033784078449,
+          "faceScore": 0.9999233484268188,
+          "meanLandmarkScore": 0.9255689382553101,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.9381485270581058,
+          "pupilConfidence": 0.4874800653631455
+        },
+        "rejectionReasons": [],
+        "score": 0.9361058473021737,
+        "warnings": [
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
+      },
+      "result": "limited",
+      "source": "source/light-iris-silver.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/light-iris-peach/light-iris-peach.limg",
+        "overlay": "overlays/light-iris-peach/light-iris-peach.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "gaze"
+        ]
+      },
+      "category": "light-low-contrast-iris",
+      "expected": "limited",
+      "id": "light-iris-peach",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8423358865774493,
+          "eyeSymmetry": 0.9908634158527816,
+          "faceScale": 0.5074954481596392,
+          "faceScore": 0.9998915195465088,
+          "meanLandmarkScore": 0.9412669539451599,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.916861118138964,
+          "pupilConfidence": 0.4452753381894251
+        },
+        "rejectionReasons": [],
+        "score": 0.9388818003632996,
+        "warnings": [
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
+      },
+      "result": "limited",
+      "source": "source/light-iris-peach.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/occluded-left-eye/occluded-left-eye.limg",
+        "overlay": "overlays/occluded-left-eye/occluded-left-eye.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ]
+      },
+      "category": "eye-occlusion",
+      "expected": "limited",
+      "id": "occluded-left-eye",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.543672392048665,
+          "eyeSymmetry": 0.6397815551457952,
+          "faceScale": 0.3694394733727073,
+          "faceScore": 0.9929389953613281,
+          "meanLandmarkScore": 0.7666249871253967,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8933862828470566,
+          "pupilConfidence": 0.5368398143759769
+        },
+        "rejectionReasons": [],
+        "score": 0.7806661245318296,
+        "warnings": [
+          "blink disabled because eye symmetry is below 0.70",
+          "blink and gaze disabled because eye confidence is below 0.70",
+          "gaze disabled because pupil confidence is below 0.60"
+        ]
+      },
+      "result": "limited",
+      "source": "source/occluded-left-eye.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/glasses-round/glasses-round.limg",
+        "overlay": "overlays/glasses-round/glasses-round.png"
+      },
+      "capabilities": {
+        "disabled": []
+      },
+      "category": "glasses",
+      "expected": "full",
+      "id": "glasses-round",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8769220353778586,
+          "eyeSymmetry": 0.9301714447384494,
+          "faceScale": 0.43880831339712917,
+          "faceScore": 0.8307774066925049,
+          "meanLandmarkScore": 0.9043170809745789,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.9824976896713826,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.8961947930973722,
+        "warnings": []
+      },
+      "result": "full",
+      "source": "source/glasses-round.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/three-quarter/three-quarter.limg",
+        "overlay": "overlays/three-quarter/three-quarter.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "blink"
+        ]
+      },
+      "category": "three-quarter-pose",
+      "expected": "limited",
+      "id": "three-quarter",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.8043522483652492,
+          "eyeSymmetry": 0.5360573077666376,
+          "faceScale": 0.44282602313222685,
+          "faceScore": 0.7481144666671753,
+          "meanLandmarkScore": 0.8525644540786743,
+          "minImageDimensionPixels": 1254,
+          "mouthConfidence": 0.8401473619255577,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.7891550041129398,
+        "warnings": [
+          "blink disabled because eye symmetry is below 0.70"
+        ]
+      },
+      "result": "limited",
+      "source": "source/three-quarter.png"
+    },
+    {
+      "artifacts": {
+        "limg": "artifacts/low-resolution-192/low-resolution-192.limg",
+        "overlay": "overlays/low-resolution-192/low-resolution-192.png"
+      },
+      "capabilities": {
+        "disabled": [
+          "blink",
+          "gaze"
+        ]
+      },
+      "category": "low-resolution",
+      "expected": "limited",
+      "id": "low-resolution-192",
+      "matched": true,
+      "quality": {
+        "metrics": {
+          "eyeConfidence": 0.9243745260132799,
+          "eyeSymmetry": 0.9989762700180707,
+          "faceScale": 0.45030895868937176,
+          "faceScore": 0.9977495074272156,
+          "meanLandmarkScore": 0.9304707646369934,
+          "minImageDimensionPixels": 192,
+          "mouthConfidence": 0.962312272346186,
+          "pupilConfidence": 1.0
+        },
+        "rejectionReasons": [],
+        "score": 0.9604156861457851,
+        "warnings": [
+          "blink and gaze disabled because the image shortest side is below 256 pixels"
+        ]
+      },
+      "result": "limited",
+      "source": "source/low-resolution-192.png"
+    }
+  ],
+  "generatedAt": "reproducible-validation-does-not-store-wall-clock",
+  "summary": {
+    "categories": {
+      "clean-frontal": {
+        "matched": 4,
+        "outcomes": {
+          "error": 0,
+          "full": 4,
+          "limited": 0,
+          "reject": 0
+        },
+        "total": 4
+      },
+      "dark-iris": {
+        "matched": 2,
+        "outcomes": {
+          "error": 0,
+          "full": 2,
+          "limited": 0,
+          "reject": 0
+        },
+        "total": 2
+      },
+      "eye-occlusion": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 1,
+          "reject": 0
+        },
+        "total": 1
+      },
+      "glasses": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 1,
+          "limited": 0,
+          "reject": 0
+        },
+        "total": 1
+      },
+      "light-low-contrast-iris": {
+        "matched": 2,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 2,
+          "reject": 0
+        },
+        "total": 2
+      },
+      "low-resolution": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 1,
+          "reject": 0
+        },
+        "total": 1
+      },
+      "three-quarter-pose": {
+        "matched": 1,
+        "outcomes": {
+          "error": 0,
+          "full": 0,
+          "limited": 1,
+          "reject": 0
+        },
+        "total": 1
+      }
+    },
+    "error": 0,
+    "expectations": {
+      "error": 0,
+      "full": 7,
+      "limited": 5,
+      "reject": 0
+    },
+    "full": 7,
+    "limited": 5,
+    "matched": 12,
+    "mismatched": 0,
+    "outcomes": {
+      "error": 0,
+      "full": 7,
+      "limited": 5,
+      "reject": 0
+    },
+    "reject": 0,
+    "total": 12
+  },
+  "version": 1
+}

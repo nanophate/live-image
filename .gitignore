@@ -11,3 +11,5 @@ __pycache__/
 fixtures/compiled/*.limg
 fixtures/compiled/*.json
 fixtures/overlays/*.png
+fixtures/validation/artifacts/
+fixtures/validation/overlays/

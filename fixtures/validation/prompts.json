@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-07-19",
+  "tool": "OpenAI built-in image generation",
+  "sharedConstraints": "One original fictional young adult character; square head-and-shoulders 2D cel-shaded anime portrait; plain matte background; no existing IP or identifiable person; no text, logo, watermark, signature, hands, props, or additional faces.",
+  "cases": {
+    "clean-coral": "Centered straight-on character with coral-red bobbed hair and amber eyes, crisp dark line art, both complete eyes and closed mouth unobstructed.",
+    "clean-lavender": "Centered straight-on character with short lavender hair and emerald-green eyes, crisp line art, both complete eyes and closed mouth unobstructed.",
+    "dark-iris-navy": "Centered straight-on character with navy hair and extremely dark brown almost-black irises that remain subtly distinguishable from black pupils, restrained highlights.",
+    "dark-iris-auburn": "Centered straight-on character with dark auburn hair and very dark forest-green irises, small pupils, minimal highlights, deliberately low iris-to-pupil contrast.",
+    "light-iris-silver": "Centered straight-on character with pale silver hair, very light ice-blue irises, pale skin, subtle light-gray pupils, high-key light, fine gray line art, intentionally low contrast.",
+    "light-iris-peach": "Centered straight-on character with pale peach-blonde hair, very light golden-yellow irises and warm-gray pupils, pastel high-key treatment, intentionally low iris-to-sclera contrast.",
+    "occluded-left-eye": "Mostly frontal character with long black hair and violet eyes; exactly one natural diagonal bang partially hides the left eye while the right eye and mouth remain visible.",
+    "glasses-round": "Centered straight-on character with chestnut hair, blue-green eyes and thin round transparent-lens glasses; rims cross near eye regions without opaque reflections.",
+    "three-quarter": "Character with teal-black hair and copper eyes turned about 25 degrees; both eyes visible but asymmetric from perspective; not profile and not straight-on.",
+    "low-resolution-192": "Centered straight-on character with golden-brown hair and purple eyes, strong simple silhouettes designed to remain legible after deterministic downsampling to 192 by 192 pixels."
+  }
+}

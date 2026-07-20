@@ -33,7 +33,8 @@ cleared.
 
 ## Test images
 
-The two anime portraits were generated specifically for this repository with
-OpenAI's built-in image-generation tool. The no-face gradient is generated
-locally with ImageMagick. See `fixtures/README.md` for the prompt record and use.
-
+The repository anime portraits were generated specifically for this repository
+with OpenAI's built-in image-generation tool. The no-face gradient is generated
+locally with ImageMagick, and the low-resolution validation portrait is a local
+192×192 downsample of a generated source. See `fixtures/README.md` and
+`fixtures/validation/prompts.json` for the prompt and provenance records.

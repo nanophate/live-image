@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "clean-teal",
+      "category": "clean-frontal",
+      "source": "source/clean-teal.png",
+      "expected": "full"
+    },
+    {
+      "id": "clean-copper",
+      "category": "clean-frontal",
+      "source": "source/clean-copper.png",
+      "expected": "full"
+    },
+    {
+      "id": "clean-coral",
+      "category": "clean-frontal",
+      "source": "source/clean-coral.png",
+      "expected": "full"
+    },
+    {
+      "id": "clean-lavender",
+      "category": "clean-frontal",
+      "source": "source/clean-lavender.png",
+      "expected": "full"
+    },
+    {
+      "id": "dark-iris-navy",
+      "category": "dark-iris",
+      "source": "source/dark-iris-navy.png",
+      "expected": "full"
+    },
+    {
+      "id": "dark-iris-auburn",
+      "category": "dark-iris",
+      "source": "source/dark-iris-auburn.png",
+      "expected": "full"
+    },
+    {
+      "id": "light-iris-silver",
+      "category": "light-low-contrast-iris",
+      "source": "source/light-iris-silver.png",
+      "expected": "limited"
+    },
+    {
+      "id": "light-iris-peach",
+      "category": "light-low-contrast-iris",
+      "source": "source/light-iris-peach.png",
+      "expected": "limited"
+    },
+    {
+      "id": "occluded-left-eye",
+      "category": "eye-occlusion",
+      "source": "source/occluded-left-eye.png",
+      "expected": "limited"
+    },
+    {
+      "id": "glasses-round",
+      "category": "glasses",
+      "source": "source/glasses-round.png",
+      "expected": "full"
+    },
+    {
+      "id": "three-quarter",
+      "category": "three-quarter-pose",
+      "source": "source/three-quarter.png",
+      "expected": "limited"
+    },
+    {
+      "id": "low-resolution-192",
+      "category": "low-resolution",
+      "source": "source/low-resolution-192.png",
+      "expected": "limited"
+    }
+  ]
+}

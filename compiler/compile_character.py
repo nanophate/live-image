@@ -33,6 +33,14 @@ EYE_GROUPS = {
 }
 MOUTH_GROUP = (24, 25, 26, 27)
 
+# Quality policy v2. The reject thresholds below describe inputs for which the
+# near-frontal rig cannot be built safely. These higher thresholds only gate the
+# eye controls that depend on precise local pixels and geometry.
+MIN_FULL_PUPIL_CONFIDENCE = 0.60
+MIN_FULL_EYE_CONFIDENCE = 0.70
+MIN_FULL_EYE_SYMMETRY = 0.70
+MIN_FULL_IMAGE_DIMENSION = 256
+
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
     return max(minimum, min(maximum, value))
@@ -281,6 +289,7 @@ def assess_quality(
     face_width = float(face_box[2] - face_box[0])
     face_height = float(face_box[3] - face_box[1])
     face_scale = min(face_width / image_width, face_height / image_height)
+    min_image_dimension = min(image_width, image_height)
     eye_confidence = min(float(eye["confidence"]) for eye in eyes)
     mouth_confidence = float(mouth["confidence"])
 
@@ -298,16 +307,32 @@ def assess_quality(
         reasons.append("face is too small for stable local deformation")
     if eye_symmetry < 0.48:
         reasons.append("eye geometry is too asymmetric for the near-frontal MVP")
+    elif eye_symmetry < MIN_FULL_EYE_SYMMETRY:
+        disabled.append("blink")
+        warnings.append(
+            f"blink disabled because eye symmetry is below {MIN_FULL_EYE_SYMMETRY:.2f}"
+        )
     if eye_confidence < 0.48:
         reasons.append("one or both eye regions are unreliable")
+    elif eye_confidence < MIN_FULL_EYE_CONFIDENCE:
+        disabled.extend(("blink", "gaze"))
+        warnings.append(
+            f"blink and gaze disabled because eye confidence is below {MIN_FULL_EYE_CONFIDENCE:.2f}"
+        )
     if mouth_confidence < 0.48:
         disabled.append("mouth")
         warnings.append("mouth control disabled because its region is unreliable")
-    if pupil_confidence < 0.20:
+    if pupil_confidence < MIN_FULL_PUPIL_CONFIDENCE:
         disabled.append("gaze")
-        warnings.append("gaze disabled because pupil candidates are unreliable")
-    elif pupil_confidence < 0.38:
-        warnings.append("gaze range reduced because pupil confidence is limited")
+        warnings.append(
+            f"gaze disabled because pupil confidence is below {MIN_FULL_PUPIL_CONFIDENCE:.2f}"
+        )
+    if min_image_dimension < MIN_FULL_IMAGE_DIMENSION:
+        disabled.extend(("blink", "gaze"))
+        warnings.append(
+            "blink and gaze disabled because the image shortest side is "
+            f"below {MIN_FULL_IMAGE_DIMENSION} pixels"
+        )
 
     score = clamp(
         0.25 * face_score
@@ -340,6 +365,7 @@ def assess_quality(
             "pupilConfidence": pupil_confidence,
             "eyeSymmetry": eye_symmetry,
             "faceScale": face_scale,
+            "minImageDimensionPixels": min_image_dimension,
         },
     }
 
@@ -518,10 +544,11 @@ def compile_paths(
         predictions = detector(image)
         if not predictions:
             diagnostic = {
-                "input": str(input_path),
+                "input": input_path.name,
                 "status": "reject",
                 "rejectionReasons": ["no near-frontal anime face detected"],
                 "detector": "hysts/anime-face-detector@0.1.0",
+                "compilerVersion": __version__,
             }
             diagnostic_path = output_dir / f"{input_path.stem}.diagnostic.json"
             diagnostic_path.write_text(json.dumps(diagnostic, indent=2), encoding="utf-8")

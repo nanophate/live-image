@@ -63,6 +63,7 @@ Open:
 
 - [http://127.0.0.1:5173/inspect.html](http://127.0.0.1:5173/inspect.html) for detector evidence
 - [http://127.0.0.1:5173/viewer.html](http://127.0.0.1:5173/viewer.html) for the separate player
+- [http://127.0.0.1:5173/validate.html](http://127.0.0.1:5173/validate.html) for the multi-image validation report
 
 The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 `fixtures/overlays/`. Generated outputs are ignored because they are reproducible.
@@ -72,6 +73,19 @@ After the first online compile, verify fully offline compilation with:
 ```bash
 npm run compile:fixtures:offline
 ```
+
+Run the 12-image generalisation suite with the cached detector models:
+
+```bash
+npm run validate:fixtures:offline
+```
+
+The checked-in `fixtures/validation/report.json` preserves expected-versus-actual
+outcomes. Large generated `.limg` and overlay artifacts stay ignored and can be
+regenerated locally for the report viewer. The current calibrated result is 7
+full and 5 capability-limited cases with no errors; the initial 7/12 mismatch
+and its limitations are preserved in
+[`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 
 ## Compile another image
 
@@ -119,8 +133,9 @@ npm test
 npm run build
 ```
 
-The validated results and known limitations are in
-[`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md).
+The animation and multi-image validation results are in
+[`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md)
+and [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
