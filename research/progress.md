@@ -1,6 +1,6 @@
 # Progress checkpoints
 
-Branch: `codex/iris-base-eye-layer`
+Current branch: `codex/product-demo-recording`
 
 | Commit / PR | Checkpoint | Evidence |
 | --- | --- | --- |
@@ -25,6 +25,8 @@ Branch: `codex/iris-base-eye-layer`
 | `c53d241` | report-only support-domain descriptors | deterministic source-bound OpenCV metrics over 12 feasibility cases, explicit contaminated A replay/procedure failure, byte-identical raw reports, malformed-artifact isolation, and no production gate change |
 | `ec0172a` | semantic blink mesh and closed-eye endpoint | Compiler 0.8 explicit 42-vertex blink fields, rigid-iris aperture integration, preserved numeric-only/Telea/upper-band failures, lower-band-first affine corrective, 3/3 supported visual gate, 7/7 Chromium suite, 12/12 public matrix, and unchanged 2/5 hold-out boundary |
 | `6876416` | independent closed-eye alpha audit | preserved hold-out A first-run failure, transparent-source double-alpha correction, unchanged Compiler 0.8 artifacts/capability policy, zero protected-core errors on replay, tracked translucent-source regression, 46/46 TypeScript, 34/34 Python, and 10/10 Chromium checks |
+| PR #7 / `7bd42ad` | semantic eye work merged | Compiler 0.8 semantic mesh, closed-eye corrective, and independent alpha audit merged to `main` |
+| `60e832b` | local product Studio and review recording | localhost-only PNG/JPEG → full/limited/reject flow, downloadable `.limg`, capability-gated named reactions, deterministic showcase, exact-neutral WebM recording, signature/dimension/Host fail-closed gates, 51/51 TypeScript, 39/39 Python, 11 Chromium passes plus 2 local-only skips, and 2/2 actual Studio browser checks |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
