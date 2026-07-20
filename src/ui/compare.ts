@@ -18,6 +18,7 @@ import {
   type LivingImageManifest,
   type Rect,
 } from "../schema.js";
+import { eyeIrisPlan } from "../warp.js";
 import { requireElement } from "./shared.js";
 
 const fileInput = requireElement<HTMLInputElement>("comparison-files");
@@ -162,8 +163,49 @@ async function neutralPixels(manifest: LivingImageManifest): Promise<Uint8Clampe
   }
 }
 
+function withoutRenderedIris(manifest: LivingImageManifest): LivingImageManifest {
+  const clone = structuredClone(manifest);
+  const transparentLayers = new Map<string, string>();
+  for (const eye of clone.analysis.features.eyes) {
+    const texture = eye.rig.deformation?.iris?.texture;
+    if (!texture) continue;
+    const key = `${texture.width}x${texture.height}`;
+    let dataUrl = transparentLayers.get(key);
+    if (!dataUrl) {
+      const canvas = document.createElement("canvas");
+      canvas.width = texture.width;
+      canvas.height = texture.height;
+      dataUrl = canvas.toDataURL("image/png");
+      transparentLayers.set(key, dataUrl);
+      canvas.width = 1;
+      canvas.height = 1;
+    }
+    texture.dataUrl = dataUrl;
+    texture.coverage = 0;
+  }
+  return clone;
+}
+
+async function renderedPixelsForState(
+  manifest: LivingImageManifest,
+  cell: MotionComparisonCell,
+): Promise<Uint8ClampedArray> {
+  const canvas = document.createElement("canvas");
+  const player = new LivingImagePlayer(canvas);
+  try {
+    await player.load(manifest);
+    settlePlayer(player, cell);
+    return canvasPixels(canvas);
+  } finally {
+    player.destroy();
+    canvas.width = 1;
+    canvas.height = 1;
+  }
+}
+
 async function makeCell(
   manifest: LivingImageManifest,
+  noIrisManifest: LivingImageManifest,
   cell: MotionComparisonCell,
   baselinePixels: Uint8ClampedArray,
   protectionEvidence: readonly EyeProtectionEvidence[],
@@ -195,7 +237,12 @@ async function makeCell(
   try {
     await player.load(manifest);
     const stateError = settlePlayer(player, cell);
+    const renderedState = player.getState();
     const renderedPixels = canvasPixels(renderCanvas);
+    const selectedEyes = controlledEyes(manifest, cell);
+    const noIrisPixels = selectedEyes.some((eye) => eye.rig.deformation?.iris)
+      ? await renderedPixelsForState(noIrisManifest, cell)
+      : null;
     const locality = measureRgbaLocality(
       baselinePixels,
       renderedPixels,
@@ -208,7 +255,7 @@ async function makeCell(
     article.dataset.outsideChangedPixels = String(locality.outsideChangedPixels);
     article.dataset.maxChannelDelta = String(locality.maxChannelDelta);
     article.dataset.visibleEffect = String(locality.visibleEffect);
-    const selectedEyeSides = new Set(controlledEyes(manifest, cell).map((eye) => eye.side));
+    const selectedEyeSides = new Set(selectedEyes.map((eye) => eye.side));
     const selectedProtections = protectionEvidence.filter((evidence) => selectedEyeSides.has(evidence.side));
     const protectionByEye = selectedProtections.map((evidence) => ({
       side: evidence.side,
@@ -238,6 +285,39 @@ async function makeCell(
       article.dataset.clearMaskChangedPixels = String(protectionQuality.clearMaskChangedPixels);
       article.dataset.protectionByEye = JSON.stringify(protectionByEye);
     }
+    const irisByEye = selectedEyes.flatMap((eye) => {
+      const blink = eye.side === "left" ? renderedState.blinkLeft : renderedState.blinkRight;
+      const plan = eyeIrisPlan(
+        eye,
+        manifest.image.width,
+        manifest.image.height,
+        blink,
+        renderedState.gazeX,
+        renderedState.gazeY,
+      );
+      const iris = eye.rig.deformation?.iris;
+      if (!plan || !iris) return [];
+      const renderedTexturePixels = noIrisPixels
+        ? measureRgbaLocality(
+          noIrisPixels,
+          renderedPixels,
+          manifest.image.width,
+          manifest.image.height,
+          [eye.region],
+          0,
+        ).insideChangedPixels
+        : 0;
+      return [{
+        side: eye.side,
+        alpha: plan.alpha,
+        shiftX: plan.centre.x - iris.centre.x * manifest.image.width,
+        shiftY: plan.centre.y - iris.centre.y * manifest.image.height,
+        radiusX: plan.radiusX,
+        radiusY: plan.radiusY,
+        renderedTexturePixels,
+      }];
+    });
+    if (irisByEye.length > 0) article.dataset.irisByEye = JSON.stringify(irisByEye);
     article.append(previewCanvas(renderCanvas, manifest, 420, `${manifest.id}: ${cell.label}`));
 
     const evidence = document.createElement("div");
@@ -279,6 +359,13 @@ async function makeCell(
     download.textContent = "Full PNG";
     evidence.append(phase, error, localityEvidence);
     if (protectionQuality) evidence.append(protection);
+    if (irisByEye.length > 0) {
+      const irisEvidence = document.createElement("span");
+      irisEvidence.textContent = irisByEye.map((entry) => (
+        `${entry.side} iris α ${entry.alpha.toFixed(3)} · shift ${entry.shiftX.toFixed(2)}, ${entry.shiftY.toFixed(2)} px · rendered Δ ${entry.renderedTexturePixels}`
+      )).join(" · ");
+      evidence.append(irisEvidence);
+    }
     evidence.append(download);
     article.append(evidence);
   } catch (error) {
@@ -397,12 +484,13 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
 
   const grid = document.createElement("div");
   grid.className = "comparison-grid";
+  const noIrisManifest = withoutRenderedIris(manifest);
   const [baselinePixels, protectionEvidence] = await Promise.all([
     neutralPixels(manifest),
     eyeProtectionEvidence(manifest),
   ]);
   for (const cell of planMotionComparison(manifest)) {
-    grid.append(await makeCell(manifest, cell, baselinePixels, protectionEvidence));
+    grid.append(await makeCell(manifest, noIrisManifest, cell, baselinePixels, protectionEvidence));
   }
   section.append(heading, grid, await makeBlinkTransition(manifest));
   return section;

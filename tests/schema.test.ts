@@ -66,3 +66,53 @@ test("validates optional compiler-authored local deformation", () => {
   eye.rig.deformation.closedRows[3] = eye.rig.deformation.closedRows[2] ?? 0;
   assert.throws(() => validateManifest(manifest), /strictly increasing/);
 });
+
+const EMBEDDED_PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAAAAACo4kLRAAAAKklEQVQYGW3BAQEAAABAIP6fdkDJkCFDhgwZMmTIkCFDhgwZMmTIkCFDRhLeABUEcxpKAAAAAElFTkSuQmCC";
+
+function eyeDeformationWithIris() {
+  return {
+    method: "fixed-boundary-piecewise-affine-v1" as const,
+    sourceRows: [0.3, 0.34, 0.38, 0.46, 0.48, 0.5],
+    closedRows: [0.3, 0.35, 0.418, 0.422, 0.475, 0.5],
+    gazeRowWeights: [0, 0, 1, 1, 0, 0],
+    region: { x: 0.25, y: 0.3, width: 0.2, height: 0.2 },
+    protectedLineArtMask: {
+      dataUrl: EMBEDDED_PNG,
+      width: 20, height: 20, coverage: 0.1, method: "canny-active-aperture-v1", cannyLow: 20, cannyHigh: 50,
+    },
+    iris: {
+      method: "ellipse-cage-telea-v1" as const,
+      texture: { dataUrl: EMBEDDED_PNG, width: 20, height: 20, coverage: 0.4, method: "source-rgba-ellipse-v1" as const },
+      baseEye: { dataUrl: EMBEDDED_PNG, width: 20, height: 20, coverage: 1, method: "telea-inpaint-v1" as const },
+      centre: { x: 0.35, y: 0.42 }, radiusX: 0.03, radiusY: 0.02, inpaintRadius: 3, segmentationConfidence: 0.8,
+    },
+  };
+}
+
+test("validates an optional compiler-authored iris/base-eye pair and preserves v1 fallback", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  assert.equal(validateManifest(manifest), manifest);
+  assert.equal(validateManifest(fixtureManifest()).id, "fixture");
+});
+
+test("rejects malformed iris layer pairs, dimensions, and ellipse geometry", () => {
+  const manifest = fixtureManifest();
+  manifest.analysis.features.eyes[0]!.rig.deformation = eyeDeformationWithIris();
+  const iris = manifest.analysis.features.eyes[0]!.rig.deformation.iris!;
+
+  iris.texture.width = 19;
+  assert.throws(() => validateManifest(manifest), /texture dimensions/);
+
+  iris.texture.width = 20;
+  (iris as { baseEye?: unknown }).baseEye = undefined;
+  assert.throws(() => validateManifest(manifest), /baseEye must be an object/);
+
+  iris.baseEye = { dataUrl: EMBEDDED_PNG, width: 20, height: 20, coverage: 1, method: "telea-inpaint-v1" };
+  iris.centre = { x: 0.18, y: 0.42 };
+  assert.throws(() => validateManifest(manifest), /ellipse must stay inside/);
+
+  iris.centre = { x: 0.35, y: 0.42 };
+  iris.texture.dataUrl = "data:image/png;base64,";
+  assert.throws(() => validateManifest(manifest), /texture must contain an embedded PNG/);
+});

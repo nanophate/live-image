@@ -11,12 +11,33 @@ export interface ProtectedLineArtMask {
   cannyHigh: number;
 }
 
+/** A compact PNG layer authored in an eye deformation region's pixel space. */
+export interface EmbeddedRgbaLayer {
+  dataUrl: string;
+  width: number;
+  height: number;
+  coverage: number;
+  method: "source-rgba-ellipse-v1" | "telea-inpaint-v1";
+}
+
+export interface IrisDeformationRig {
+  method: "ellipse-cage-telea-v1";
+  texture: EmbeddedRgbaLayer;
+  baseEye: EmbeddedRgbaLayer;
+  centre: Point;
+  radiusX: number;
+  radiusY: number;
+  inpaintRadius: number;
+  segmentationConfidence: number;
+}
+
 export interface EyeDeformationRig {
   method: string;
   sourceRows: number[];
   closedRows: number[];
   gazeRowWeights: number[];
   protectedLineArtMask: ProtectedLineArtMask;
+  iris?: IrisDeformationRig;
   region: Rect;
 }
 
@@ -100,6 +121,7 @@ export const MAX_IMAGE_DIMENSION = 8192;
 export const MAX_IMAGE_PIXELS = 33_554_432;
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+const PNG_DATA_URL = /^data:image\/png;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$/;
 
 function assertPoint(value: unknown, label: string): asserts value is Point {
   if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
@@ -260,6 +282,77 @@ function assertEyeDeformation(
   }
   if (!finite(mask.cannyLow) || !finite(mask.cannyHigh) || mask.cannyLow < 0 || mask.cannyHigh < mask.cannyLow) {
     throw new Error(`${label}.protectedLineArtMask Canny thresholds are invalid`);
+  }
+  if (deformation.iris !== undefined) {
+    assertIrisDeformation(
+      deformation.iris,
+      deformation.region,
+      imageWidth,
+      imageHeight,
+      `${label}.iris`,
+    );
+  }
+}
+
+function assertEmbeddedRgbaLayer(
+  value: unknown,
+  expectedWidth: number,
+  expectedHeight: number,
+  expectedMethod: EmbeddedRgbaLayer["method"],
+  label: string,
+): void {
+  if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
+  const layer = value as Partial<EmbeddedRgbaLayer>;
+  if (typeof layer.dataUrl !== "string" || !PNG_DATA_URL.test(layer.dataUrl)) {
+    throw new Error(`${label} must contain an embedded PNG`);
+  }
+  if (!Number.isInteger(layer.width) || layer.width !== expectedWidth || !Number.isInteger(layer.height) || layer.height !== expectedHeight) {
+    throw new Error(`${label} dimensions must match its deformation region`);
+  }
+  if (!finite(layer.coverage) || layer.coverage < 0 || layer.coverage > 1) {
+    throw new Error(`${label} coverage must stay in [0,1]`);
+  }
+  if (layer.method !== expectedMethod) throw new Error(`${label}.method is unsupported`);
+}
+
+function assertIrisDeformation(
+  value: unknown,
+  region: Rect,
+  imageWidth: number,
+  imageHeight: number,
+  label: string,
+): void {
+  if (!value || typeof value !== "object") throw new Error(`${label} must be an object`);
+  const iris = value as Partial<IrisDeformationRig>;
+  if (iris.method !== "ellipse-cage-telea-v1") throw new Error(`${label}.method is unsupported`);
+  const expectedWidth = Math.max(1, Math.round(region.width * imageWidth));
+  const expectedHeight = Math.max(1, Math.round(region.height * imageHeight));
+  assertEmbeddedRgbaLayer(iris.texture, expectedWidth, expectedHeight, "source-rgba-ellipse-v1", `${label}.texture`);
+  assertEmbeddedRgbaLayer(iris.baseEye, expectedWidth, expectedHeight, "telea-inpaint-v1", `${label}.baseEye`);
+  assertPoint(iris.centre, `${label}.centre`);
+  if (
+    !finite(iris.radiusX)
+    || !finite(iris.radiusY)
+    || iris.radiusX <= 0
+    || iris.radiusY <= 0
+    || iris.radiusX > 1
+    || iris.radiusY > 1
+    || iris.centre.x < 0
+    || iris.centre.x > 1
+    || iris.centre.y < 0
+    || iris.centre.y > 1
+  ) throw new Error(`${label} ellipse geometry is invalid`);
+  assertInsideRect({
+    x: iris.centre.x - iris.radiusX,
+    y: iris.centre.y - iris.radiusY,
+    width: iris.radiusX * 2,
+    height: iris.radiusY * 2,
+  }, region, `${label} ellipse`);
+  if (typeof iris.inpaintRadius !== "number" || !Number.isInteger(iris.inpaintRadius) || iris.inpaintRadius <= 0) {
+    throw new Error(`${label}.inpaintRadius must be a positive integer`);
+  }
+  if (!finite(iris.segmentationConfidence) || iris.segmentationConfidence < 0 || iris.segmentationConfidence > 1) {
+    throw new Error(`${label}.segmentationConfidence must stay in [0,1]`);
   }
 }
 

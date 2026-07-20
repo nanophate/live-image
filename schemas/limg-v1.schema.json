@@ -91,6 +91,41 @@
         "cannyHigh": { "type": "number", "minimum": 0 }
       }
     },
+    "embeddedRgbaLayer": {
+      "type": "object",
+      "required": ["dataUrl", "width", "height", "coverage", "method"],
+      "properties": {
+        "dataUrl": { "type": "string", "pattern": "^data:image/png;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "method": { "enum": ["source-rgba-ellipse-v1", "telea-inpaint-v1"] }
+      }
+    },
+    "irisDeformation": {
+      "type": "object",
+      "required": ["method", "texture", "baseEye", "centre", "radiusX", "radiusY", "inpaintRadius", "segmentationConfidence"],
+      "properties": {
+        "method": { "const": "ellipse-cage-telea-v1" },
+        "texture": {
+          "allOf": [
+            { "$ref": "#/$defs/embeddedRgbaLayer" },
+            { "type": "object", "properties": { "method": { "const": "source-rgba-ellipse-v1" } } }
+          ]
+        },
+        "baseEye": {
+          "allOf": [
+            { "$ref": "#/$defs/embeddedRgbaLayer" },
+            { "type": "object", "properties": { "method": { "const": "telea-inpaint-v1" } } }
+          ]
+        },
+        "centre": { "$ref": "#/$defs/point" },
+        "radiusX": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "radiusY": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "inpaintRadius": { "type": "integer", "minimum": 1 },
+        "segmentationConfidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
     "eyeFeature": {
       "type": "object",
       "required": ["side", "region", "anchors", "pupil", "rig"],
@@ -139,6 +174,7 @@
                 "closedRows": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number" } },
                 "gazeRowWeights": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number", "minimum": 0, "maximum": 1 } },
                 "protectedLineArtMask": { "$ref": "#/$defs/protectedLineArtMask" },
+                "iris": { "$ref": "#/$defs/irisDeformation" },
                 "region": { "$ref": "#/$defs/rect" }
               }
             }

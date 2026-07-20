@@ -43,17 +43,49 @@ class FakeImage {
 
   set src(value: string) {
     this.source = value;
-    if (value.includes("MASK")) {
+    if (value.includes("MASK") || value.includes("BASE") || value.includes("IRIS")) {
       this.naturalWidth = 20;
       this.naturalHeight = 20;
     }
+    if (value.includes("WIDE")) this.naturalWidth = 21;
     queueMicrotask(() => {
-      if (value.includes("BROKEN")) this.onerror?.();
+      if (value.includes("BROKEN") || value.includes("FAIL")) this.onerror?.();
       else this.onload?.();
     });
   }
 
   get src(): string { return this.source; }
+}
+
+function addIrisLayers(manifest: ReturnType<typeof fixtureManifest>): void {
+  const eye = manifest.analysis.features.eyes[0];
+  assert.ok(eye);
+  eye.rig.deformation = {
+    method: "fixed-boundary-piecewise-affine-v1",
+    sourceRows: [0.3, 0.34, 0.38, 0.46, 0.48, 0.5],
+    closedRows: [0.3, 0.35, 0.418, 0.422, 0.475, 0.5],
+    gazeRowWeights: [0, 0, 1, 1, 0, 0],
+    region: { ...eye.region },
+    protectedLineArtMask: {
+      dataUrl: "data:image/png;base64,MASK",
+      width: 20,
+      height: 20,
+      coverage: 0.1,
+      method: "canny-active-aperture-v1",
+      cannyLow: 20,
+      cannyHigh: 50,
+    },
+    iris: {
+      method: "ellipse-cage-telea-v1",
+      texture: { dataUrl: "data:image/png;base64,IRIS", width: 20, height: 20, coverage: 0.1, method: "source-rgba-ellipse-v1" },
+      baseEye: { dataUrl: "data:image/png;base64,BASE", width: 20, height: 20, coverage: 1, method: "telea-inpaint-v1" },
+      centre: { x: eye.pupil.x, y: eye.pupil.y },
+      radiusX: 0.02,
+      radiusY: 0.02,
+      inpaintRadius: 3,
+      segmentationConfidence: 0.9,
+    },
+  };
 }
 
 test("a failed replacement load preserves the last playable character", async () => {
@@ -132,6 +164,48 @@ test("a source image with mismatched intrinsic dimensions is rejected", async ()
       /source image dimensions do not match its manifest/,
     );
     assert.equal(canvas.width, 0);
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("an undecodable iris texture rejects the new load transaction", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const player = new LivingImagePlayer(new FakeCanvas() as unknown as HTMLCanvasElement);
+    const manifest = fixtureManifest();
+    addIrisLayers(manifest);
+    const iris = manifest.analysis.features.eyes[0]?.rig.deformation?.iris;
+    assert.ok(iris);
+    iris.texture.dataUrl = "data:image/png;base64,FAIL";
+    await assert.rejects(player.load(manifest), /left iris texture could not be decoded/);
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("an iris layer with mismatched intrinsic dimensions is rejected", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const player = new LivingImagePlayer(new FakeCanvas() as unknown as HTMLCanvasElement);
+    const manifest = fixtureManifest();
+    addIrisLayers(manifest);
+    const iris = manifest.analysis.features.eyes[0]?.rig.deformation?.iris;
+    assert.ok(iris);
+    iris.baseEye.dataUrl = "data:image/png;base64,BASEWIDE";
+    await assert.rejects(player.load(manifest), /left base eye dimensions do not match its manifest/);
   } finally {
     Object.assign(globalThis, { Image: previousImage, document: previousDocument });
   }

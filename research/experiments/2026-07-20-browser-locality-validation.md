@@ -2,6 +2,11 @@
 
 Review date: **2026-07-20**
 
+> **Subsequent update:** this document records the historical Compiler `0.3.0`
+> pre-iris run. Compiler `0.4.0` iris/base-eye evidence and its explicit claim
+> boundary are recorded in
+> [`2026-07-20-iris-base-eye-validation.md`](2026-07-20-iris-base-eye-validation.md).
+
 ## Question
 
 Does the real browser Canvas 2D path produce a visible blink, wink, gaze, and

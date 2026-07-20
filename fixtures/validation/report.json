@@ -1,7 +1,7 @@
 {
   "cases": [
     {
-      "artifactSha256": "782ac4d5ae2d0b17893f7ef95be495dfe7c6fcb4d6a104efd71b93ce3d5bc977",
+      "artifactSha256": "e323dad0eeebbca3dc68fbc8cd58bf349d6099747e7cc55e7d2b92eb2af1ccd4",
       "artifacts": {
         "limg": "artifacts/clean-teal/clean-teal.limg",
         "overlay": "overlays/clean-teal/clean-teal.png"
@@ -18,17 +18,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06501335643635839,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.26824777994368637,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06865012615643398,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.1814900476590973,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -50,6 +60,7 @@
           "eyeSymmetry": 0.9894489158806269,
           "faceScale": 0.40165941642992425,
           "faceScore": 0.9994938373565674,
+          "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9598621726036072,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8665257055899411,
@@ -65,7 +76,7 @@
       "sourceSha256": "4480e53d53959ac7aa8665a91166ec3c5e839bb10bd53aaa96d708607b5798e6"
     },
     {
-      "artifactSha256": "348db235b421c3ce5253b975a7d489d8945f7bfb9fdccedc9bde25e4377ed863",
+      "artifactSha256": "fb95d130046829ff4d7cf94634e77bebe61b3bc9d2c56917305c508a1d6cefed",
       "artifacts": {
         "limg": "artifacts/clean-copper/clean-copper.limg",
         "overlay": "overlays/clean-copper/clean-copper.png"
@@ -82,17 +93,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06388074291300097,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.8737185286098614,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.2880254154447703,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06103723404255319,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.7759167344362913,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.2611702127659574,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -114,6 +135,7 @@
           "eyeSymmetry": 0.9729999977841146,
           "faceScale": 0.3880760521409614,
           "faceScore": 0.9989290833473206,
+          "irisSegmentationConfidence": 0.7759167344362913,
           "meanLandmarkScore": 0.9580478072166443,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9774035960435867,
@@ -129,7 +151,7 @@
       "sourceSha256": "440b6c5625ed15549243bd9b979f88dbb6c0cb10a64b9415acec4a7b80918dd4"
     },
     {
-      "artifactSha256": "aadc19ed29647ce3a309fd51c26b28c564b82afaaeece95353ea0c5de2f816c9",
+      "artifactSha256": "c43116e7a56f37ecfd3363bf8709465b032ad482956b228941a13e8e9ce56dd5",
       "artifacts": {
         "limg": "artifacts/clean-coral/clean-coral.limg",
         "overlay": "overlays/clean-coral/clean-coral.png"
@@ -146,17 +168,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06152251742980969,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.9228395061728395,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.26100747440487404,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06558042263632674,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.21487654899023004,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -178,6 +210,7 @@
           "eyeSymmetry": 0.9829077438201885,
           "faceScale": 0.42911579430198366,
           "faceScore": 0.985558032989502,
+          "irisSegmentationConfidence": 0.9228395061728395,
           "meanLandmarkScore": 0.964948832988739,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8626856397194316,
@@ -193,7 +226,7 @@
       "sourceSha256": "d180bd1a2afa8dff22a0a55f722c36cd981383f0f5acdc29809b581bf891dc59"
     },
     {
-      "artifactSha256": "d39bd0224ae3c0decbbb47ddfb5e3a58d880fd3e3aeff75cd77c55e939d80a1e",
+      "artifactSha256": "22ef2c22e3480491090c8efbe66ae62f8f431cb4708067d51fad297250c7555a",
       "artifacts": {
         "limg": "artifacts/clean-lavender/clean-lavender.limg",
         "overlay": "overlays/clean-lavender/clean-lavender.png"
@@ -210,17 +243,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06545508274231679,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.30186170212765956,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06512790355777713,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.28668038812114083,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -242,6 +285,7 @@
           "eyeSymmetry": 0.9940694183322782,
           "faceScale": 0.4477387204694976,
           "faceScore": 0.9749826788902283,
+          "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9386937022209167,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8694293082521667,
@@ -257,7 +301,7 @@
       "sourceSha256": "1b38643b433f1c609a8595a25a92e52e953c8ce88142c9a964b11ca43bf12069"
     },
     {
-      "artifactSha256": "59aa380fc3269bdc9df192f89bc1b92df988095e2b7c3c9aa3e7bf39908b93a5",
+      "artifactSha256": "1903cffa2a7d31bbfd77d4519f7162616982b290c9bd9cc3433b7f09361df5b4",
       "artifacts": {
         "limg": "artifacts/dark-iris-navy/dark-iris-navy.limg",
         "overlay": "overlays/dark-iris-navy/dark-iris-navy.png"
@@ -274,17 +318,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06467806173249253,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.8698913800008405,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.30882841022236973,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06492374727668845,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.9435793331061431,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.27303502597620244,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -306,6 +360,7 @@
           "eyeSymmetry": 0.9396275618329888,
           "faceScale": 0.4620896724232456,
           "faceScore": 0.9986550211906433,
+          "irisSegmentationConfidence": 0.8698913800008405,
           "meanLandmarkScore": 0.8780241012573242,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8841284016436788,
@@ -321,7 +376,7 @@
       "sourceSha256": "c0bec89d72c9a890bb21eba0c6fedd59770538d50abc85e947049512ece8e1ab"
     },
     {
-      "artifactSha256": "27197fad33b80db3454482a5141545e50af967d5c46a5fb7c0934a0458cde7ef",
+      "artifactSha256": "62e55e2c5830a7ef2cabd9ac566ea598abfb13e9bbed9a746f55eb1c54352b43",
       "artifacts": {
         "limg": "artifacts/dark-iris-auburn/dark-iris-auburn.limg",
         "overlay": "overlays/dark-iris-auburn/dark-iris-auburn.png"
@@ -338,17 +393,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.059,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.6252489546934753,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.23495238095238094,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.050136043533930856,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.5776251565427158,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.18838028169014084,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -370,6 +435,7 @@
           "eyeSymmetry": 0.9567365355247397,
           "faceScale": 0.45155599737091306,
           "faceScore": 0.9989126324653625,
+          "irisSegmentationConfidence": 0.5776251565427158,
           "meanLandmarkScore": 0.892257571220398,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9267698039164387,
@@ -385,17 +451,17 @@
       "sourceSha256": "509b20244aec20d421f531da05344c3773340957eef792270fda0be77cffd49d"
     },
     {
-      "artifactSha256": "8ab4b2fa2c0a8f109335ac1ce6710d041c834c5d0acf155040c07990eb7cefe2",
+      "artifactSha256": "70daedd77de9b575ea159d905327758ea6bc29f81a4689f9263f9bb264adb963",
       "artifacts": {
         "limg": "artifacts/light-iris-silver/light-iris-silver.limg",
         "overlay": "overlays/light-iris-silver/light-iris-silver.png"
       },
       "capabilities": {
         "disabled": [
+          "blink",
           "gaze"
         ],
         "enabled": [
-          "blink",
           "mouth"
         ]
       },
@@ -403,7 +469,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -435,6 +501,7 @@
           "eyeSymmetry": 0.9757384846103176,
           "faceScale": 0.4983033784078449,
           "faceScore": 0.9999233484268188,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.9255689382553101,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9381485270581058,
@@ -444,7 +511,8 @@
         "rejectionReasons": [],
         "score": 0.9361058473021737,
         "warnings": [
-          "gaze disabled because pupil confidence is below 0.60"
+          "gaze disabled because pupil confidence is below 0.60",
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
       },
       "result": "limited",
@@ -452,17 +520,17 @@
       "sourceSha256": "45e890d2bc07352e1b363ed27f273c24d4144cf51263f53cfb703044377fb603"
     },
     {
-      "artifactSha256": "13b3eedc5176995bd15d406f0aadf89f92b5d82db1e61d65a206e7991e08f3be",
+      "artifactSha256": "32bd62f894bd87518777f48a7e8ebce5cc26802f247e89148a782917292fc3a8",
       "artifacts": {
         "limg": "artifacts/light-iris-peach/light-iris-peach.limg",
         "overlay": "overlays/light-iris-peach/light-iris-peach.png"
       },
       "capabilities": {
         "disabled": [
+          "blink",
           "gaze"
         ],
         "enabled": [
-          "blink",
           "mouth"
         ]
       },
@@ -470,7 +538,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -502,6 +570,7 @@
           "eyeSymmetry": 0.9908634158527816,
           "faceScale": 0.5074954481596392,
           "faceScore": 0.9998915195465088,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.9412669539451599,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.916861118138964,
@@ -511,7 +580,8 @@
         "rejectionReasons": [],
         "score": 0.9388818003632996,
         "warnings": [
-          "gaze disabled because pupil confidence is below 0.60"
+          "gaze disabled because pupil confidence is below 0.60",
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
       },
       "result": "limited",
@@ -519,7 +589,7 @@
       "sourceSha256": "72a85ef3b23e0301c5ff99e2971a9531d2dcc83204275aa77d56aee1a03b1807"
     },
     {
-      "artifactSha256": "a4b6183f7f6a42374fcebac178a6bccd4411575de42b2b42151e081f71d13bde",
+      "artifactSha256": "5b73319bb6ac21afe4a77d634bfbd61b9686fcc2a32138f262747a747b344004",
       "artifacts": {
         "limg": "artifacts/occluded-left-eye/occluded-left-eye.limg",
         "overlay": "overlays/occluded-left-eye/occluded-left-eye.png"
@@ -537,7 +607,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -548,6 +618,11 @@
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06792201416649134,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.28364541692965844,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -569,6 +644,7 @@
           "eyeSymmetry": 0.6397815551457952,
           "faceScale": 0.3694394733727073,
           "faceScore": 0.9929389953613281,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.7666249871253967,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8933862828470566,
@@ -580,7 +656,8 @@
         "warnings": [
           "blink disabled because eye symmetry is below 0.70",
           "blink and gaze disabled because eye confidence is below 0.70",
-          "gaze disabled because pupil confidence is below 0.60"
+          "gaze disabled because pupil confidence is below 0.60",
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
       },
       "result": "limited",
@@ -588,7 +665,7 @@
       "sourceSha256": "d225d7ae7eb524f7757ce070a5f413cbd3843f74bf9d723de9fed110d67de582"
     },
     {
-      "artifactSha256": "38af78789300f0beba16927429d0adce39a5286c0a593a2aa495b763bfeba078",
+      "artifactSha256": "751ce221010fa14d18a01cdf36dcdc4c1b20c50001f8e6f0102bc97db78912bb",
       "artifacts": {
         "limg": "artifacts/glasses-round/glasses-round.limg",
         "overlay": "overlays/glasses-round/glasses-round.png"
@@ -605,17 +682,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06641803553469662,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.28930606771706335,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06710742669224445,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.26010550835845436,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -637,6 +724,7 @@
           "eyeSymmetry": 0.9301714447384494,
           "faceScale": 0.43880831339712917,
           "faceScore": 0.8307774066925049,
+          "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9043170809745789,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9824976896713826,
@@ -652,7 +740,7 @@
       "sourceSha256": "1768a0f572d400100ec15e3a0ab9030e75b6c57ad7f2b979765760d954a01d74"
     },
     {
-      "artifactSha256": "47aa3eb20fc8e3f70cf7eeefa42ad8175ab7cebaa3452173eca7cd8675694d77",
+      "artifactSha256": "35ca239efef7102ff08b33af8dbe2399c719d1303ff9cf74905247f862dd57db",
       "artifacts": {
         "limg": "artifacts/three-quarter/three-quarter.limg",
         "overlay": "overlays/three-quarter/three-quarter.png"
@@ -670,17 +758,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06704199459987362,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.20733038432814385,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06501161540861967,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.26757047259110295,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -702,6 +800,7 @@
           "eyeSymmetry": 0.5360573077666376,
           "faceScale": 0.44282602313222685,
           "faceScore": 0.7481144666671753,
+          "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.8525644540786743,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8401473619255577,
@@ -719,7 +818,7 @@
       "sourceSha256": "b7c68c42bfb0ff9aec9477d5802c037f084bdcfc1c5047bc4c7a4b48862e94d9"
     },
     {
-      "artifactSha256": "75fcba07698d967057198be2b7153ba507f966456f953620cc11e803f6216b87",
+      "artifactSha256": "60e613128d6210edbaa7b45329ff5018312bb6a3d321e0075e3b065ce4574886",
       "artifacts": {
         "limg": "artifacts/low-resolution-192/low-resolution-192.limg",
         "overlay": "overlays/low-resolution-192/low-resolution-192.png"
@@ -737,17 +836,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.057931034482758624,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.5625,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.47448275862068967,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.07539682539682539,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.4126984126984127,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -769,6 +878,7 @@
           "eyeSymmetry": 0.9989762700180707,
           "faceScale": 0.45030895868937176,
           "faceScore": 0.9977495074272156,
+          "irisSegmentationConfidence": 0.5625,
           "meanLandmarkScore": 0.9304707646369934,
           "minImageDimensionPixels": 192,
           "mouthConfidence": 0.962312272346186,
@@ -778,6 +888,7 @@
         "rejectionReasons": [],
         "score": 0.9604156861457851,
         "warnings": [
+          "gaze disabled because an iris lacks one horizontal or one quarter vertical pixel of safe clearance",
           "blink and gaze disabled because the image shortest side is below 256 pixels"
         ]
       },

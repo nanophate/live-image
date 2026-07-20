@@ -10,6 +10,12 @@ successful preservation?
 
 ## Evidence boundary
 
+**Confirmed subsequent update.** This section records the boundary at Compiler
+`0.3.0`. Compiler `0.4.0` now adds the previously missing rigid iris/highlight
+texture and inpainted base eye; its new geometry/alpha evidence and remaining
+perceptual boundary are recorded in
+[`2026-07-20-iris-base-eye-validation.md`](2026-07-20-iris-base-eye-validation.md).
+
 **Confirmed.** Compiler `0.3.0` stores an RGBA protected-line mask, eye region,
 pupil point/radius, aperture landmarks, and six warp rows. It does not yet
 store an independent iris/highlight texture, an inpainted base eye, or the
@@ -129,10 +135,14 @@ their recorded attribution terms.
 
 ## Open follow-ups
 
-- **Open:** compiler-extracted iris/highlight RGBA texture, inpainted base eye,
-  and aperture alpha. Once present, require rigid cage distances within
-  `0.01 px`, inverse-registered texture preservation, monotonically decreasing
-  visible alpha across blink samples, and zero iris alpha at full close.
+- **Confirmed subsequent result (Compiler 0.4):** compiler-extracted iris RGB
+  with authored alpha, inpainted base eye, aperture clipping, rigid cage
+  invariance, monotonic planned alpha, direct nonzero rendered-texture pixels,
+  and zero planned/rendered iris contribution at full close are implemented.
+  See
+  [`2026-07-20-iris-base-eye-validation.md`](2026-07-20-iris-base-eye-validation.md).
+- **Open:** inverse-register the actual moved texture and score its RGB against
+  the source independently of the Runtime's motion plan.
 - **Open:** add fixed inner-ROI border and triangle-Jacobian diagnostics for a
   pasted rectangular rim or a local jelly bulge that can remain inside the ROI.
 - **Open:** calibrate any non-invariant inpaint/seam score once on a frozen

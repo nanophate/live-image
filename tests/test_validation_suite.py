@@ -71,7 +71,7 @@ class ValidationSuiteTests(unittest.TestCase):
                     {
                         "compiler": {
                             "name": "fake-compiler",
-                            "version": "0.3.0",
+                            "version": "0.4.0",
                             "detectorVersion": "test",
                         },
                         "analysis": {
@@ -85,6 +85,15 @@ class ValidationSuiteTests(unittest.TestCase):
                                                 "protectedLineArtMask": {
                                                     "method": "canny-active-aperture-v1",
                                                     "coverage": 0.25,
+                                                },
+                                                "iris": {
+                                                    "method": "ellipse-cage-telea-v1",
+                                                    "segmentationConfidence": 0.85,
+                                                    "texture": {
+                                                        "method": "source-rgba-ellipse-v1",
+                                                        "coverage": 0.07,
+                                                    },
+                                                    "baseEye": {"method": "telea-inpaint-v1"},
                                                 },
                                             }
                                         },
@@ -132,10 +141,22 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(first["cases"][0]["artifacts"]["limg"], "artifacts/normal/full.limg")
         self.assertEqual(first["cases"][0]["artifacts"]["overlay"], "overlays/normal/full.png")
         self.assertEqual(first["cases"][0]["quality"]["metrics"], {"faceScore": 0.9})
-        self.assertEqual(first["cases"][0]["compiler"]["version"], "0.3.0")
+        self.assertEqual(first["cases"][0]["compiler"]["version"], "0.4.0")
         self.assertEqual(
             first["cases"][0]["deformation"]["eyes"][0]["protectedLineCoverage"],
             0.25,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["irisMethod"],
+            "ellipse-cage-telea-v1",
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["irisCoverage"],
+            0.07,
+        )
+        self.assertEqual(
+            first["cases"][0]["deformation"]["eyes"][0]["baseEyeMethod"],
+            "telea-inpaint-v1",
         )
         self.assertEqual(first["cases"][0]["deformation"]["mouth"]["lineConfidence"], 0.8)
         self.assertRegex(first["cases"][0]["sourceSha256"], r"^[0-9a-f]{64}$")

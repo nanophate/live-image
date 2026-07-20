@@ -1,7 +1,7 @@
 {
   "cases": [
     {
-      "artifactSha256": "9c7c98eb43ba1bbbfff1fd238c1d1bbfe4a9d04d4ef30c19c520ad3388b75958",
+      "artifactSha256": "d6143ce29a17ee1cc0981dfddcccaa4c71d936b3706146a0a5e0b4fa06270a7a",
       "artifacts": {
         "limg": "artifacts/stevenburrow-sample1/stevenburrow-sample1.limg",
         "overlay": "overlays/stevenburrow-sample1/stevenburrow-sample1.png"
@@ -18,17 +18,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06866744366744366,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.21017871017871018,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06940276110444178,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 1.0,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.07765606242496999,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -58,6 +68,7 @@
           "eyeSymmetry": 0.7931141689009195,
           "faceScale": 0.27098345947265623,
           "faceScore": 0.999775230884552,
+          "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9164047241210938,
           "minImageDimensionPixels": 1000,
           "mouthConfidence": 0.8148298431516257,
@@ -73,16 +84,17 @@
       "sourceSha256": "d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831"
     },
     {
-      "artifactSha256": "364b0824ce26f1f411d6198081a7000dd5963d7d93d1738e99419cd3e707bfde",
+      "artifactSha256": "927319c3b081a26b9ca58eae2e52fe32883562dd8cff7b7cebf5ce08a798c576",
       "artifacts": {
         "limg": "artifacts/mcproject-manga-girl/mcproject-manga-girl.limg",
         "overlay": "overlays/mcproject-manga-girl/mcproject-manga-girl.png"
       },
       "capabilities": {
-        "disabled": [],
-        "enabled": [
+        "disabled": [
           "blink",
-          "gaze",
+          "gaze"
+        ],
+        "enabled": [
           "mouth"
         ]
       },
@@ -90,7 +102,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -123,13 +135,14 @@
         ]
       },
       "id": "mcproject-manga-girl",
-      "matched": true,
+      "matched": false,
       "quality": {
         "metrics": {
           "eyeConfidence": 0.8341783945960755,
           "eyeSymmetry": 0.8624707175538592,
           "faceScale": 0.4696958368474787,
           "faceScore": 0.9899850487709045,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.9052454233169556,
           "minImageDimensionPixels": 832,
           "mouthConfidence": 0.9250444325677281,
@@ -138,14 +151,16 @@
         },
         "rejectionReasons": [],
         "score": 0.9138297128222923,
-        "warnings": []
+        "warnings": [
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
+        ]
       },
-      "result": "full",
+      "result": "limited",
       "source": "source/mcproject-manga-girl.png",
       "sourceSha256": "c724af25f948bc73080b4c94e1f21ebbd1540fdd8f9eb84a9b918c853a9c9b8b"
     },
     {
-      "artifactSha256": "33a72f949ecf24e5e29b8c76478e675845ee9877d20e1e07a1c20fa17de6f2d6",
+      "artifactSha256": "0dc912d9ff7588ee47ddfaf8e25939334d865c20e868838e268c699335236fae",
       "artifacts": {
         "limg": "artifacts/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.limg",
         "overlay": "overlays/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.png"
@@ -162,7 +177,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -173,6 +188,11 @@
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06447270007479432,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.8016325625494441,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.17796060832710048,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -203,6 +223,7 @@
           "eyeSymmetry": 0.4594968137849921,
           "faceScale": 0.4698583781719208,
           "faceScore": 0.998544454574585,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.268320232629776,
           "minImageDimensionPixels": 512,
           "mouthConfidence": 0.29153725504875183,
@@ -216,7 +237,8 @@
         "score": 0.5639981585618065,
         "warnings": [
           "blink and gaze disabled because eye confidence is below 0.70",
-          "mouth control disabled because its landmarks or source line are unreliable"
+          "mouth control disabled because its landmarks or source line are unreliable",
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
       },
       "result": "reject",
@@ -224,7 +246,7 @@
       "sourceSha256": "652ccd346cc96adf42bed09080a92cffb1b50426393921b336729540f590293b"
     },
     {
-      "artifactSha256": "abea45678dfaa8d8d37a38ec21718bd9c6d2543afb5e3af594e32e20bafe982c",
+      "artifactSha256": "617fe1c87d6ae0b5a49c8761e55ad288f7bfcfd39304c1224fdf58e7c951e6fe",
       "artifacts": {
         "limg": "artifacts/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.limg",
         "overlay": "overlays/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.png"
@@ -241,17 +263,27 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06753340556157457,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.768975526625979,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.2361863488624052,
             "protectedLineMethod": "canny-active-aperture-v1",
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.03685583822570124,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.3893342008391735,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.24135681669928244,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -281,6 +313,7 @@
           "eyeSymmetry": 0.9168838725065006,
           "faceScale": 0.18348115703226373,
           "faceScore": 0.9993385672569275,
+          "irisSegmentationConfidence": 0.3893342008391735,
           "meanLandmarkScore": 0.8949946165084839,
           "minImageDimensionPixels": 320,
           "mouthConfidence": 0.7765403985223058,
@@ -291,24 +324,26 @@
           "face is too small for stable local deformation"
         ],
         "score": 0.8555446129366663,
-        "warnings": []
+        "warnings": [
+          "gaze disabled because an iris lacks one horizontal or one quarter vertical pixel of safe clearance"
+        ]
       },
       "result": "reject",
       "source": "source/jupitersdaughter-maid-neutral.png",
       "sourceSha256": "dbcffaae6181bec6035f5729542e0e30c9287d02d4fe55359754b49261606242"
     },
     {
-      "artifactSha256": "ad0058bc6f9e3a402f7bf9802371e3a2e8ee42a5854697def96ecd6a1cf76ecc",
+      "artifactSha256": "c055acfb5b584468d501b9b4d339302394572e90703e5b0d6aa4ce84d9363d5c",
       "artifacts": {
         "limg": "artifacts/zonked-painted-portrait/zonked-painted-portrait.limg",
         "overlay": "overlays/zonked-painted-portrait/zonked-painted-portrait.png"
       },
       "capabilities": {
         "disabled": [
+          "blink",
           "gaze"
         ],
         "enabled": [
-          "blink",
           "mouth"
         ]
       },
@@ -316,7 +351,7 @@
       "compiler": {
         "detectorVersion": "0.1.0",
         "name": "living-image-compiler",
-        "version": "0.3.0"
+        "version": "0.4.0"
       },
       "deformation": {
         "eyes": [
@@ -327,6 +362,11 @@
             "side": "left"
           },
           {
+            "baseEyeMethod": "telea-inpaint-v1",
+            "irisCoverage": 0.06518018018018018,
+            "irisMethod": "ellipse-cage-telea-v1",
+            "irisSegmentationConfidence": 0.6633653219230563,
+            "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.4557657657657658,
             "protectedLineMethod": "canny-active-aperture-v1",
@@ -356,6 +396,7 @@
           "eyeSymmetry": 0.7146083734273683,
           "faceScale": 0.3789817979600694,
           "faceScore": 0.9977547526359558,
+          "irisSegmentationConfidence": 0.0,
           "meanLandmarkScore": 0.8814598917961121,
           "minImageDimensionPixels": 1250,
           "mouthConfidence": 0.8599012494087219,
@@ -365,7 +406,8 @@
         "rejectionReasons": [],
         "score": 0.8502557270014077,
         "warnings": [
-          "gaze disabled because pupil confidence is below 0.60"
+          "gaze disabled because pupil confidence is below 0.60",
+          "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
       },
       "result": "limited",
@@ -417,11 +459,11 @@
         "total": 1
       },
       "strong-highlight-external": {
-        "matched": 1,
+        "matched": 0,
         "outcomes": {
           "error": 0,
-          "full": 1,
-          "limited": 0,
+          "full": 0,
+          "limited": 1,
           "reject": 0
         },
         "total": 1
@@ -434,14 +476,14 @@
       "limited": 1,
       "reject": 2
     },
-    "full": 2,
-    "limited": 1,
-    "matched": 3,
-    "mismatched": 2,
+    "full": 1,
+    "limited": 2,
+    "matched": 2,
+    "mismatched": 3,
     "outcomes": {
       "error": 0,
-      "full": 2,
-      "limited": 1,
+      "full": 1,
+      "limited": 2,
       "reject": 2
     },
     "reject": 2,

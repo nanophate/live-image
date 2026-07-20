@@ -1,9 +1,14 @@
 import { clampState, IdleBehavior, ZERO_STATE, type ControlState } from "./behavior.js";
 import { clamp, smooth } from "./math.js";
 import { validateManifest, type EyeFeature, type LivingImageManifest, type MouthFeature } from "./schema.js";
-import { drawGridWarp, eyeWarpGrids, mouthOpenPlan } from "./warp.js";
+import { drawGridWarp, eyeIrisPlan, eyeWarpGrids, mouthOpenPlan } from "./warp.js";
 
 export type StatePatch = Partial<ControlState>;
+
+interface EyeIrisLayers {
+  baseEye: HTMLImageElement;
+  texture: HTMLImageElement;
+}
 
 /** Shared pulse shape for interactive blinks and deterministic visual checks. */
 export const DEFAULT_BLINK_PULSE_DURATION_SECONDS = 0.16;
@@ -32,6 +37,7 @@ export class LivingImagePlayer {
   private blinkPulseStart = Number.NEGATIVE_INFINITY;
   private blinkPulseDuration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
   private eyeProtectionLayers = new Map<string, HTMLCanvasElement>();
+  private eyeIrisLayers = new Map<string, EyeIrisLayers>();
   private loadGeneration = 0;
 
   constructor(readonly canvas: HTMLCanvasElement) {
@@ -55,11 +61,15 @@ export class LivingImagePlayer {
     if (image.naturalWidth !== manifest.image.width || image.naturalHeight !== manifest.image.height) {
       throw new Error("embedded source image dimensions do not match its manifest");
     }
-    const protectionLayers = await this.buildEyeProtectionLayers(manifest, image);
+    const [protectionLayers, irisLayers] = await Promise.all([
+      this.buildEyeProtectionLayers(manifest, image),
+      this.buildEyeIrisLayers(manifest),
+    ]);
     if (generation !== this.loadGeneration) return;
     this.manifest = manifest;
     this.image = image;
     this.eyeProtectionLayers = protectionLayers;
+    this.eyeIrisLayers = irisLayers;
     this.behavior = new IdleBehavior(manifest);
     this.elapsed = 0;
     this.previousTimestamp = null;
@@ -178,8 +188,45 @@ export class LivingImagePlayer {
   private drawEye(eye: EyeFeature, image: HTMLImageElement, width: number, height: number): void {
     const blink = eye.side === "left" ? this.renderedState.blinkLeft : this.renderedState.blinkRight;
     if (blink <= 0.001 && Math.abs(this.renderedState.gazeX) <= 0.001 && Math.abs(this.renderedState.gazeY) <= 0.001) return;
-    const grids = eyeWarpGrids(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
-    drawGridWarp(this.context, image, grids.source, grids.destination);
+    const irisLayers = this.eyeIrisLayers.get(eye.side);
+    const irisPlan = eyeIrisPlan(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
+    const grids = irisLayers && irisPlan
+      ? eyeWarpGrids(eye, width, height, blink, 0, 0)
+      : eyeWarpGrids(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
+    if (irisLayers && irisPlan) {
+      const region = eye.rig.deformation?.region;
+      if (!region) throw new Error(`${eye.side} iris layer is missing its deformation region`);
+      drawGridWarp(this.context, irisLayers.baseEye, grids.source, grids.destination, {
+        sourceOrigin: { x: region.x * width, y: region.y * height },
+      });
+      if (irisPlan.alpha > 0) {
+        this.context.save();
+        this.context.beginPath();
+        for (const [index, point] of irisPlan.aperture.entries()) {
+          if (index === 0) this.context.moveTo(point.x, point.y);
+          else this.context.lineTo(point.x, point.y);
+        }
+        this.context.closePath();
+        this.context.clip();
+        this.context.globalAlpha = irisPlan.alpha;
+        this.context.drawImage(
+          irisLayers.texture,
+          0,
+          0,
+          irisLayers.texture.naturalWidth,
+          irisLayers.texture.naturalHeight,
+          irisPlan.textureOrigin.x,
+          irisPlan.textureOrigin.y,
+          region.width * width,
+          region.height * height,
+        );
+        this.context.restore();
+      }
+    } else {
+      // v1 manifests without compiler-extracted iris layers retain the
+      // original full-image warp path.
+      drawGridWarp(this.context, image, grids.source, grids.destination);
+    }
     const protectedLayer = this.eyeProtectionLayers.get(eye.side);
     const protectionRegion = eye.rig.deformation?.region;
     if (protectedLayer && protectionRegion) {
@@ -318,6 +365,39 @@ export class LivingImagePlayer {
       layerContext.drawImage(mask, 0, 0, layer.width, layer.height);
       layerContext.globalCompositeOperation = "source-over";
       layers.set(eye.side, layer);
+    }));
+    return layers;
+  }
+
+  private async buildEyeIrisLayers(manifest: LivingImageManifest): Promise<Map<string, EyeIrisLayers>> {
+    const layers = new Map<string, EyeIrisLayers>();
+    await Promise.all(manifest.analysis.features.eyes.map(async (eye) => {
+      const deformation = eye.rig.deformation;
+      const iris = deformation?.iris;
+      if (!deformation || !iris) return;
+      const expectedWidth = Math.max(1, Math.round(deformation.region.width * manifest.image.width));
+      const expectedHeight = Math.max(1, Math.round(deformation.region.height * manifest.image.height));
+      const decode = async (label: "base eye" | "iris texture", dataUrl: string, width: number, height: number): Promise<HTMLImageElement> => {
+        const layer = new Image();
+        layer.decoding = "async";
+        await new Promise<void>((resolve, reject) => {
+          layer.onload = () => resolve();
+          layer.onerror = () => reject(new Error(`${eye.side} ${label} could not be decoded`));
+          layer.src = dataUrl;
+        });
+        if (layer.naturalWidth !== width || layer.naturalHeight !== height) {
+          throw new Error(`${eye.side} ${label} dimensions do not match its manifest`);
+        }
+        if (width !== expectedWidth || height !== expectedHeight) {
+          throw new Error(`${eye.side} ${label} dimensions do not match its deformation region`);
+        }
+        return layer;
+      };
+      const [baseEye, texture] = await Promise.all([
+        decode("base eye", iris.baseEye.dataUrl, iris.baseEye.width, iris.baseEye.height),
+        decode("iris texture", iris.texture.dataUrl, iris.texture.width, iris.texture.height),
+      ]);
+      layers.set(eye.side, { baseEye, texture });
     }));
     return layers;
   }

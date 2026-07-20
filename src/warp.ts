@@ -58,7 +58,9 @@ export function drawGridWarp(
   image: CanvasImageSource,
   source: readonly (readonly Vec2[])[],
   destination: readonly (readonly Vec2[])[],
+  options: { sourceOrigin?: Vec2 } = {},
 ): void {
+  const sourceOrigin = options.sourceOrigin ?? { x: 0, y: 0 };
   for (let row = 0; row < source.length - 1; row += 1) {
     const sourceTop = source[row];
     const sourceBottom = source[row + 1];
@@ -69,8 +71,12 @@ export function drawGridWarp(
       const s00 = sourceTop[column], s10 = sourceTop[column + 1], s01 = sourceBottom[column], s11 = sourceBottom[column + 1];
       const d00 = destinationTop[column], d10 = destinationTop[column + 1], d01 = destinationBottom[column], d11 = destinationBottom[column + 1];
       if (!s00 || !s10 || !s01 || !s11 || !d00 || !d10 || !d01 || !d11) continue;
-      drawTexturedTriangle(context, image, [s00, s10, s11], [d00, d10, d11]);
-      drawTexturedTriangle(context, image, [s00, s11, s01], [d00, d11, d01]);
+      // The compiler may embed a compact eye-base texture instead of the full
+      // source image. Keep destination coordinates in image space while
+      // remapping only the texture's source coordinates to its local origin.
+      const local = (point: Vec2): Vec2 => ({ x: point.x - sourceOrigin.x, y: point.y - sourceOrigin.y });
+      drawTexturedTriangle(context, image, [local(s00), local(s10), local(s11)], [d00, d10, d11]);
+      drawTexturedTriangle(context, image, [local(s00), local(s11), local(s01)], [d00, d11, d01]);
     }
   }
 }
@@ -124,6 +130,79 @@ export function eyeWarpGrids(
     };
   }));
   return { source, destination };
+}
+
+export interface IrisMotionPlan {
+  /** Pixel-space centre of the rigid iris/highlight texture. */
+  centre: Vec2;
+  /** Pixel radii stay invariant: gaze is translation only. */
+  radiusX: number;
+  radiusY: number;
+  /** The compact texture's destination origin, in full-image pixel space. */
+  textureOrigin: Vec2;
+  /** The current eyelid aperture, assembled from the destination cage. */
+  aperture: Vec2[];
+  /** Exactly zero at the compiler-authored full-close floor. */
+  alpha: number;
+}
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  if (edge1 <= edge0) return value > edge0 ? 1 : 0;
+  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Plan the rigid iris/highlight layer independently of the eyelid mesh. The
+ * aperture is derived from the same destination rows as the base-eye warp so
+ * canvas compositing cannot diverge from the compiler's geometry.
+ */
+export function eyeIrisPlan(
+  eye: EyeFeature,
+  imageWidth: number,
+  imageHeight: number,
+  blinkValue: number,
+  gazeX: number,
+  gazeY: number,
+): IrisMotionPlan | null {
+  const deformation = eye.rig.deformation;
+  const iris = deformation?.iris;
+  if (!deformation || !iris) return null;
+  const blink = clamp(blinkValue, 0, 1);
+  // The base eye and eyelid aperture only blink. Gaze is a rigid iris
+  // translation; feeding it back into these rows would deform the sclera and
+  // translate the clip a second time.
+  const grids = eyeWarpGrids(eye, imageWidth, imageHeight, blink, 0, 0);
+  const top = grids.destination[2];
+  const bottom = grids.destination[3];
+  if (!top || !bottom) return null;
+  const topLeft = top[1], topCentre = top[2], topRight = top[3];
+  const bottomLeft = bottom[1], bottomCentre = bottom[2], bottomRight = bottom[3];
+  if (!topLeft || !topCentre || !topRight || !bottomLeft || !bottomCentre || !bottomRight) return null;
+
+  const gazeSuppression = 1 - blink;
+  const shiftX = clamp(gazeX, -1, 1) * eye.rig.maxGazeX * imageWidth * gazeSuppression;
+  const shiftY = clamp(gazeY, -1, 1) * eye.rig.maxGazeY * imageHeight * gazeSuppression;
+  const apertureHeight = Math.max(0, bottomCentre.y - topCentre.y);
+  const closeFloor = eye.rig.blinkFloor * imageHeight;
+  const irisDiameter = iris.radiusY * imageHeight * 2;
+
+  return {
+    centre: {
+      x: iris.centre.x * imageWidth + shiftX,
+      y: iris.centre.y * imageHeight + shiftY,
+    },
+    radiusX: iris.radiusX * imageWidth,
+    radiusY: iris.radiusY * imageHeight,
+    textureOrigin: {
+      x: deformation.region.x * imageWidth + shiftX,
+      y: deformation.region.y * imageHeight + shiftY,
+    },
+    aperture: [topLeft, topCentre, topRight, bottomRight, bottomCentre, bottomLeft],
+    // Full close is a semantic endpoint even if an invalid/legacy cage leaves
+    // a larger-than-floor numerical gap between its two lid rows.
+    alpha: blink >= 1 ? 0 : smoothstep(closeFloor, closeFloor + irisDiameter * 0.35, apertureHeight),
+  };
 }
 
 export interface MouthOpenPlan {

@@ -17,7 +17,10 @@ from compiler.compile_character import (
     compile_mouth,
     compile_paths,
     detect_pupil,
+    ellipse_inside_polygon,
     normalise_box,
+    safe_diagonal_ellipse_shifts,
+    safe_symmetric_ellipse_shift,
 )
 
 
@@ -31,15 +34,27 @@ class CompilerGeometryTests(unittest.TestCase):
         mouth_line_confidence: float = 0.90,
         image_width: int = 512,
         image_height: int = 512,
+        iris_layers_ready: bool | None = None,
+        max_gaze_y: float = 0.01,
     ) -> dict[str, object]:
         keypoints = np.zeros((28, 3), dtype=np.float32)
         keypoints[:, 2] = 0.90
         larger_eye_width = 0.20
+        layers_ready = pupil_confidence >= 0.60 if iris_layers_ready is None else iris_layers_ready
         eyes = [
             {
                 "confidence": eye_confidence,
                 "anchors": {"left": 0.10, "right": 0.10 + larger_eye_width},
                 "pupil": {"confidence": pupil_confidence},
+                "rig": {
+                    "maxGazeX": 0.01,
+                    "maxGazeY": max_gaze_y,
+                    "deformation": {
+                        "iris": {"segmentationConfidence": pupil_confidence}
+                        if layers_ready
+                        else None
+                    },
+                },
             },
             {
                 "confidence": eye_confidence,
@@ -48,6 +63,15 @@ class CompilerGeometryTests(unittest.TestCase):
                     "right": 0.60 + larger_eye_width * eye_symmetry,
                 },
                 "pupil": {"confidence": pupil_confidence},
+                "rig": {
+                    "maxGazeX": 0.01,
+                    "maxGazeY": max_gaze_y,
+                    "deformation": {
+                        "iris": {"segmentationConfidence": pupil_confidence}
+                        if layers_ready
+                        else None
+                    },
+                },
             },
         ]
         face_box = (0, 0, image_width * 0.5, image_height * 0.5, 0.95)
@@ -78,6 +102,51 @@ class CompilerGeometryTests(unittest.TestCase):
         self.assertAlmostEqual(point[1], 43, delta=7)
         self.assertGreater(result["confidence"], 0.2)
 
+    def test_safe_iris_shift_stays_inside_detected_eye_polygon(self) -> None:
+        polygon = np.array(
+            [[20, 40], [55, 20], [120, 38], [108, 60], [65, 64], [28, 58]],
+            dtype=np.float32,
+        )
+        horizontal = safe_symmetric_ellipse_shift(polygon, 70, 42, 10, 8, 100, "x")
+        vertical = safe_symmetric_ellipse_shift(polygon, 70, 42, 10, 8, 100, "y")
+        self.assertGreater(horizontal, 0)
+        self.assertLess(horizontal, 100)
+        self.assertGreater(vertical, 0)
+        self.assertLess(vertical, 100)
+        for direction in (-1, 1):
+            self.assertTrue(
+                ellipse_inside_polygon(polygon, 70, 42, 10, 8, direction * horizontal, 0)
+            )
+            self.assertTrue(
+                ellipse_inside_polygon(polygon, 70, 42, 10, 8, 0, direction * vertical)
+            )
+
+    def test_diagonal_iris_shift_jointly_scales_safe_axes(self) -> None:
+        polygon = np.array(
+            [[20, 40], [55, 20], [120, 38], [108, 60], [65, 64], [28, 58]],
+            dtype=np.float32,
+        )
+        max_x = safe_symmetric_ellipse_shift(polygon, 70, 42, 10, 8, 100, "x")
+        max_y = safe_symmetric_ellipse_shift(polygon, 70, 42, 10, 8, 100, "y")
+        safe_x, safe_y = safe_diagonal_ellipse_shifts(
+            polygon, 70, 42, 10, 8, max_x, max_y
+        )
+        self.assertLess(safe_x, max_x)
+        self.assertLess(safe_y, max_y)
+        for direction_x in (-1, 1):
+            for direction_y in (-1, 1):
+                self.assertTrue(
+                    ellipse_inside_polygon(
+                        polygon,
+                        70,
+                        42,
+                        10,
+                        8,
+                        direction_x * safe_x,
+                        direction_y * safe_y,
+                    )
+                )
+
     def test_quality_rejects_unstable_face(self) -> None:
         keypoints = np.zeros((28, 3), dtype=np.float32)
         keypoints[:, 2] = 0.2
@@ -98,7 +167,7 @@ class CompilerGeometryTests(unittest.TestCase):
         keypoints = np.zeros((28, 3), dtype=np.float32)
         keypoints[:, 2] = 0.95
         keypoints[[11, 12, 13, 16, 15, 14], :2] = np.array(
-            [[55, 58], [76, 44], [112, 56], [108, 70], [80, 74], [58, 69]],
+            [[55, 58], [76, 42], [112, 56], [108, 80], [80, 84], [58, 79]],
             dtype=np.float32,
         )
         cv2.ellipse(image, (82, 59), (15, 17), 0, 0, 360, (70, 50, 30), -1)
@@ -120,6 +189,37 @@ class CompilerGeometryTests(unittest.TestCase):
         local_pupil_x = int(round(eye["pupil"]["x"] * 180 - region["x"] * 180))
         local_pupil_y = int(round(eye["pupil"]["y"] * 120 - region["y"] * 120))
         self.assertEqual(int(decoded_mask[local_pupil_y, local_pupil_x, 3]), 0)
+
+        iris = deformation["iris"]
+        self.assertEqual(iris["method"], "ellipse-cage-telea-v1")
+        self.assertEqual(iris["texture"]["method"], "source-rgba-ellipse-v1")
+        self.assertEqual(iris["baseEye"]["method"], "telea-inpaint-v1")
+        self.assertGreaterEqual(iris["segmentationConfidence"], 0.6)
+        self.assertGreaterEqual(iris["inpaintRadius"], 2)
+        expected_width = round(region["width"] * 180)
+        expected_height = round(region["height"] * 120)
+        for layer_name in ("texture", "baseEye"):
+            layer = iris[layer_name]
+            self.assertEqual(layer["width"], expected_width)
+            self.assertEqual(layer["height"], expected_height)
+            payload = base64.b64decode(layer["dataUrl"].split(",", 1)[1])
+            decoded = cv2.imdecode(np.frombuffer(payload, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+            self.assertEqual(decoded.shape, (expected_height, expected_width, 4))
+            if layer_name == "texture":
+                self.assertGreater(np.count_nonzero(decoded[:, :, 3]), 0)
+                self.assertLess(np.count_nonzero(decoded[:, :, 3]), decoded.shape[0] * decoded.shape[1])
+            else:
+                self.assertTrue(np.all(decoded[:, :, 3] == 255))
+        self.assertGreaterEqual(iris["centre"]["x"] - iris["radiusX"], region["x"])
+        self.assertLessEqual(
+            iris["centre"]["x"] + iris["radiusX"],
+            region["x"] + region["width"],
+        )
+        self.assertGreaterEqual(iris["centre"]["y"] - iris["radiusY"], region["y"])
+        self.assertLessEqual(
+            iris["centre"]["y"] + iris["radiusY"],
+            region["y"] + region["height"],
+        )
 
     def test_compiler_authors_bounded_mouth_line_bands(self) -> None:
         image = np.full((140, 180, 3), 225, dtype=np.uint8)
@@ -154,13 +254,17 @@ class CompilerGeometryTests(unittest.TestCase):
         self.assertEqual(quality["warnings"], [])
         self.assertEqual(quality["metrics"]["minImageDimensionPixels"], 256)
 
-    def test_quality_v2_low_pupil_confidence_disables_only_gaze(self) -> None:
+    def test_quality_v3_low_pupil_confidence_disables_blink_and_gaze_without_layers(self) -> None:
         quality = self.quality_with(pupil_confidence=0.599)
 
         self.assertEqual(quality["status"], "limited")
-        self.assertEqual(quality["disabledCapabilities"], ["gaze"])
+        self.assertEqual(quality["disabledCapabilities"], ["blink", "gaze"])
         self.assertIn(
             "gaze disabled because pupil confidence is below 0.60",
+            quality["warnings"],
+        )
+        self.assertIn(
+            "blink and gaze disabled because one or both iris/base-eye layers are unreliable",
             quality["warnings"],
         )
 
@@ -173,6 +277,21 @@ class CompilerGeometryTests(unittest.TestCase):
             "blink and gaze disabled because eye confidence is below 0.70",
             quality["warnings"],
         )
+
+    def test_missing_iris_layers_disable_blink_and_gaze(self) -> None:
+        quality = self.quality_with(iris_layers_ready=False)
+
+        self.assertEqual(quality["status"], "limited")
+        self.assertEqual(quality["disabledCapabilities"], ["blink", "gaze"])
+        self.assertIn(
+            "blink and gaze disabled because one or both iris/base-eye layers are unreliable",
+            quality["warnings"],
+        )
+
+    def test_zero_vertical_iris_clearance_disables_gaze(self) -> None:
+        quality = self.quality_with(max_gaze_y=0.0)
+        self.assertIn("gaze", quality["disabledCapabilities"])
+        self.assertNotIn("blink", quality["disabledCapabilities"])
 
     def test_quality_v2_eye_asymmetry_disables_only_blink(self) -> None:
         quality = self.quality_with(eye_symmetry=0.699)
@@ -222,7 +341,7 @@ class CompilerGeometryTests(unittest.TestCase):
                 results = compile_paths([source], root / "output", None, False, False)
 
             diagnostic = json.loads(results[0][0].read_text(encoding="utf-8"))
-            self.assertEqual(__version__, "0.3.0")
+            self.assertEqual(__version__, "0.4.0")
             self.assertEqual(diagnostic["input"], "portrait.png")
             self.assertEqual(diagnostic["compilerVersion"], __version__)
             self.assertNotIn(str(root), json.dumps(diagnostic))

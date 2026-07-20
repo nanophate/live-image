@@ -283,6 +283,23 @@ def _extract_build_evidence(document: Any) -> dict[str, Any]:
                     item["protectedLineCoverage"] = coverage
                 if isinstance(mask.get("method"), str):
                     item["protectedLineMethod"] = mask["method"]
+            iris = eye_deformation.get("iris")
+            if isinstance(iris, dict):
+                if isinstance(iris.get("method"), str):
+                    item["irisMethod"] = iris["method"]
+                confidence = iris.get("segmentationConfidence")
+                if isinstance(confidence, (int, float)) and not isinstance(confidence, bool) and math.isfinite(confidence):
+                    item["irisSegmentationConfidence"] = confidence
+                texture = iris.get("texture")
+                if isinstance(texture, dict):
+                    coverage = texture.get("coverage")
+                    if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+                        item["irisCoverage"] = coverage
+                    if isinstance(texture.get("method"), str):
+                        item["irisTextureMethod"] = texture["method"]
+                base_eye = iris.get("baseEye")
+                if isinstance(base_eye, dict) and isinstance(base_eye.get("method"), str):
+                    item["baseEyeMethod"] = base_eye["method"]
             if item:
                 eye_evidence.append(item)
     if eye_evidence:
