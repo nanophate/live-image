@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from dataclasses import dataclass
 import hashlib
 import importlib.metadata
 import json
@@ -40,6 +41,27 @@ MIN_FULL_PUPIL_CONFIDENCE = 0.60
 MIN_FULL_EYE_CONFIDENCE = 0.70
 MIN_FULL_EYE_SYMMETRY = 0.70
 MIN_FULL_IMAGE_DIMENSION = 256
+MAX_IMAGE_DIMENSION = 8192
+MAX_IMAGE_PIXELS = 33_554_432
+
+
+@dataclass(frozen=True)
+class DetectorRuntime:
+    """Loaded detector and immutable model digests reusable across compiles."""
+
+    detector: Any
+    digests: dict[str, str]
+
+
+def load_detector_runtime(offline: bool, flip_test: bool) -> DetectorRuntime:
+    if offline:
+        os.environ["HF_HUB_OFFLINE"] = "1"
+    detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
+    model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
+    return DetectorRuntime(
+        detector=detector,
+        digests={name: sha256_file(path) for name, path in model_paths.items()},
+    )
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
@@ -1307,23 +1329,29 @@ def compile_paths(
     overlay_dir: Path | None,
     offline: bool,
     flip_test: bool,
+    detector_runtime: DetectorRuntime | None = None,
 ) -> list[tuple[Path, dict[str, Any]]]:
-    if offline:
-        os.environ["HF_HUB_OFFLINE"] = "1"
     output_dir.mkdir(parents=True, exist_ok=True)
     if overlay_dir:
         overlay_dir.mkdir(parents=True, exist_ok=True)
 
-    detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
-    model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
-    digests = {name: sha256_file(path) for name, path in model_paths.items()}
+    runtime = detector_runtime or load_detector_runtime(offline, flip_test)
     results: list[tuple[Path, dict[str, Any]]] = []
 
     for input_path in input_paths:
         image = cv2.imread(str(input_path), cv2.IMREAD_COLOR)
         if image is None:
             raise ValueError(f"could not decode image: {input_path}")
-        predictions = detector(image)
+        image_height, image_width = image.shape[:2]
+        if (
+            image_width > MAX_IMAGE_DIMENSION
+            or image_height > MAX_IMAGE_DIMENSION
+            or image_width * image_height > MAX_IMAGE_PIXELS
+        ):
+            raise ValueError(
+                f"image dimensions exceed the portable runtime limit: {image_width}x{image_height}"
+            )
+        predictions = runtime.detector(image)
         if not predictions:
             diagnostic = {
                 "input": input_path.name,
@@ -1337,7 +1365,7 @@ def compile_paths(
             results.append((diagnostic_path, diagnostic))
             continue
 
-        manifest = build_manifest(input_path, image, predictions, digests)
+        manifest = build_manifest(input_path, image, predictions, runtime.digests)
         output_path = output_dir / f"{input_path.stem}.limg"
         output_path.write_text(json.dumps(manifest, separators=(",", ":")), encoding="utf-8")
         if overlay_dir:

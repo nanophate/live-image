@@ -1,19 +1,57 @@
 import type { ControlState } from "../behavior.js";
-import { LivingImagePlayer } from "../runtime.js";
-import { fetchLivingImage, loadLivingImageFile, type LivingImageManifest } from "../schema.js";
-import { renderQuality, requireElement, SAMPLE_URLS } from "./shared.js";
+import { canvasRecordingSupported, recordCanvasAction } from "../recording.js";
+import { LivingImagePlayer, type RuntimeReaction } from "../runtime.js";
+import { SHOWCASE_DURATION_SECONDS, showcaseFrameAt } from "../showcase.js";
+import {
+  fetchLivingImage,
+  loadLivingImageFile,
+  parseLivingImage,
+  type LivingImageManifest,
+} from "../schema.js";
+import { renderQuality, renderRejectDiagnostic, requireElement, SAMPLE_URLS } from "./shared.js";
 
 const canvas = requireElement<HTMLCanvasElement>("character-canvas");
-const player = new LivingImagePlayer(canvas);
+const player = new LivingImagePlayer(canvas, { eyeDeformation: "best-available" });
 const fileInput = requireElement<HTMLInputElement>("file-input");
 const autoIdle = requireElement<HTMLInputElement>("auto-idle");
 const status = requireElement<HTMLElement>("render-status");
 const name = requireElement<HTMLElement>("character-name");
 const meta = requireElement<HTMLElement>("character-meta");
 const qualityCard = requireElement<HTMLElement>("quality-card");
+const downloadLimg = requireElement<HTMLAnchorElement>("download-limg");
+const demoButton = requireElement<HTMLButtonElement>("demo-button");
+const recordButton = requireElement<HTMLButtonElement>("record-button");
+const showcaseLabel = requireElement<HTMLOutputElement>("showcase-label");
+const showcaseProgress = requireElement<HTMLProgressElement>("showcase-progress");
+const sampleTealButton = requireElement<HTMLButtonElement>("sample-teal");
+const sampleCopperButton = requireElement<HTMLButtonElement>("sample-copper");
+const sampleButtons = [sampleTealButton, sampleCopperButton];
+const resetButton = requireElement<HTMLButtonElement>("reset-button");
 const inputs = [...document.querySelectorAll<HTMLInputElement>("[data-control]")];
+const reactionButtons = new Map<RuntimeReaction, HTMLButtonElement>([
+  ["blink", requireElement<HTMLButtonElement>("blink-button")],
+  ["talk", requireElement<HTMLButtonElement>("talk-button")],
+  ["look-left", requireElement<HTMLButtonElement>("look-left-button")],
+  ["look-right", requireElement<HTMLButtonElement>("look-right-button")],
+]);
 
-let mouthTimer: number | null = null;
+let currentManifest: LivingImageManifest | null = null;
+let downloadUrl: string | null = null;
+let showcaseAnimation: number | null = null;
+let finishShowcase: (() => void) | null = null;
+let restoreAutoIdleAfterShowcase: boolean | null = null;
+let busy = false;
+
+function setDownload(payload: Blob | null, filename = "character.limg"): void {
+  if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+  downloadUrl = payload ? URL.createObjectURL(payload) : null;
+  downloadLimg.hidden = !downloadUrl;
+  downloadLimg.removeAttribute("href");
+  if (downloadUrl) {
+    downloadLimg.href = downloadUrl;
+    downloadLimg.download = filename;
+  }
+}
 
 function resetControlInputs(): void {
   for (const input of inputs) {
@@ -23,44 +61,211 @@ function resetControlInputs(): void {
   }
 }
 
-async function useManifest(manifest: LivingImageManifest): Promise<void> {
+function syncControlInputs(state: ControlState): void {
+  for (const input of inputs) {
+    const control = input.dataset.control as keyof ControlState;
+    const value = state[control];
+    input.value = value.toFixed(2);
+    const output = document.getElementById(`${control}-output`);
+    if (output) output.textContent = value.toFixed(2);
+  }
+}
+
+function setBusy(nextBusy: boolean): void {
+  busy = nextBusy;
+  fileInput.disabled = busy;
+  autoIdle.disabled = busy;
+  resetButton.disabled = busy;
+  for (const button of sampleButtons) button.disabled = busy;
+  refreshCapabilityControls();
+}
+
+function refreshCapabilityControls(): void {
+  const capabilities = player.getCapabilities();
+  const hasCurrentManifest = currentManifest !== null;
+  for (const input of inputs) {
+    const control = input.dataset.control ?? "";
+    input.disabled = busy
+      || !hasCurrentManifest
+      || !capabilities.loaded
+      || capabilities.status === "reject"
+      || (control.startsWith("blink") && !capabilities.blink)
+      || (control.startsWith("gaze") && !capabilities.gaze)
+      || (control === "mouthOpen" && !capabilities.mouth)
+      || (control === "breath" && !capabilities.breath);
+  }
+  reactionButtons.get("blink")!.disabled = busy || !hasCurrentManifest || !capabilities.blink;
+  reactionButtons.get("talk")!.disabled = busy || !hasCurrentManifest || !capabilities.mouth;
+  reactionButtons.get("look-left")!.disabled = busy || !hasCurrentManifest || !capabilities.gaze;
+  reactionButtons.get("look-right")!.disabled = busy || !hasCurrentManifest || !capabilities.gaze;
+  demoButton.disabled = busy || !hasCurrentManifest || !capabilities.loaded || capabilities.status === "reject";
+  recordButton.disabled = demoButton.disabled || !canvasRecordingSupported(canvas);
+}
+
+function stopShowcase(label = "Ready"): void {
+  if (showcaseAnimation !== null) cancelAnimationFrame(showcaseAnimation);
+  showcaseAnimation = null;
+  player.resetToNeutral();
+  resetControlInputs();
+  if (restoreAutoIdleAfterShowcase !== null) {
+    autoIdle.checked = restoreAutoIdleAfterShowcase;
+    player.setAutoIdle(restoreAutoIdleAfterShowcase);
+    restoreAutoIdleAfterShowcase = null;
+  }
+  showcaseLabel.textContent = label;
+  if (finishShowcase) finishShowcase();
+  finishShowcase = null;
+}
+
+async function runShowcase(): Promise<void> {
+  if (!currentManifest || currentManifest.quality.status === "reject") return;
+  stopShowcase();
+  restoreAutoIdleAfterShowcase = autoIdle.checked;
+  autoIdle.checked = false;
+  player.setAutoIdle(false);
+  player.resetToNeutral();
+  const capabilities = player.getCapabilities();
+  const startedAt = performance.now();
+  await new Promise<void>((resolve) => {
+    finishShowcase = resolve;
+    const frame = (timestamp: number): void => {
+      const elapsed = Math.min(SHOWCASE_DURATION_SECONDS, (timestamp - startedAt) / 1000);
+      const showcase = showcaseFrameAt(elapsed, capabilities);
+      player.setState(showcase.state);
+      syncControlInputs(showcase.state);
+      showcaseLabel.textContent = showcase.label;
+      showcaseProgress.value = showcase.progress;
+      if (elapsed >= SHOWCASE_DURATION_SECONDS) {
+        showcaseAnimation = null;
+        player.resetToNeutral();
+        resetControlInputs();
+        const restoreAutoIdle = restoreAutoIdleAfterShowcase ?? false;
+        autoIdle.checked = restoreAutoIdle;
+        player.setAutoIdle(restoreAutoIdle);
+        restoreAutoIdleAfterShowcase = null;
+        showcaseLabel.textContent = "Complete";
+        finishShowcase = null;
+        resolve();
+        return;
+      }
+      showcaseAnimation = requestAnimationFrame(frame);
+    };
+    showcaseAnimation = requestAnimationFrame(frame);
+  });
+}
+
+async function useManifest(manifest: LivingImageManifest, downloadable?: { blob: Blob; filename: string }): Promise<void> {
+  stopShowcase();
   status.textContent = "Decoding embedded texture…";
   await player.load(manifest);
+  currentManifest = manifest;
   resetControlInputs();
+  showcaseProgress.value = 0;
+  player.setAutoIdle(autoIdle.checked);
   player.start();
   name.textContent = manifest.id.replaceAll("-", " ");
   meta.textContent = `${manifest.image.width}×${manifest.image.height} · ${manifest.compiler.detector} ${manifest.compiler.detectorVersion}`;
-  status.textContent = manifest.quality.status === "reject" ? "Rejected asset · animation gated" : "Local deterministic runtime";
+  status.textContent = manifest.quality.status === "reject" ? "Rejected asset · animation gated" : "Ready · local deterministic runtime";
   renderQuality(qualityCard, manifest);
-  const disabled = new Set(manifest.quality.disabledCapabilities);
-  for (const input of inputs) {
-    const control = input.dataset.control ?? "";
-    input.disabled = manifest.quality.status === "reject"
-      || (control.startsWith("blink") && disabled.has("blink"))
-      || (control.startsWith("gaze") && disabled.has("gaze"))
-      || (control === "mouthOpen" && disabled.has("mouth"));
-  }
+  setDownload(downloadable?.blob ?? null, downloadable?.filename);
+  refreshCapabilityControls();
 }
 
 async function loadSample(url: string): Promise<void> {
   try {
+    setBusy(true);
     status.textContent = "Loading compiled fixture…";
     await useManifest(await fetchLivingImage(url));
   } catch (error) {
     status.textContent = "Sample missing";
     meta.textContent = `${(error as Error).message}. Run npm run compile:fixtures first.`;
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function showSourcePreview(file: File): Promise<void> {
+  const bitmap = await createImageBitmap(file);
+  player.stop();
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const context = canvas.getContext("2d", { alpha: false });
+  if (!context) throw new Error("Canvas 2D is unavailable");
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+}
+
+async function compileImage(file: File): Promise<void> {
+  stopShowcase();
+  currentManifest = null;
+  setDownload(null);
+  setBusy(true);
+  await showSourcePreview(file);
+  name.textContent = file.name.replace(/\.[^.]+$/u, "");
+  meta.textContent = "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
+  status.textContent = "Compiling · first model load can take a while";
+  qualityCard.hidden = true;
+  try {
+    const response = await fetch("/api/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": file.type || (file.name.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg"),
+        "X-Living-Image-Filename": encodeURIComponent(file.name),
+      },
+      body: file,
+    });
+    const payload = await response.text();
+    const parsed = JSON.parse(payload) as unknown;
+    if (response.status === 422) {
+      renderRejectDiagnostic(qualityCard, parsed as { rejectionReasons?: string[]; warnings?: string[] });
+      status.textContent = "Not supported · no character file created";
+      meta.textContent = "Try a near-frontal anime portrait with a larger unobstructed face and both eyes visible.";
+      return;
+    }
+    if (!response.ok) {
+      const message = typeof parsed === "object" && parsed && "message" in parsed
+        ? String((parsed as { message: unknown }).message)
+        : `Local compiler returned HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    const manifest = parseLivingImage(payload);
+    const filename = `${manifest.id}.limg`;
+    await useManifest(manifest, { blob: new Blob([payload], { type: "application/json" }), filename });
+    status.textContent = manifest.quality.status === "limited"
+      ? "Compiled with limited controls · ready to review"
+      : "Compiled · ready to review";
+  } catch (error) {
+    status.textContent = "Compilation unavailable";
+    meta.textContent = `${(error as Error).message}. Start this page with nodenv exec npm run studio.`;
+  } finally {
+    setBusy(false);
+    refreshCapabilityControls();
   }
 }
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files?.[0];
   if (!file) return;
-  try { await useManifest(await loadLivingImageFile(file)); }
-  catch (error) { status.textContent = "Load failed"; meta.textContent = (error as Error).message; }
+  try {
+    if (file.name.toLowerCase().endsWith(".limg") || file.type === "application/json") {
+      setBusy(true);
+      await useManifest(await loadLivingImageFile(file));
+    } else {
+      await compileImage(file);
+    }
+  } catch (error) {
+    status.textContent = "Load failed";
+    meta.textContent = (error as Error).message;
+  } finally {
+    setBusy(false);
+    refreshCapabilityControls();
+    fileInput.value = "";
+  }
 });
 
 for (const input of inputs) {
   input.addEventListener("input", () => {
+    if (showcaseAnimation !== null) stopShowcase("Manual control");
     const control = input.dataset.control as keyof ControlState;
     const value = Number(input.value);
     player.setState({ [control]: value });
@@ -70,25 +275,52 @@ for (const input of inputs) {
 }
 
 autoIdle.addEventListener("change", () => player.setAutoIdle(autoIdle.checked));
-requireElement<HTMLButtonElement>("sample-teal").addEventListener("click", () => void loadSample(SAMPLE_URLS.teal));
-requireElement<HTMLButtonElement>("sample-copper").addEventListener("click", () => void loadSample(SAMPLE_URLS.copper));
-requireElement<HTMLButtonElement>("blink-button").addEventListener("click", () => player.triggerBlink());
-requireElement<HTMLButtonElement>("talk-button").addEventListener("click", () => {
-  if (mouthTimer !== null) window.clearInterval(mouthTimer);
-  let ticks = 0;
-  mouthTimer = window.setInterval(() => {
-    player.setState({ mouthOpen: ticks % 2 === 0 ? 0.62 : 0.08 });
-    ticks += 1;
-    if (ticks >= 8) {
-      if (mouthTimer !== null) window.clearInterval(mouthTimer);
-      mouthTimer = null;
-      player.setState({ mouthOpen: 0 });
-    }
-  }, 115);
-});
-requireElement<HTMLButtonElement>("reset-button").addEventListener("click", () => {
-  player.resetState();
+sampleTealButton.addEventListener("click", () => void loadSample(SAMPLE_URLS.teal));
+sampleCopperButton.addEventListener("click", () => void loadSample(SAMPLE_URLS.copper));
+for (const [reaction, button] of reactionButtons) {
+  button.addEventListener("click", () => {
+    stopShowcase("Reaction");
+    if (!player.triggerReaction(reaction)) status.textContent = `${reaction} is unavailable for this character`;
+  });
+}
+resetButton.addEventListener("click", () => {
+  stopShowcase();
+  player.resetToNeutral();
   resetControlInputs();
 });
+demoButton.addEventListener("click", async () => {
+  setBusy(true);
+  try { await runShowcase(); }
+  finally { setBusy(false); refreshCapabilityControls(); }
+});
+recordButton.addEventListener("click", async () => {
+  if (!currentManifest) return;
+  setBusy(true);
+  stopShowcase("Ready");
+  status.textContent = "Recording local showcase…";
+  try {
+    const recording = await recordCanvasAction(canvas, runShowcase);
+    const url = URL.createObjectURL(recording.blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${currentManifest.id}-showcase.webm`;
+    anchor.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+    status.textContent = `Recorded ${(recording.blob.size / 1024).toFixed(0)} KiB · local WebM`;
+  } catch (error) {
+    status.textContent = "Recording failed";
+    meta.textContent = (error as Error).message;
+  } finally {
+    setBusy(false);
+    refreshCapabilityControls();
+  }
+});
 
+window.addEventListener("beforeunload", () => {
+  stopShowcase();
+  if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+  player.destroy();
+});
+
+refreshCapabilityControls();
 void loadSample(SAMPLE_URLS.teal);

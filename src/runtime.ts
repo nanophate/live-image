@@ -6,12 +6,23 @@ import { drawGridWarp, eyeIrisPlan, eyeWarpGrids, mouthOpenPlan } from "./warp.j
 
 export type StatePatch = Partial<ControlState>;
 
+export type RuntimeReaction = "blink" | "talk" | "look-left" | "look-right" | "look-up" | "look-down";
+
+export interface RuntimeCapabilities {
+  loaded: boolean;
+  status: LivingImageManifest["quality"]["status"] | null;
+  blink: boolean;
+  gaze: boolean;
+  mouth: boolean;
+  breath: boolean;
+}
+
 interface EyeIrisLayers {
   baseEye: HTMLImageElement;
   texture: HTMLImageElement;
 }
 
-export type EyeDeformationMode = "row-grid" | "semantic-mesh-required" | "semantic-mesh-corrective-required";
+export type EyeDeformationMode = "row-grid" | "semantic-mesh-required" | "semantic-mesh-corrective-required" | "best-available";
 
 export interface LivingImagePlayerOptions {
   eyeDeformation?: EyeDeformationMode;
@@ -30,6 +41,31 @@ export function blinkPulseAmount(elapsedSeconds: number, durationSeconds: number
     : (1 - phase) / (1 - BLINK_PULSE_CLOSE_FRACTION);
 }
 
+/** A deterministic multi-syllable mouth pulse used by the named reaction API. */
+export function mouthPulseAmount(elapsedSeconds: number, durationSeconds: number, syllables: number): number {
+  if (
+    !Number.isFinite(elapsedSeconds)
+    || !Number.isFinite(durationSeconds)
+    || !Number.isFinite(syllables)
+    || durationSeconds <= 0
+    || syllables <= 0
+  ) return 0;
+  const phase = elapsedSeconds / durationSeconds;
+  if (phase < 0 || phase > 1) return 0;
+  const envelope = Math.sin(Math.PI * phase) ** 0.45;
+  return 0.72 * envelope * Math.sin(Math.PI * syllables * phase) ** 2;
+}
+
+/** Smooth enter/hold/exit envelope for short directional-look reactions. */
+export function lookReactionAmount(elapsedSeconds: number, durationSeconds: number): number {
+  if (!Number.isFinite(elapsedSeconds) || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return 0;
+  const phase = elapsedSeconds / durationSeconds;
+  if (phase < 0 || phase > 1) return 0;
+  if (phase < 0.22) return easeInOut(phase / 0.22);
+  if (phase > 0.72) return easeInOut((1 - phase) / 0.28);
+  return 1;
+}
+
 export class LivingImagePlayer {
   private readonly context: CanvasRenderingContext2D;
   private manifest: LivingImageManifest | null = null;
@@ -43,6 +79,13 @@ export class LivingImagePlayer {
   private animationFrame: number | null = null;
   private blinkPulseStart = Number.NEGATIVE_INFINITY;
   private blinkPulseDuration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
+  private mouthPulseStart = Number.NEGATIVE_INFINITY;
+  private mouthPulseDuration = 0.92;
+  private mouthPulseSyllables = 4;
+  private lookReactionStart = Number.NEGATIVE_INFINITY;
+  private lookReactionDuration = 1.25;
+  private lookReactionX = 0;
+  private lookReactionY = 0;
   private eyeProtectionLayers = new Map<string, HTMLCanvasElement>();
   private eyeIrisLayers = new Map<string, EyeIrisLayers>();
   private eyeCorrectiveLayers = new Map<string, HTMLImageElement>();
@@ -87,6 +130,7 @@ export class LivingImagePlayer {
     this.previousTimestamp = null;
     this.manualState = { ...ZERO_STATE };
     this.renderedState = { ...ZERO_STATE };
+    this.cancelReactions();
     this.canvas.width = manifest.image.width;
     this.canvas.height = manifest.image.height;
     this.render();
@@ -100,8 +144,32 @@ export class LivingImagePlayer {
     return { ...this.renderedState };
   }
 
+  getCapabilities(): Readonly<RuntimeCapabilities> {
+    const quality = this.manifest?.quality;
+    if (!quality) return { loaded: false, status: null, blink: false, gaze: false, mouth: false, breath: false };
+    const disabled = new Set(quality.disabledCapabilities);
+    const playable = quality.status !== "reject";
+    return {
+      loaded: true,
+      status: quality.status,
+      blink: playable && !disabled.has("blink"),
+      gaze: playable && !disabled.has("gaze"),
+      mouth: playable && !disabled.has("mouth"),
+      breath: playable && !disabled.has("breath"),
+    };
+  }
+
   resetState(): void {
     this.manualState = { ...ZERO_STATE };
+    this.cancelReactions();
+  }
+
+  /** Clear history and synchronously draw the exact neutral frame. */
+  resetToNeutral(): void {
+    this.manualState = { ...ZERO_STATE };
+    this.renderedState = { ...ZERO_STATE };
+    this.cancelReactions();
+    this.render();
   }
 
   setAutoIdle(enabled: boolean): void {
@@ -111,6 +179,41 @@ export class LivingImagePlayer {
   triggerBlink(duration = DEFAULT_BLINK_PULSE_DURATION_SECONDS): void {
     this.blinkPulseDuration = Math.max(0.06, duration);
     this.blinkPulseStart = this.elapsed;
+  }
+
+  triggerReaction(reaction: RuntimeReaction): boolean {
+    const capabilities = this.getCapabilities();
+    if (reaction === "blink") {
+      if (!capabilities.blink) return false;
+      this.triggerBlink();
+      return true;
+    }
+    if (reaction === "talk") {
+      if (!capabilities.mouth) return false;
+      this.mouthPulseStart = this.elapsed;
+      this.mouthPulseDuration = 0.92;
+      this.mouthPulseSyllables = 4;
+      return true;
+    }
+    if (!capabilities.gaze) return false;
+    const directions: Record<Exclude<RuntimeReaction, "blink" | "talk">, [number, number]> = {
+      "look-left": [-0.72, 0],
+      "look-right": [0.72, 0],
+      "look-up": [0, -0.55],
+      "look-down": [0, 0.55],
+    };
+    [this.lookReactionX, this.lookReactionY] = directions[reaction];
+    this.lookReactionStart = this.elapsed;
+    this.lookReactionDuration = 1.25;
+    return true;
+  }
+
+  cancelReactions(): void {
+    this.blinkPulseStart = Number.NEGATIVE_INFINITY;
+    this.mouthPulseStart = Number.NEGATIVE_INFINITY;
+    this.lookReactionStart = Number.NEGATIVE_INFINITY;
+    this.lookReactionX = 0;
+    this.lookReactionY = 0;
   }
 
   start(): void {
@@ -142,12 +245,18 @@ export class LivingImagePlayer {
     this.elapsed += delta;
     const idle = this.autoIdle ? this.behavior.sample(this.elapsed) : ZERO_STATE;
     const pulse = blinkPulseAmount(this.elapsed - this.blinkPulseStart, this.blinkPulseDuration);
+    const mouthPulse = mouthPulseAmount(
+      this.elapsed - this.mouthPulseStart,
+      this.mouthPulseDuration,
+      this.mouthPulseSyllables,
+    );
+    const lookAmount = lookReactionAmount(this.elapsed - this.lookReactionStart, this.lookReactionDuration);
     const target = clampState({
       blinkLeft: Math.max(this.manualState.blinkLeft, idle.blinkLeft, pulse),
       blinkRight: Math.max(this.manualState.blinkRight, idle.blinkRight, pulse),
-      gazeX: this.manualState.gazeX + idle.gazeX * (1 - Math.abs(this.manualState.gazeX)),
-      gazeY: this.manualState.gazeY + idle.gazeY * (1 - Math.abs(this.manualState.gazeY)),
-      mouthOpen: this.manualState.mouthOpen,
+      gazeX: this.manualState.gazeX + idle.gazeX * (1 - Math.abs(this.manualState.gazeX)) + this.lookReactionX * lookAmount,
+      gazeY: this.manualState.gazeY + idle.gazeY * (1 - Math.abs(this.manualState.gazeY)) + this.lookReactionY * lookAmount,
+      mouthOpen: Math.max(this.manualState.mouthOpen, mouthPulse),
       breath: this.manualState.breath + idle.breath * (1 - Math.abs(this.manualState.breath)),
     });
     this.applyCapabilityGate(target);
@@ -202,8 +311,10 @@ export class LivingImagePlayer {
     if (blink <= 0.001 && Math.abs(this.renderedState.gazeX) <= 0.001 && Math.abs(this.renderedState.gazeY) <= 0.001) return;
     const deformation = eye.rig.deformation;
     const semanticMesh = deformation?.semanticMesh;
-    const semanticRequired = this.eyeDeformationMode !== "row-grid";
-    const semanticPlan = semanticRequired && blink > 0.001
+    const semanticEnabled = this.eyeDeformationMode === "best-available"
+      ? Boolean(semanticMesh)
+      : this.eyeDeformationMode !== "row-grid";
+    const semanticPlan = semanticEnabled && blink > 0.001
       ? (() => {
           if (!semanticMesh) throw new Error(`${eye.side} eye is missing its required semantic mesh`);
           return planEyeSemanticMesh(semanticMesh, width, height, blink);
@@ -267,7 +378,9 @@ export class LivingImagePlayer {
     }
     const protectedLayer = this.eyeProtectionLayers.get(eye.side);
     const protectionRegion = eye.rig.deformation?.region;
-    if (this.eyeDeformationMode === "semantic-mesh-corrective-required" && blink > 0.001) {
+    const correctiveEnabled = this.eyeDeformationMode === "semantic-mesh-corrective-required"
+      || (this.eyeDeformationMode === "best-available" && Boolean(deformation?.closedEye));
+    if (correctiveEnabled && blink > 0.001) {
       const corrective = deformation?.closedEye;
       const correctiveLayer = this.eyeCorrectiveLayers.get(eye.side);
       if (!corrective || !correctiveLayer || !protectionRegion) {

@@ -273,6 +273,17 @@ test("a rejected asset keeps every direct runtime control neutral", async () => 
     const manifest = fixtureManifest();
     manifest.quality.status = "reject";
     await player.load(manifest);
+    assert.deepEqual(player.getCapabilities(), {
+      loaded: true,
+      status: "reject",
+      blink: false,
+      gaze: false,
+      mouth: false,
+      breath: false,
+    });
+    assert.equal(player.triggerReaction("blink"), false);
+    assert.equal(player.triggerReaction("talk"), false);
+    assert.equal(player.triggerReaction("look-left"), false);
     player.setAutoIdle(false);
     player.setState({
       blinkLeft: 1,
@@ -291,6 +302,44 @@ test("a rejected asset keeps every direct runtime control neutral", async () => 
       mouthOpen: 0,
       breath: 0,
     });
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
+
+test("named reactions report capabilities and drive enabled controls", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const player = new LivingImagePlayer(new FakeCanvas() as unknown as HTMLCanvasElement);
+    const manifest = fixtureManifest();
+    manifest.quality.status = "limited";
+    manifest.quality.disabledCapabilities = ["gaze"];
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    assert.deepEqual(player.getCapabilities(), {
+      loaded: true,
+      status: "limited",
+      blink: true,
+      gaze: false,
+      mouth: true,
+      breath: true,
+    });
+    assert.equal(player.triggerReaction("blink"), true);
+    assert.equal(player.triggerReaction("talk"), true);
+    assert.equal(player.triggerReaction("look-right"), false);
+    player.step(0.1);
+    assert.ok(player.getState().blinkLeft > 0);
+    assert.ok(player.getState().mouthOpen > 0);
+    assert.equal(player.getState().gazeX, 0);
+    player.resetState();
+    player.step(0.1);
+    assert.equal(player.getState().blinkLeft, 0);
   } finally {
     Object.assign(globalThis, { Image: previousImage, document: previousDocument });
   }

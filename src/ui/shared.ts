@@ -22,7 +22,22 @@ export function renderQuality(container: HTMLElement, manifest: LivingImageManif
   `;
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value.replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character] ?? character);
 }
 
+export function renderRejectDiagnostic(
+  container: HTMLElement,
+  diagnostic: { rejectionReasons?: string[]; warnings?: string[] },
+): void {
+  const reasons = diagnostic.rejectionReasons?.length
+    ? diagnostic.rejectionReasons
+    : ["The image is outside the currently supported portrait domain."];
+  const warnings = diagnostic.warnings ?? [];
+  container.hidden = false;
+  container.innerHTML = `
+    <div class="quality-head"><strong class="reject-text">reject</strong><output>no .limg</output></div>
+    <p>The compiler stopped safely instead of creating a broken character.</p>
+    <ul>${[...reasons, ...warnings].map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul>
+  `;
+}

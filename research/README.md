@@ -10,6 +10,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`hugging-face-and-motion-landscape.md`](hugging-face-and-motion-landscape.md) — Hugging Face demos, closest compile-once precedents, license boundaries, and the next architecture experiment
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
+- [`product-studio-and-recording.md`](product-studio-and-recording.md) — local PNG-to-Viewer product flow, capability/reaction API, Canvas WebM review recording, and security/license boundary
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`browser-visual-ci.md`](browser-visual-ci.md) — headless-browser options, minimal Canvas 2D CI decision, cost, compatibility, and license boundaries
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
@@ -43,6 +44,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md) — pre-registered report-only corrective audit over the already-opened independent licensed set
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md) — preserved independent first-run protected-core failure, hashed visual evidence, and double-alpha root cause
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md) — opaque-cache correction, zero-error hold-out replay, translucent-source CI regression, and unchanged promotion boundary
+- [`experiments/2026-07-20-product-studio-validation.md`](experiments/2026-07-20-product-studio-validation.md) — real PNG-to-`.limg` Studio, reason-only reject, capability-gated reactions, deterministic showcase, and actual Chromium WebM evidence
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

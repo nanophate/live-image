@@ -12,6 +12,7 @@ import numpy as np
 
 from compiler import __version__
 from compiler.compile_character import (
+    DetectorRuntime,
     assess_quality,
     closed_eye_corrective_layer,
     compile_eye,
@@ -397,6 +398,19 @@ class CompilerGeometryTests(unittest.TestCase):
             self.assertEqual(diagnostic["input"], "portrait.png")
             self.assertEqual(diagnostic["compilerVersion"], __version__)
             self.assertNotIn(str(root), json.dumps(diagnostic))
+
+    def test_compile_paths_rechecks_runtime_image_dimension_limit_before_detection(self) -> None:
+        detector = mock.Mock()
+        runtime = DetectorRuntime(detector=detector, digests={})
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch(
+                "compiler.compile_character.cv2.imread",
+                return_value=np.zeros((1, 8193, 3), dtype=np.uint8),
+            ):
+                with self.assertRaisesRegex(ValueError, "portable runtime limit"):
+                    compile_paths([root / "oversized.png"], root / "output", None, True, False, runtime)
+        detector.assert_not_called()
 
 
 if __name__ == "__main__":

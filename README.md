@@ -42,7 +42,7 @@ Node is deliberately pinned through nodenv:
 
 ```bash
 nodenv install -s 24.18.0
-npm ci
+nodenv exec npm ci
 
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements/compiler.txt
@@ -56,11 +56,42 @@ The first compiler run downloads the MIT-labelled YOLOv3 and HRNetV2 weights
 from their upstream Hugging Face model repositories. Later runs can require the
 cache with `--offline`.
 
-## Run the proof
+## Run the local Studio
+
+After setup, the shortest product path is:
 
 ```bash
-npm run compile:fixtures
-npm run dev
+nodenv exec npm run studio
+```
+
+Open [http://127.0.0.1:8787/viewer.html](http://127.0.0.1:8787/viewer.html),
+select a PNG or JPEG, and wait for one of three explicit outcomes:
+
+- `full`: download the `.limg`, use every available control, play the review
+  showcase, or record it as a silent local WebM.
+- `limited`: download and play the `.limg`; unsafe capabilities are disabled in
+  both the UI and Runtime API.
+- `reject`: see the reason and guidance. No `.limg`, animation, or recording is
+  exposed.
+
+The server listens only on `127.0.0.1`, keeps uploaded images in a temporary
+directory for the duration of compilation, and reuses the loaded detector for
+later requests. After the detector weights are cached, require a network-free
+compiler run with:
+
+```bash
+nodenv exec npm run studio:offline
+```
+
+The Viewer still accepts an existing `.limg` without the Python compile
+endpoint. Details and the verified security/recording boundary are in
+[`research/product-studio-and-recording.md`](research/product-studio-and-recording.md).
+
+## Run the engineering proof
+
+```bash
+nodenv exec npm run compile:fixtures
+nodenv exec npm run dev
 ```
 
 Open:
@@ -76,13 +107,13 @@ The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 After the first online compile, verify fully offline compilation with:
 
 ```bash
-npm run compile:fixtures:offline
+nodenv exec npm run compile:fixtures:offline
 ```
 
 Run the 12-image generalisation suite with the cached detector models:
 
 ```bash
-npm run validate:fixtures:offline
+nodenv exec npm run validate:fixtures:offline
 ```
 
 The checked-in `fixtures/validation/report.json` preserves expected-versus-actual
@@ -96,8 +127,8 @@ Run the independent external hold-out without network access after the detector
 models are cached:
 
 ```bash
-npm run check:holdout:local
-npm run validate:holdout:offline
+nodenv exec npm run check:holdout:local
+nodenv exec npm run validate:holdout:offline
 ```
 
 The externally licensed PNG inputs are deliberately ignored by Git. Place them
@@ -148,9 +179,14 @@ import { LivingImagePlayer } from "./src/runtime.js";
 import { parseLivingImage } from "./src/schema.js";
 
 const manifest = parseLivingImage(await file.text());
-const player = new LivingImagePlayer(canvas);
+const player = new LivingImagePlayer(canvas, { eyeDeformation: "best-available" });
 await player.load(manifest);
 player.start();
+
+const capabilities = player.getCapabilities();
+if (capabilities.blink) player.triggerReaction("blink");
+if (capabilities.mouth) player.triggerReaction("talk");
+if (capabilities.gaze) player.triggerReaction("look-right");
 
 player.setState({
   blinkLeft: 0,
@@ -164,15 +200,17 @@ player.setState({
 
 All values are normalised. Per-image motion ranges and feature coordinates live
 in the compiled asset, not in runtime branches. Rejected or disabled controls
-are gated by the player.
+are gated by the player; `triggerReaction()` returns `false` when the requested
+reaction is unavailable. `setState()` remains the continuous-control API, while
+named reactions provide deterministic one-shot behavior for product code.
 
 ## Verify
 
 ```bash
-npm test
-npm run build
-npx playwright install --only-shell chromium
-npm run test:browser
+nodenv exec npm test
+nodenv exec npm run build
+nodenv exec npx playwright install --only-shell chromium
+nodenv exec npm run test:browser
 ```
 
 The browser suite uses the Compiler 0.8.0 automatic rigs for both primary
@@ -188,7 +226,7 @@ render with transparent iris textures provides direct Canvas evidence: every
 visible selected iris must contribute pixels, while full blink/wink must
 contribute zero. The suite also requires exact open-state recovery and makes no
 external page requests. After
-regenerating `fixtures/browser` rigs, run `npm run build` before the
+regenerating `fixtures/browser` rigs, run `nodenv exec npm run build` before the
 preview-backed browser test. Playwright's browser and FFmpeg downloads are
 development/CI-only and are not bundled into the Viewer.
 
