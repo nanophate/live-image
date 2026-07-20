@@ -1,12 +1,14 @@
 import {
   compareRgbaPixels,
   controlStateMaxError,
+  measureProtectedMaskQuality,
   measureRgbaLocality,
   MOTION_SETTLE_DELTA_SECONDS,
   MOTION_SETTLE_FRAMES,
   MOTION_STATE_TOLERANCE,
   planBlinkTransition,
   planMotionComparison,
+  type AlignedAlphaMask,
   type MotionComparisonCell,
 } from "../motion-comparison.js";
 import { LivingImagePlayer } from "../runtime.js";
@@ -29,6 +31,12 @@ const LOCALITY_PADDING_PIXELS = 1;
 interface NamedManifest {
   source: string;
   manifest: LivingImageManifest;
+}
+
+interface EyeProtectionEvidence {
+  side: "left" | "right";
+  region: Rect;
+  mask: AlignedAlphaMask;
 }
 
 function parseUrlList(value: string): string[] {
@@ -75,17 +83,67 @@ function canvasPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
   return context.getImageData(0, 0, canvas.width, canvas.height).data;
 }
 
+function controlledEyes(manifest: LivingImageManifest, cell: MotionComparisonCell) {
+  if (cell.capability === "gaze") return manifest.analysis.features.eyes;
+  if (cell.capability !== "blink") return [];
+  return manifest.analysis.features.eyes.filter((eye) => eye.side === "left"
+    ? cell.requestedState.blinkLeft > 0
+    : cell.requestedState.blinkRight > 0);
+}
+
 function allowedMotionRegions(manifest: LivingImageManifest, cell: MotionComparisonCell): Rect[] {
   if (cell.capability === "mouth") return [manifest.analysis.features.mouth.region];
-  if (cell.capability === "gaze") return manifest.analysis.features.eyes.map((eye) => eye.region);
-  if (cell.capability === "blink") {
-    return manifest.analysis.features.eyes
-      .filter((eye) => eye.side === "left"
-        ? cell.requestedState.blinkLeft > 0
-        : cell.requestedState.blinkRight > 0)
-      .map((eye) => eye.region);
-  }
-  return [];
+  return controlledEyes(manifest, cell).map((eye) => eye.region);
+}
+
+async function eyeProtectionEvidence(manifest: LivingImageManifest): Promise<EyeProtectionEvidence[]> {
+  return Promise.all(manifest.analysis.features.eyes.flatMap((eye) => {
+    const deformation = eye.rig.deformation;
+    if (!deformation) return [];
+    return [(async () => {
+      const definition = deformation.protectedLineArtMask;
+      const image = new Image();
+      image.decoding = "async";
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () => reject(new Error(`${eye.side} protected line-art mask could not be decoded for evidence`));
+        image.src = definition.dataUrl;
+      });
+      if (image.naturalWidth !== definition.width || image.naturalHeight !== definition.height) {
+        throw new Error(`${eye.side} protected line-art evidence dimensions do not match its manifest`);
+      }
+      const regionLeft = deformation.region.x * manifest.image.width;
+      const regionTop = deformation.region.y * manifest.image.height;
+      const originX = Math.floor(regionLeft);
+      const originY = Math.floor(regionTop);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(regionLeft + deformation.region.width * manifest.image.width) - originX;
+      canvas.height = Math.ceil(regionTop + deformation.region.height * manifest.image.height) - originY;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) throw new Error("Canvas 2D is not available for protected line-art evidence");
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(
+        image,
+        regionLeft - originX,
+        regionTop - originY,
+        deformation.region.width * manifest.image.width,
+        deformation.region.height * manifest.image.height,
+      );
+      const rgba = context.getImageData(0, 0, canvas.width, canvas.height).data;
+      const alpha = new Uint8ClampedArray(canvas.width * canvas.height);
+      for (let pixel = 0; pixel < alpha.length; pixel += 1) alpha[pixel] = rgba[pixel * 4 + 3] ?? 0;
+      const maskWidth = canvas.width;
+      const maskHeight = canvas.height;
+      canvas.width = 1;
+      canvas.height = 1;
+      return {
+        side: eye.side,
+        region: deformation.region,
+        mask: { data: alpha, width: maskWidth, height: maskHeight, originX, originY },
+      };
+    })()];
+  }));
 }
 
 async function neutralPixels(manifest: LivingImageManifest): Promise<Uint8ClampedArray> {
@@ -108,6 +166,7 @@ async function makeCell(
   manifest: LivingImageManifest,
   cell: MotionComparisonCell,
   baselinePixels: Uint8ClampedArray,
+  protectionEvidence: readonly EyeProtectionEvidence[],
 ): Promise<HTMLElement> {
   const article = document.createElement("article");
   article.className = `comparison-cell comparison-cell-${cell.status}`;
@@ -136,9 +195,10 @@ async function makeCell(
   try {
     await player.load(manifest);
     const stateError = settlePlayer(player, cell);
+    const renderedPixels = canvasPixels(renderCanvas);
     const locality = measureRgbaLocality(
       baselinePixels,
-      canvasPixels(renderCanvas),
+      renderedPixels,
       manifest.image.width,
       manifest.image.height,
       allowedMotionRegions(manifest, cell),
@@ -148,6 +208,36 @@ async function makeCell(
     article.dataset.outsideChangedPixels = String(locality.outsideChangedPixels);
     article.dataset.maxChannelDelta = String(locality.maxChannelDelta);
     article.dataset.visibleEffect = String(locality.visibleEffect);
+    const selectedEyeSides = new Set(controlledEyes(manifest, cell).map((eye) => eye.side));
+    const selectedProtections = protectionEvidence.filter((evidence) => selectedEyeSides.has(evidence.side));
+    const protectionByEye = selectedProtections.map((evidence) => ({
+      side: evidence.side,
+      metrics: measureProtectedMaskQuality(
+        baselinePixels,
+        renderedPixels,
+        manifest.image.width,
+        manifest.image.height,
+        evidence.mask,
+        evidence.region,
+      ),
+    }));
+    const protectionQuality = protectionByEye.length === 0
+      ? null
+      : protectionByEye.map((entry) => entry.metrics).reduce((total, metrics) => ({
+        corePixels: total.corePixels + metrics.corePixels,
+        coreErrorPixels: total.coreErrorPixels + metrics.coreErrorPixels,
+        coreMaxRgbDelta: Math.max(total.coreMaxRgbDelta, metrics.coreMaxRgbDelta),
+        clearMaskPixels: total.clearMaskPixels + metrics.clearMaskPixels,
+        clearMaskChangedPixels: total.clearMaskChangedPixels + metrics.clearMaskChangedPixels,
+      }));
+    if (protectionQuality) {
+      article.dataset.protectedCorePixels = String(protectionQuality.corePixels);
+      article.dataset.protectedCoreErrorPixels = String(protectionQuality.coreErrorPixels);
+      article.dataset.protectedCoreMaxRgbDelta = String(protectionQuality.coreMaxRgbDelta);
+      article.dataset.clearMaskPixels = String(protectionQuality.clearMaskPixels);
+      article.dataset.clearMaskChangedPixels = String(protectionQuality.clearMaskChangedPixels);
+      article.dataset.protectionByEye = JSON.stringify(protectionByEye);
+    }
     article.append(previewCanvas(renderCanvas, manifest, 420, `${manifest.id}: ${cell.label}`));
 
     const evidence = document.createElement("div");
@@ -169,11 +259,27 @@ async function makeCell(
       article.classList.add("comparison-cell-error");
       localityEvidence.classList.add("comparison-error-text");
     }
+    const protection = document.createElement("span");
+    if (protectionQuality) {
+      protection.textContent = `protected errors ${protectionQuality.coreErrorPixels}/${protectionQuality.corePixels} · max RGB ${protectionQuality.coreMaxRgbDelta} · clear-mask Δ ${protectionQuality.clearMaskChangedPixels}/${protectionQuality.clearMaskPixels}`;
+      const invalidEye = protectionByEye.some(({ metrics }) => (
+        metrics.corePixels === 0
+        || metrics.coreErrorPixels > 0
+        || metrics.clearMaskPixels === 0
+        || metrics.clearMaskChangedPixels === 0
+      ));
+      if (invalidEye) {
+        article.classList.add("comparison-cell-error");
+        protection.classList.add("comparison-error-text");
+      }
+    }
     const download = document.createElement("a");
     download.href = await canvasPngUrl(renderCanvas);
     download.download = `${manifest.id}-${cell.id}.png`;
     download.textContent = "Full PNG";
-    evidence.append(phase, error, localityEvidence, download);
+    evidence.append(phase, error, localityEvidence);
+    if (protectionQuality) evidence.append(protection);
+    evidence.append(download);
     article.append(evidence);
   } catch (error) {
     article.classList.add("comparison-cell-error");
@@ -291,9 +397,12 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
 
   const grid = document.createElement("div");
   grid.className = "comparison-grid";
-  const baselinePixels = await neutralPixels(manifest);
+  const [baselinePixels, protectionEvidence] = await Promise.all([
+    neutralPixels(manifest),
+    eyeProtectionEvidence(manifest),
+  ]);
   for (const cell of planMotionComparison(manifest)) {
-    grid.append(await makeCell(manifest, cell, baselinePixels));
+    grid.append(await makeCell(manifest, cell, baselinePixels, protectionEvidence));
   }
   section.append(heading, grid, await makeBlinkTransition(manifest));
   return section;
