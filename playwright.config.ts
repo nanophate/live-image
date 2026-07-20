@@ -17,7 +17,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "npm run preview -- --host 127.0.0.1 --port 4174",
+    command: "npm run build && npm run preview -- --host 127.0.0.1 --port 4174",
     url: "http://127.0.0.1:4174/compare.html",
     reuseExistingServer: false,
     timeout: 120_000,

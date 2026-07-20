@@ -199,3 +199,51 @@ test(`automatic rigs keep browser-rendered motion inside compiler feature region
   console.log(`LOCALITY_EVIDENCE ${eyeMode} ${JSON.stringify(evidence)}`);
 });
 }
+
+test("protected cores remain exact when the embedded source contains transparency", async ({ page }) => {
+  const manifest = JSON.parse(compiledRig("teal-librarian").toString("utf8")) as {
+    id: string;
+    image: { dataUrl: string; sha256: string };
+  };
+  await page.goto("/compare.html");
+  const translucentDataUrl = await page.evaluate(async (sourceDataUrl) => {
+    const source = new Image();
+    await new Promise<void>((resolve, reject) => {
+      source.onload = () => resolve();
+      source.onerror = () => reject(new Error("tracked source image could not be decoded"));
+      source.src = sourceDataUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = source.naturalWidth;
+    canvas.height = source.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas 2D is unavailable for the transparency regression fixture");
+    context.globalAlpha = 0.5;
+    context.drawImage(source, 0, 0);
+    return canvas.toDataURL("image/png");
+  }, manifest.image.dataUrl);
+  const encoded = Buffer.from(translucentDataUrl.split(",", 2)[1] ?? "", "base64");
+  manifest.id = "transparent-source-regression";
+  manifest.image.dataUrl = translucentDataUrl;
+  manifest.image.sha256 = createHash("sha256").update(encoded).digest("hex");
+
+  await page.locator("#comparison-eye-deformation").selectOption("semantic-mesh-corrective-required");
+  await page.locator("#comparison-files").setInputFiles({
+    name: "transparent-source-regression.limg",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(manifest)),
+  });
+  await expect(page.locator("#comparison-status")).toHaveText(
+    "Rendered 1 character in fixed deterministic states.",
+    { timeout: 120_000 },
+  );
+
+  const character = page.locator('[data-character-id="transparent-source-regression"]');
+  for (const state of ["blink-mid", "blink-full", "wink-left", "wink-right", "gaze-left", "gaze-right"]) {
+    const metrics = await cellMetrics(character, state);
+    expect(metrics.protection, `${state} should expose protection evidence`).not.toBeNull();
+    expect(metrics.protection!.coreErrorPixels, `${state} double-composited protected source alpha`).toBe(0);
+    expect(metrics.protection!.coreMaxRgbDelta, `${state} changed a protected core channel`).toBeLessThanOrEqual(1);
+  }
+  await expect(character.locator(".comparison-cell-error")).toHaveCount(0);
+});

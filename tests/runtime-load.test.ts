@@ -29,6 +29,7 @@ class FakeContext {
   clip(): void {}
   ellipse(): void {}
   fill(): void {}
+  fillRect(): void {}
   drawImage(image: unknown): void { this.drawnImages.push(image); }
 }
 

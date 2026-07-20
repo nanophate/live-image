@@ -410,6 +410,12 @@ export class LivingImagePlayer {
       const layerContext = layer.getContext("2d");
       if (!layerContext) throw new Error("Canvas 2D is not available for protected line art");
       const region = deformation.region;
+      // The player canvas is opaque, so transparent source pixels are first
+      // composited against black there. Cache the protected crop using the same
+      // backing colour; retaining source alpha here would composite those pixels
+      // a second time when the protection layer is restored.
+      layerContext.fillStyle = "#000";
+      layerContext.fillRect(0, 0, layer.width, layer.height);
       layerContext.drawImage(
         image,
         region.x * manifest.image.width,

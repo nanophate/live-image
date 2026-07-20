@@ -40,6 +40,9 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-closed-eye-corrective-v2-first-run.md`](experiments/2026-07-20-closed-eye-corrective-v2-first-run.md) — two-image improvement, dark-hair coherent fit failure, and bound artifacts
 - [`experiments/2026-07-20-closed-eye-corrective-v3-protocol.md`](experiments/2026-07-20-closed-eye-corrective-v3-protocol.md) — pre-registered lower-band-first sampling test
 - [`experiments/2026-07-20-closed-eye-corrective-v3-validation.md`](experiments/2026-07-20-closed-eye-corrective-v3-validation.md) — Compiler 0.8 implementation, 3/3 visual endpoint gate, 7/7 browser result, 12/12 public matrix, and preserved hold-out boundary
+- [`experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md) — pre-registered report-only corrective audit over the already-opened independent licensed set
+- [`experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md) — preserved independent first-run protected-core failure, hashed visual evidence, and double-alpha root cause
+- [`experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md) — opaque-cache correction, zero-error hold-out replay, translucent-source CI regression, and unchanged promotion boundary
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels
