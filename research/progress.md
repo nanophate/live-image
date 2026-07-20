@@ -21,6 +21,8 @@ Branch: `codex/iris-base-eye-layer`
 | PR #5 / `0a56bb7` | real-browser motion-locality gate | exact Playwright 1.61.1 + Chromium validates 2 automatic rigs across 26 blink, wink, gaze, and mouth states with visible local effects, zero ROI leakage, and pixel-exact blink recovery |
 | `1ff35ad` | protected eye-pixel gate | real Canvas sampling validates 20 eye-state renders / 36 selected-eye checks independently, with zero protected-core RGB errors and nonzero clear-mask movement; mask-bypass and one-eye no-op faults both reproduced failures |
 | `068174a` | Compiler 0.4 rigid iris/base-eye layers | fully contained automatic iris RGB/alpha cages, Telea base eyes, cardinal/diagonal gaze bounds, blink-only sclera warp, direct rendered-iris Canvas control, 12/12 matrix and preserved 2/5 stricter hold-out result |
+| `70da748` | source and exact motion contracts | all 12 public quality-calibration inputs pin SHA-256 plus exact blink/gaze/mouth capability partitions; real offline detection remains 12/12 and the tracked report is unit-checked |
+| `c53d241` | report-only support-domain descriptors | deterministic source-bound OpenCV metrics over 12 feasibility cases, explicit contaminated A replay/procedure failure, byte-identical raw reports, malformed-artifact isolation, and no production gate change |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
