@@ -83,6 +83,27 @@ They should not be treated as one hosting target.
   workload. Porting this path to WebAssembly would be a separate architecture
   project, not deployment configuration.
 
+## Codex / ChatGPT Sites
+
+- **Confirmed:** OpenAI describes Sites as hosted interactive websites and
+  lightweight apps that can be created, previewed, published, and shared from
+  Codex or ChatGPT Work. Access and public-publishing controls depend on the
+  user's plan, region, and workspace administration. Sources:
+  <https://help.openai.com/en/articles/20001339-creating-and-managing-chatgpt-sites>
+  and <https://openai.com/academy/chatgpt-sites/>.
+- **Confirmed:** the Sites workflow available in the reviewed Codex environment
+  targets Cloudflare Worker-compatible ESM output and can provision logical D1
+  or R2 bindings. It does not provide a native PyTorch/OpenCV process runtime.
+- **Inference:** Sites can host the Canvas `.limg` Viewer and its reactions,
+  showcase, and recording. The current multi-page Vite repository still needs a
+  Sites-compatible hosting manifest/build adaptation; it is not a zero-change
+  publish.
+- **Decision:** Sites is attractive for a quick private or workspace review URL.
+  GitHub Pages remains preferable for the canonical public project demo tied to
+  this repository and its release history.
+- **Decision:** Sites does not change the hosted Compiler conclusion. PNG
+  compilation stays local until a separately secured container API exists.
+
 ## Cloudflare Containers
 
 - **Confirmed:** Cloudflare Containers are generally available on Workers Paid
@@ -175,6 +196,8 @@ They should not be treated as one hosting target.
 - **Open:** GitHub Pages remains a reasonable documentation/static fallback,
   but Cloudflare is the more coherent path if the project intends to add a
   hosted compiler later.
+- **Open:** Codex Sites may be used as a parallel private review surface, but
+  should not become a second divergent Runtime implementation.
 
 ## License and provenance impact
 
