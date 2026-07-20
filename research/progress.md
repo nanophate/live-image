@@ -28,6 +28,7 @@ Current branch: `codex/product-demo-recording`
 | PR #7 / `7bd42ad` | semantic eye work merged | Compiler 0.8 semantic mesh, closed-eye corrective, and independent alpha audit merged to `main` |
 | `60e832b` | local product Studio and review recording | localhost-only PNG/JPEG → full/limited/reject flow, downloadable `.limg`, capability-gated named reactions, deterministic showcase, exact-neutral WebM recording, signature/dimension/Host fail-closed gates, 51/51 TypeScript, 39/39 Python, 11 Chromium passes plus 2 local-only skips, and 2/2 actual Studio browser checks |
 | `c8ad373` | public hosting feasibility | Cloudflare Pages selected for the first static Viewer review, GitHub Pages retained as a static fallback, ordinary Workers rejected for the current PyTorch/OpenCV compiler, and Cloudflare Containers limited to a future authenticated private alpha after privacy/license/operations gates |
+| `e57e389` | hosted compiler private-alpha scaffold | one-origin Worker Assets + private Python Container path, reviewed model hashes baked and checked offline, Viewer hosted/local/viewer-only modes, bounded fixed-length uploads with header isolation, real detector HTTP proof at 4.34 seconds warm local, 55/55 TypeScript, 44/44 Python, 13 Chromium passes plus 2 documented local-only skips, and deploy disabled pending Docker/Access/cost gates |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
