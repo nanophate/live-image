@@ -8,9 +8,17 @@ for the upstream license texts or legal review.
 - TypeScript — Apache License 2.0 — <https://github.com/microsoft/TypeScript>
 - Vite — MIT License — <https://github.com/vitejs/vite>
 - esbuild (transitive Vite dependency) — MIT License — <https://github.com/evanw/esbuild>
+- @playwright/test / Playwright 1.61.1 — Apache License 2.0; preserve its
+  NOTICE when redistributed — <https://github.com/microsoft/playwright>
+- Playwright Chromium headless shell revision 1228 (Chromium
+  149.0.7827.55) — Chromium BSD-style license plus bundled third-party
+  notices — <https://chromium.googlesource.com/chromium/src/+/main/LICENSE>
+- Playwright FFmpeg revision 1011 — GNU Lesser General Public License 2.1 or later;
+  the downloaded cache includes `COPYING.LGPLv2.1` — <https://ffmpeg.org/legal.html>
 
 No third-party package is required by the generated browser runtime at frame
-time; Vite and TypeScript are development/build tools.
+time. Playwright, Chromium, and FFmpeg are development/CI-only and are not
+copied into the Viewer build or release artifacts.
 
 ## Compiler
 

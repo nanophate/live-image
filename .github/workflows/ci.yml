@@ -33,6 +33,17 @@ jobs:
         run: npm run test:ts
       - name: Build browser viewers
         run: npm run build
+      - name: Install Chromium headless shell
+        run: npx playwright install --with-deps --only-shell chromium
+      - name: Run browser Canvas tests
+        run: npm run test:browser
+      - name: Upload browser diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-results
+          path: test-results/
+          if-no-files-found: ignore
 
   compiler:
     name: Compiler tests

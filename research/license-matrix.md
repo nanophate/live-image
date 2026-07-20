@@ -12,6 +12,7 @@ artifacts are not part of this release.
 | anime-face-detector | MIT; vendored portions Apache-2.0 | Model cards state MIT, but training-data provenance is not warranted | compile-time detector | usable for research MVP; provenance review before commercial release |
 | compiler dependency stack | OpenCV Apache-2.0; NumPy BSD-3-Clause; PyTorch/torchvision BSD-style; Hugging Face Hub and safetensors Apache-2.0 | no additional project-owned data | detector execution and checkpoint loading | versions pinned directly or transitively in the compiler environment |
 | web build stack | TypeScript Apache-2.0; Vite and esbuild MIT | none | development, tests, and browser bundle generation | no third-party package is required by the generated runtime at frame time |
+| browser validation stack | @playwright/test / Playwright 1.61.1 Apache-2.0; Chromium BSD-style plus bundled third-party notices; Playwright FFmpeg LGPL-2.1-or-later | Chromium headless shell revision 1228 / 149.0.7827.55 and FFmpeg revision 1011, downloaded to an ephemeral developer or CI cache | full-resolution Canvas 2D locality and recovery tests only | exact npm version locked; browser/FFmpeg are not shipped in Viewer artifacts; preserve bundled notices before any cache, image, or test-appliance redistribution |
 | repository fixtures | n/a | generated specifically for this project with OpenAI image generation, plus one locally downsampled derivative | regression tests, demo, and 12-image validation | prompt/provenance recorded in `fixtures/README.md` and `fixtures/validation/prompts.json` |
 | external hold-out test media | n/a | four CC0 images and one CC BY 3.0 image from five OpenGameArt contributors | independent compiler/runtime validation only | local-only and ignored by Git; exact attribution, hashes, and any derivative obligations are recorded in `fixtures/holdout/ATTRIBUTION.md` |
 
@@ -28,3 +29,6 @@ artifacts are not part of this release.
 - Keep external hold-out media out of Git and outside the MIT-licensed
   project-artwork claim; preserve the Jupiter's Daughter CC BY 3.0 attribution
   whenever that portrait or a derivative is distributed.
+- Do not copy Playwright browser or FFmpeg caches into a release, container, or
+  offline test appliance without carrying their bundled license/notice files
+  and reviewing the resulting redistribution obligations.

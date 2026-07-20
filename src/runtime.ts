@@ -148,7 +148,7 @@ export class LivingImagePlayer {
     if (disabled.has("gaze")) state.gazeX = state.gazeY = 0;
     if (disabled.has("mouth")) state.mouthOpen = 0;
     if (this.manifest.quality.status === "reject") {
-      state.blinkLeft = state.blinkRight = state.gazeX = state.gazeY = state.mouthOpen = 0;
+      state.blinkLeft = state.blinkRight = state.gazeX = state.gazeY = state.mouthOpen = state.breath = 0;
     }
   }
 

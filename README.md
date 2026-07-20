@@ -152,13 +152,24 @@ are gated by the player.
 ```bash
 npm test
 npm run build
+npx playwright install --only-shell chromium
+npm run test:browser
 ```
+
+The browser suite uses the Compiler 0.3.0 automatic rigs for both primary
+fixtures, reads the real full-resolution Canvas, and requires every enabled
+blink, wink, gaze, and mouth state to change pixels only inside its
+compiler-authored feature region. It also requires exact open-state recovery
+and makes no external page requests. Playwright's browser and FFmpeg downloads
+are development/CI-only and are not bundled into the Viewer.
 
 The animation and multi-image validation results are in
 [`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md)
 and [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 The independent hold-out and common-state renderer are documented in
 [`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md).
+The real-browser locality gate is documented in
+[`research/experiments/2026-07-20-browser-locality-validation.md`](research/experiments/2026-07-20-browser-locality-validation.md).
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations

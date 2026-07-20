@@ -3,7 +3,7 @@ import {
   blinkPulseAmount,
   DEFAULT_BLINK_PULSE_DURATION_SECONDS,
 } from "./runtime.js";
-import type { LivingImageManifest } from "./schema.js";
+import type { LivingImageManifest, Rect } from "./schema.js";
 
 export type MotionCapability = "blink" | "gaze" | "mouth";
 export type MotionComparisonPhase = "reference" | "acceptance" | "stress";
@@ -54,6 +54,13 @@ export interface BlinkTransitionPlan {
 export interface PixelDifference {
   differingPixels: number;
   maxChannelDelta: number;
+}
+
+export interface RgbaLocalityMetrics {
+  insideChangedPixels: number;
+  outsideChangedPixels: number;
+  maxChannelDelta: number;
+  visibleEffect: boolean;
 }
 
 const SCENARIOS: readonly MotionScenario[] = [
@@ -157,6 +164,98 @@ export function compareRgbaPixels(
     if (pixelDiffers) differingPixels += 1;
   }
   return { differingPixels, maxChannelDelta };
+}
+
+/**
+ * Measure whether a full-resolution RGBA change stays inside compiler-authored
+ * normalized regions. A pixel is allowed when its area intersects a region;
+ * pixel padding expands those resulting integer bounds before clipping them to
+ * the frame. `visibleEffect` deliberately requires an in-region change, so an
+ * outside-only rendering leak is not mistaken for an intended motion effect.
+ */
+export function measureRgbaLocality(
+  baseline: Uint8ClampedArray,
+  frame: Uint8ClampedArray,
+  width: number,
+  height: number,
+  allowedRects: readonly Rect[],
+  pixelPadding = 0,
+): RgbaLocalityMetrics {
+  if (!Number.isSafeInteger(width) || width <= 0 || !Number.isSafeInteger(height) || height <= 0) {
+    throw new Error("RGBA frame width and height must be positive safe integers");
+  }
+  const expectedLength = width * height * 4;
+  if (!Number.isSafeInteger(expectedLength)) {
+    throw new Error("RGBA frame dimensions are too large");
+  }
+  if (baseline.length !== expectedLength || frame.length !== expectedLength) {
+    throw new Error(`RGBA frames must each contain exactly ${expectedLength} channels`);
+  }
+  if (!Number.isSafeInteger(pixelPadding) || pixelPadding < 0) {
+    throw new Error("Pixel padding must be a non-negative safe integer");
+  }
+  if (!Array.isArray(allowedRects)) {
+    throw new Error("Allowed rectangles must be an array");
+  }
+
+  const snapPixelBoundary = (value: number): number => {
+    const nearestInteger = Math.round(value);
+    const tolerance = Number.EPSILON * Math.max(1, Math.abs(value)) * 8;
+    return Math.abs(value - nearestInteger) <= tolerance ? nearestInteger : value;
+  };
+  const pixelBounds = allowedRects.map((rect, index) => {
+    if (rect === null || typeof rect !== "object") {
+      throw new Error(`Allowed rectangle ${index} must be an object`);
+    }
+    const values = [rect.x, rect.y, rect.width, rect.height];
+    if (!values.every(Number.isFinite)) {
+      throw new Error(`Allowed rectangle ${index} must contain finite values`);
+    }
+    if (
+      rect.x < 0 || rect.y < 0 || rect.width <= 0 || rect.height <= 0
+      || rect.x + rect.width > 1 || rect.y + rect.height > 1
+    ) {
+      throw new Error(`Allowed rectangle ${index} must be a positive normalized rectangle`);
+    }
+    const left = snapPixelBoundary(rect.x * width);
+    const top = snapPixelBoundary(rect.y * height);
+    const right = snapPixelBoundary((rect.x + rect.width) * width);
+    const bottom = snapPixelBoundary((rect.y + rect.height) * height);
+    return {
+      left: Math.max(0, Math.floor(left) - pixelPadding),
+      top: Math.max(0, Math.floor(top) - pixelPadding),
+      right: Math.min(width, Math.ceil(right) + pixelPadding),
+      bottom: Math.min(height, Math.ceil(bottom) + pixelPadding),
+    };
+  });
+
+  let insideChangedPixels = 0;
+  let outsideChangedPixels = 0;
+  let maxChannelDelta = 0;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const offset = (y * width + x) * 4;
+      let pixelDiffers = false;
+      for (let channel = 0; channel < 4; channel += 1) {
+        const delta = Math.abs((baseline[offset + channel] ?? 0) - (frame[offset + channel] ?? 0));
+        if (delta > 0) pixelDiffers = true;
+        maxChannelDelta = Math.max(maxChannelDelta, delta);
+      }
+      if (!pixelDiffers) continue;
+      const inside = pixelBounds.some((bounds) => (
+        x >= bounds.left && x < bounds.right && y >= bounds.top && y < bounds.bottom
+      ));
+      if (inside) insideChangedPixels += 1;
+      else outsideChangedPixels += 1;
+    }
+  }
+
+  return {
+    insideChangedPixels,
+    outsideChangedPixels,
+    maxChannelDelta,
+    visibleEffect: insideChangedPixels > 0,
+  };
 }
 
 export function controlStateMaxError(expected: ControlState, actual: Readonly<ControlState>): number {

@@ -136,3 +136,40 @@ test("a source image with mismatched intrinsic dimensions is rejected", async ()
     Object.assign(globalThis, { Image: previousImage, document: previousDocument });
   }
 });
+
+test("a rejected asset keeps every direct runtime control neutral", async () => {
+  const previousImage = globalThis.Image;
+  const previousDocument = globalThis.document;
+  Object.assign(globalThis, {
+    Image: FakeImage,
+    document: { createElement: () => new FakeCanvas() },
+  });
+
+  try {
+    const canvas = new FakeCanvas();
+    const player = new LivingImagePlayer(canvas as unknown as HTMLCanvasElement);
+    const manifest = fixtureManifest();
+    manifest.quality.status = "reject";
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    player.setState({
+      blinkLeft: 1,
+      blinkRight: 1,
+      gazeX: 1,
+      gazeY: 1,
+      mouthOpen: 1,
+      breath: 1,
+    });
+    player.step(1 / 60);
+    assert.deepEqual(player.getState(), {
+      blinkLeft: 0,
+      blinkRight: 0,
+      gazeX: 0,
+      gazeY: 0,
+      mouthOpen: 0,
+      breath: 0,
+    });
+  } finally {
+    Object.assign(globalThis, { Image: previousImage, document: previousDocument });
+  }
+});
