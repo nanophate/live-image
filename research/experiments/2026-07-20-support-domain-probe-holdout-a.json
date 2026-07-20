@@ -1,0 +1,653 @@
+{
+  "version": 1,
+  "probe": {
+    "name": "living-image-support-domain-probe",
+    "version": "1.0.0",
+    "compilerVersion": "0.4.0",
+    "parameters": {
+      "faceSize": 256,
+      "faceBoxRule": "floor-min-ceil-max-strict-normalized-bounds",
+      "featureRegionRule": "axis-aligned-strict-normalized-bounds",
+      "resizeRule": "INTER_AREA-when-shrinking-otherwise-INTER_LINEAR",
+      "colourConversion": "BGR-to-gray-COLOR_BGR2GRAY",
+      "alphaCompositeBackgroundBgr": [
+        255,
+        255,
+        255
+      ],
+      "gaussianKernel": 5,
+      "gaussianSigma": 1.0,
+      "gaussianBorder": "BORDER_REFLECT_101",
+      "cannyLow": 80,
+      "cannyHigh": 160,
+      "cannyAperture": 3,
+      "cannyL2Gradient": true,
+      "edgeSupportDistance": 3.0,
+      "distanceTransform": "DIST_L2",
+      "distanceTransformMask": 3,
+      "boundaryBand": 3,
+      "bilateralDiameter": 7,
+      "bilateralSigmaColour": 24.0,
+      "bilateralSigmaSpace": 5.0,
+      "bilateralBorder": "BORDER_REFLECT_101",
+      "residualDefinition": "abs(gray-bilateral-gray)/255",
+      "residualQuantile": 0.95,
+      "connectedComponentConnectivity": 8,
+      "minimumEdgeComponentPixels": 3,
+      "crossingCloseKernel": 3,
+      "crossingCloseIterations": 1,
+      "irisCoreErosionKernel": 3,
+      "maskMorphologyBorder": "BORDER_CONSTANT-zero",
+      "legacyFieldMapping": {
+        "quality.metrics.irisSegmentationConfidence": "compilerIrisGeometricEligibilityScore"
+      },
+      "opencvVersion": "4.10.0",
+      "numpyVersion": "1.26.4"
+    }
+  },
+  "sourceManifest": "manifest.json",
+  "sourceManifestSha256": "8c614b8640fe5831fa0b885c6bf6b01f69fce7cf57f5d4568aa098430d2fdc22",
+  "evidenceStatus": "contaminated-exploratory-replay",
+  "summary": {
+    "total": 5,
+    "measured": 5,
+    "errors": 0
+  },
+  "cases": [
+    {
+      "id": "stevenburrow-sample1",
+      "category": "clean-frontal-external",
+      "source": "source/stevenburrow-sample1.png",
+      "sourceSha256": "d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831",
+      "expected": "full",
+      "compilerStatus": "full",
+      "artifactSha256": "d6143ce29a17ee1cc0981dfddcccaa4c71d936b3706146a0a5e0b4fa06270a7a",
+      "descriptors": {
+        "faceResizeInterpolation": "INTER_AREA",
+        "featureLandmarkEdgeSupport": {
+          "left": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 0.47749999165534973
+          },
+          "right": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 1.1621499955654144
+          },
+          "mouth": {
+            "sampleCount": 4,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 0.9549999833106995
+          }
+        },
+        "patchBoundaryEdgeDensityJump": {
+          "left": {
+            "insideEdgeDensity": 0.03368794326241135,
+            "outsideEdgeDensity": 0.055,
+            "absoluteDensityJump": 0.021312056737588653
+          },
+          "right": {
+            "insideEdgeDensity": 0.03317535545023697,
+            "outsideEdgeDensity": 0.04110612855007474,
+            "absoluteDensityJump": 0.007930773099837772
+          },
+          "mouth": {
+            "insideEdgeDensity": 0.025,
+            "outsideEdgeDensity": 0.0036231884057971015,
+            "absoluteDensityJump": 0.0213768115942029
+          }
+        },
+        "bilateralAbsoluteResidual": {
+          "face": {
+            "mean": 0.006516760215163231,
+            "p95": 0.0313725508749485
+          },
+          "features": {
+            "left": {
+              "mean": 0.009215686470270157,
+              "p95": 0.03921568766236305
+            },
+            "right": {
+              "mean": 0.0055922819301486015,
+              "p95": 0.0313725508749485
+            },
+            "mouth": {
+              "mean": 0.003952427301555872,
+              "p95": 0.027450980618596077
+            }
+          }
+        },
+        "strongEdgeComponents": {
+          "componentCount": 52,
+          "componentsPer10kPixels": 7.9345703125,
+          "medianComponentPixels": 37.5,
+          "largestComponentFraction": 0.0249176025390625
+        },
+        "irisConnectedEdgeGraph": {
+          "left": {
+            "available": true,
+            "minimumComponentPixels": 22,
+            "connectedComponentCount": 1,
+            "largestConnectedComponentPixels": 5428
+          },
+          "right": {
+            "available": true,
+            "minimumComponentPixels": 23,
+            "connectedComponentCount": 0,
+            "largestConnectedComponentPixels": 0
+          }
+        },
+        "effectiveEyeGeometry": [
+          {
+            "side": "left",
+            "widthPixels": 53.79547119140625,
+            "heightPixels": 48.40594482421875,
+            "safeGazeXPixels": 2.5069998529102304,
+            "safeGazeYPixels": 0.7713963266430486,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 11.0,
+            "irisRadiusYPixels": 19.0,
+            "compilerIrisGeometricEligibilityScore": 1.0
+          },
+          {
+            "side": "right",
+            "widthPixels": 67.82815551757812,
+            "heightPixels": 49.98834228515625,
+            "safeGazeXPixels": 3.6567071255063346,
+            "safeGazeYPixels": 1.524499085354764,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 14.0,
+            "irisRadiusYPixels": 20.0,
+            "compilerIrisGeometricEligibilityScore": 1.0
+          }
+        ],
+        "compilerGeometry": {
+          "faceScore": 0.999775230884552,
+          "meanLandmarkScore": 0.9164047241210938,
+          "eyeConfidence": 0.8313607603311539,
+          "mouthConfidence": 0.8148298431516257,
+          "mouthLineConfidence": 1.0,
+          "pupilConfidence": 1.0,
+          "compilerIrisGeometricEligibilityScore": 1.0,
+          "eyeSymmetry": 0.7931141689009195,
+          "faceScale": 0.27098345947265623,
+          "minImageDimensionPixels": 1000.0
+        }
+      }
+    },
+    {
+      "id": "mcproject-manga-girl",
+      "category": "strong-highlight-external",
+      "source": "source/mcproject-manga-girl.png",
+      "sourceSha256": "c724af25f948bc73080b4c94e1f21ebbd1540fdd8f9eb84a9b918c853a9c9b8b",
+      "expected": "full",
+      "compilerStatus": "limited",
+      "artifactSha256": "927319c3b081a26b9ca58eae2e52fe32883562dd8cff7b7cebf5ce08a798c576",
+      "descriptors": {
+        "faceResizeInterpolation": "INTER_AREA",
+        "featureLandmarkEdgeSupport": {
+          "left": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 1.1621499955654144
+          },
+          "right": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 1.4324999749660492
+          },
+          "mouth": {
+            "sampleCount": 4,
+            "supportedFraction": 0.75,
+            "medianDistancePixels": 0.9549999833106995
+          }
+        },
+        "patchBoundaryEdgeDensityJump": {
+          "left": {
+            "insideEdgeDensity": 0.010548523206751054,
+            "outsideEdgeDensity": 0.018627450980392157,
+            "absoluteDensityJump": 0.008078927773641102
+          },
+          "right": {
+            "insideEdgeDensity": 0.0210727969348659,
+            "outsideEdgeDensity": 0.025985663082437275,
+            "absoluteDensityJump": 0.004912866147571374
+          },
+          "mouth": {
+            "insideEdgeDensity": 0.019696969696969695,
+            "outsideEdgeDensity": 0.004098360655737705,
+            "absoluteDensityJump": 0.01559860904123199
+          }
+        },
+        "bilateralAbsoluteResidual": {
+          "face": {
+            "mean": 0.00694233039394021,
+            "p95": 0.0313725508749485
+          },
+          "features": {
+            "left": {
+              "mean": 0.00824105553328991,
+              "p95": 0.034901962429283624
+            },
+            "right": {
+              "mean": 0.00831503327935934,
+              "p95": 0.03235294297337532
+            },
+            "mouth": {
+              "mean": 0.006876104976981878,
+              "p95": 0.03529411926865578
+            }
+          }
+        },
+        "strongEdgeComponents": {
+          "componentCount": 44,
+          "componentsPer10kPixels": 6.7138671875,
+          "medianComponentPixels": 64.5,
+          "largestComponentFraction": 0.0070343017578125
+        },
+        "irisConnectedEdgeGraph": {
+          "left": {
+            "available": false,
+            "connectedComponentCount": 0,
+            "largestConnectedComponentPixels": 0
+          },
+          "right": {
+            "available": false,
+            "connectedComponentCount": 0,
+            "largestConnectedComponentPixels": 0
+          }
+        },
+        "effectiveEyeGeometry": [
+          {
+            "side": "left",
+            "widthPixels": 79.5931396484375,
+            "heightPixels": 55.0255126953125,
+            "safeGazeXPixels": 5.969485473632813,
+            "safeGazeYPixels": 4.126913452148437,
+            "irisAvailable": false
+          },
+          {
+            "side": "right",
+            "widthPixels": 92.2850341796875,
+            "heightPixels": 58.33514404296875,
+            "safeGazeXPixels": 6.921377563476562,
+            "safeGazeYPixels": 4.375135803222656,
+            "irisAvailable": false
+          }
+        ],
+        "compilerGeometry": {
+          "faceScore": 0.9899850487709045,
+          "meanLandmarkScore": 0.9052454233169556,
+          "eyeConfidence": 0.8341783945960755,
+          "mouthConfidence": 0.9250444325677281,
+          "mouthLineConfidence": 1.0,
+          "pupilConfidence": 1.0,
+          "compilerIrisGeometricEligibilityScore": 0.0,
+          "eyeSymmetry": 0.8624707175538592,
+          "faceScale": 0.4696958368474787,
+          "minImageDimensionPixels": 832.0
+        }
+      }
+    },
+    {
+      "id": "kitsuge-casual-avatar-00",
+      "category": "one-eye-closed-external",
+      "source": "source/kitsuge-casual-avatar-00.png",
+      "sourceSha256": "652ccd346cc96adf42bed09080a92cffb1b50426393921b336729540f590293b",
+      "expected": "limited",
+      "compilerStatus": "reject",
+      "artifactSha256": "0dc912d9ff7588ee47ddfaf8e25939334d865c20e868838e268c699335236fae",
+      "descriptors": {
+        "faceResizeInterpolation": "INTER_AREA",
+        "featureLandmarkEdgeSupport": {
+          "left": {
+            "sampleCount": 6,
+            "supportedFraction": 0.6666666666666666,
+            "medianDistancePixels": 2.5946500301361084
+          },
+          "right": {
+            "sampleCount": 6,
+            "supportedFraction": 0.6666666666666666,
+            "medianDistancePixels": 1.6396499872207642
+          },
+          "mouth": {
+            "sampleCount": 4,
+            "supportedFraction": 0.25,
+            "medianDistancePixels": 3.549649953842163
+          }
+        },
+        "patchBoundaryEdgeDensityJump": {
+          "left": {
+            "insideEdgeDensity": 0.08871794871794872,
+            "outsideEdgeDensity": 0.06489071038251366,
+            "absoluteDensityJump": 0.023827238335435055
+          },
+          "right": {
+            "insideEdgeDensity": 0.11170212765957446,
+            "outsideEdgeDensity": 0.07199546485260772,
+            "absoluteDensityJump": 0.03970666280696675
+          },
+          "mouth": {
+            "insideEdgeDensity": 0.010638297872340425,
+            "outsideEdgeDensity": 0.03954802259887006,
+            "absoluteDensityJump": 0.028909724726529633
+          }
+        },
+        "bilateralAbsoluteResidual": {
+          "face": {
+            "mean": 0.00572773115709424,
+            "p95": 0.03529411926865578
+          },
+          "features": {
+            "left": {
+              "mean": 0.008065042085945606,
+              "p95": 0.04313725605607033
+            },
+            "right": {
+              "mean": 0.008196252398192883,
+              "p95": 0.0470588244497776
+            },
+            "mouth": {
+              "mean": 0.0006424222374334931,
+              "p95": 0.003921568859368563
+            }
+          }
+        },
+        "strongEdgeComponents": {
+          "componentCount": 33,
+          "componentsPer10kPixels": 5.035400390625,
+          "medianComponentPixels": 52.0,
+          "largestComponentFraction": 0.0118255615234375
+        },
+        "irisConnectedEdgeGraph": {
+          "left": {
+            "available": false,
+            "connectedComponentCount": 0,
+            "largestConnectedComponentPixels": 0
+          },
+          "right": {
+            "available": true,
+            "minimumComponentPixels": 38,
+            "connectedComponentCount": 1,
+            "largestConnectedComponentPixels": 1566
+          }
+        },
+        "effectiveEyeGeometry": [
+          {
+            "side": "left",
+            "widthPixels": 156.69374084472656,
+            "heightPixels": 61.3458251953125,
+            "safeGazeXPixels": 11.752030563354491,
+            "safeGazeYPixels": 4.6009368896484375,
+            "irisAvailable": false
+          },
+          {
+            "side": "right",
+            "widthPixels": 72.00027465820312,
+            "heightPixels": 70.3331298828125,
+            "safeGazeXPixels": 1.1680124269647412,
+            "safeGazeYPixels": 0.6329166003788782,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 14.0,
+            "irisRadiusYPixels": 28.0,
+            "compilerIrisGeometricEligibilityScore": 0.8016325625494441
+          }
+        ],
+        "compilerGeometry": {
+          "faceScore": 0.998544454574585,
+          "meanLandmarkScore": 0.268320232629776,
+          "eyeConfidence": 0.5156021010267238,
+          "mouthConfidence": 0.29153725504875183,
+          "mouthLineConfidence": 0.0,
+          "pupilConfidence": 0.8016325625494441,
+          "compilerIrisGeometricEligibilityScore": 0.0,
+          "eyeSymmetry": 0.4594968137849921,
+          "faceScale": 0.4698583781719208,
+          "minImageDimensionPixels": 512.0
+        }
+      }
+    },
+    {
+      "id": "jupitersdaughter-maid-neutral",
+      "category": "small-face-full-body-external",
+      "source": "source/jupitersdaughter-maid-neutral.png",
+      "sourceSha256": "dbcffaae6181bec6035f5729542e0e30c9287d02d4fe55359754b49261606242",
+      "expected": "reject",
+      "compilerStatus": "reject",
+      "artifactSha256": "617fe1c87d6ae0b5a49c8761e55ad288f7bfcfd39304c1224fdf58e7c951e6fe",
+      "descriptors": {
+        "faceResizeInterpolation": "INTER_LINEAR",
+        "featureLandmarkEdgeSupport": {
+          "left": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 1.3693000078201294
+          },
+          "right": {
+            "sampleCount": 6,
+            "supportedFraction": 1.0,
+            "medianDistancePixels": 0.9549999833106995
+          },
+          "mouth": {
+            "sampleCount": 4,
+            "supportedFraction": 0.0,
+            "medianDistancePixels": 61.105918884277344
+          }
+        },
+        "patchBoundaryEdgeDensityJump": {
+          "left": {
+            "insideEdgeDensity": 0.03543307086614173,
+            "outsideEdgeDensity": 0.02443609022556391,
+            "absoluteDensityJump": 0.010996980640577823
+          },
+          "right": {
+            "insideEdgeDensity": 0.010025062656641603,
+            "outsideEdgeDensity": 0.00539568345323741,
+            "absoluteDensityJump": 0.004629379203404193
+          },
+          "mouth": {
+            "insideEdgeDensity": 0.0,
+            "outsideEdgeDensity": 0.0,
+            "absoluteDensityJump": 0.0
+          }
+        },
+        "bilateralAbsoluteResidual": {
+          "face": {
+            "mean": 0.006531899329274893,
+            "p95": 0.027450980618596077
+          },
+          "features": {
+            "left": {
+              "mean": 0.0087527334690094,
+              "p95": 0.0313725508749485
+            },
+            "right": {
+              "mean": 0.007944333367049694,
+              "p95": 0.027450980618596077
+            },
+            "mouth": {
+              "mean": 0.0047105043195188046,
+              "p95": 0.0235294122248888
+            }
+          }
+        },
+        "strongEdgeComponents": {
+          "componentCount": 21,
+          "componentsPer10kPixels": 3.204345703125,
+          "medianComponentPixels": 108.0,
+          "largestComponentFraction": 0.0061492919921875
+        },
+        "irisConnectedEdgeGraph": {
+          "left": {
+            "available": true,
+            "minimumComponentPixels": 31,
+            "connectedComponentCount": 2,
+            "largestConnectedComponentPixels": 589
+          },
+          "right": {
+            "available": true,
+            "minimumComponentPixels": 32,
+            "connectedComponentCount": 1,
+            "largestConnectedComponentPixels": 1105
+          }
+        },
+        "effectiveEyeGeometry": [
+          {
+            "side": "left",
+            "widthPixels": 26.161773681640625,
+            "heightPixels": 25.86579895019534,
+            "safeGazeXPixels": 0.16748571746525398,
+            "safeGazeYPixels": 0.14555118387355725,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 5.0,
+            "irisRadiusYPixels": 10.0,
+            "compilerIrisGeometricEligibilityScore": 0.768975526625979
+          },
+          {
+            "side": "right",
+            "widthPixels": 28.533355712890625,
+            "heightPixels": 26.74963378906253,
+            "safeGazeXPixels": 0.0,
+            "safeGazeYPixels": 0.0,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 4.0,
+            "irisRadiusYPixels": 8.0,
+            "compilerIrisGeometricEligibilityScore": 0.3893342008391735
+          }
+        ],
+        "compilerGeometry": {
+          "faceScore": 0.9993385672569275,
+          "meanLandmarkScore": 0.8949946165084839,
+          "eyeConfidence": 0.7678903759588933,
+          "mouthConfidence": 0.7765403985223058,
+          "mouthLineConfidence": 1.0,
+          "pupilConfidence": 0.768975526625979,
+          "compilerIrisGeometricEligibilityScore": 0.3893342008391735,
+          "eyeSymmetry": 0.9168838725065006,
+          "faceScale": 0.18348115703226373,
+          "minImageDimensionPixels": 320.0
+        }
+      }
+    },
+    {
+      "id": "zonked-painted-portrait",
+      "category": "outside-anime-domain-external",
+      "source": "source/zonked-painted-portrait.png",
+      "sourceSha256": "a20340ed563c45e7dee7c35a952a30a8a0bd4540255008779af30f6d4dd0836b",
+      "expected": "reject",
+      "compilerStatus": "limited",
+      "artifactSha256": "c055acfb5b584468d501b9b4d339302394572e90703e5b0d6aa4ce84d9363d5c",
+      "descriptors": {
+        "faceResizeInterpolation": "INTER_AREA",
+        "featureLandmarkEdgeSupport": {
+          "left": {
+            "sampleCount": 6,
+            "supportedFraction": 0.5,
+            "medianDistancePixels": 3.0089499950408936
+          },
+          "right": {
+            "sampleCount": 6,
+            "supportedFraction": 0.16666666666666666,
+            "medianDistancePixels": 9.377950191497803
+          },
+          "mouth": {
+            "sampleCount": 4,
+            "supportedFraction": 0.75,
+            "medianDistancePixels": 2.387499988079071
+          }
+        },
+        "patchBoundaryEdgeDensityJump": {
+          "left": {
+            "insideEdgeDensity": 0.075,
+            "outsideEdgeDensity": 0.050595238095238096,
+            "absoluteDensityJump": 0.0244047619047619
+          },
+          "right": {
+            "insideEdgeDensity": 0.1125,
+            "outsideEdgeDensity": 0.0845959595959596,
+            "absoluteDensityJump": 0.027904040404040403
+          },
+          "mouth": {
+            "insideEdgeDensity": 0.08536585365853659,
+            "outsideEdgeDensity": 0.09753086419753086,
+            "absoluteDensityJump": 0.01216501053899427
+          }
+        },
+        "bilateralAbsoluteResidual": {
+          "face": {
+            "mean": 0.015634872019290924,
+            "p95": 0.0470588244497776
+          },
+          "features": {
+            "left": {
+              "mean": 0.014606545679271221,
+              "p95": 0.04313725605607033
+            },
+            "right": {
+              "mean": 0.011338947340846062,
+              "p95": 0.0313725508749485
+            },
+            "mouth": {
+              "mean": 0.01215837150812149,
+              "p95": 0.0313725508749485
+            }
+          }
+        },
+        "strongEdgeComponents": {
+          "componentCount": 115,
+          "componentsPer10kPixels": 17.547607421875,
+          "medianComponentPixels": 34.0,
+          "largestComponentFraction": 0.005767822265625
+        },
+        "irisConnectedEdgeGraph": {
+          "left": {
+            "available": false,
+            "connectedComponentCount": 0,
+            "largestConnectedComponentPixels": 0
+          },
+          "right": {
+            "available": true,
+            "minimumComponentPixels": 11,
+            "connectedComponentCount": 1,
+            "largestConnectedComponentPixels": 62
+          }
+        },
+        "effectiveEyeGeometry": [
+          {
+            "side": "left",
+            "widthPixels": 72.9765014648438,
+            "heightPixels": 55.304443359375,
+            "safeGazeXPixels": 4.050073471270976,
+            "safeGazeYPixels": 3.069303877236677,
+            "irisAvailable": false
+          },
+          {
+            "side": "right",
+            "widthPixels": 102.1209716796875,
+            "heightPixels": 54.986572265625,
+            "safeGazeXPixels": 4.819617520342855,
+            "safeGazeYPixels": 0.8374813725554299,
+            "irisAvailable": true,
+            "irisRadiusXPixels": 20.0,
+            "irisRadiusYPixels": 22.0,
+            "compilerIrisGeometricEligibilityScore": 0.6633653219230563
+          }
+        ],
+        "compilerGeometry": {
+          "faceScore": 0.9977547526359558,
+          "meanLandmarkScore": 0.8814598917961121,
+          "eyeConfidence": 0.7049771702967736,
+          "mouthConfidence": 0.8599012494087219,
+          "mouthLineConfidence": 1.0,
+          "pupilConfidence": 0.5999656060616926,
+          "compilerIrisGeometricEligibilityScore": 0.0,
+          "eyeSymmetry": 0.7146083734273683,
+          "faceScale": 0.3789817979600694,
+          "minImageDimensionPixels": 1250.0
+        }
+      }
+    }
+  ],
+  "generatedAt": "reproducible-probe-does-not-store-wall-clock"
+}

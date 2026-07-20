@@ -113,6 +113,19 @@ style-domain gate. The frozen baseline and motion review are in
 and the stricter Compiler 0.4 result is in
 [`research/experiments/2026-07-20-iris-base-eye-validation.md`](research/experiments/2026-07-20-iris-base-eye-validation.md).
 
+Measure the fixed report-only support-domain descriptors after regenerating the
+artifacts. These commands do not change compiler acceptance or capabilities:
+
+```bash
+nodenv exec npm run probe:support-domain:validation
+```
+
+Hold-out A was accidentally probed before the pre-registered hold-out B order;
+that replay is retained only as explicitly contaminated failure evidence and is
+not part of the normal command path. The implementation, raw reports, observed
+descriptor ranges, and current false-positive boundary are documented in
+[`research/experiments/2026-07-20-support-domain-descriptor-probe.md`](research/experiments/2026-07-20-support-domain-descriptor-probe.md).
+
 ## Compile another image
 
 ```bash
