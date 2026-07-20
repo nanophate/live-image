@@ -169,10 +169,22 @@ pre { max-height: 290px; overflow: auto; padding: 14px; border-radius: 8px; back
 .comparison-skipped strong { color: var(--amber); font-size: .74rem; }
 .comparison-skipped span, .comparison-render-error { color: var(--muted); font-size: .67rem; line-height: 1.45; }
 .comparison-render-error { min-height: 180px; margin: 0; padding: 18px; display: grid; place-content: center; color: #ffb5af; }
+.comparison-timeline { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+.comparison-timeline header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 11px; }
+.comparison-timeline h3 { margin: 0; font-size: .88rem; }
+.comparison-timeline p { max-width: 640px; margin: 0; color: var(--muted); font-size: .67rem; line-height: 1.45; }
+.comparison-timeline-strip { display: grid; grid-template-columns: repeat(11, minmax(88px, 1fr)); gap: 7px; overflow-x: auto; padding-bottom: 4px; }
+.comparison-timeline-frame { min-width: 88px; margin: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #0d1114; }
+.comparison-timeline-frame canvas { display: block; width: 100%; height: auto; background: #232a2f; }
+.comparison-timeline-frame figcaption, .comparison-timeline-frame > span { display: block; padding: 6px 7px; color: var(--muted); font: .53rem "SFMono-Regular", Consolas, ui-monospace, monospace; white-space: nowrap; }
+.comparison-timeline-frame > span { padding-top: 0; }
+.comparison-timeline-evidence { margin: 9px 0 0; color: var(--muted); font: .58rem "SFMono-Regular", Consolas, ui-monospace, monospace; }
+.comparison-timeline-skipped { padding: 14px; border: 1px dashed var(--line); border-radius: 8px; color: var(--amber); font-size: .7rem; }
 
 @media (max-width: 760px) {
   .comparison-shell { width: min(100% - 28px, 1540px); padding-top: 34px; }
   .comparison-heading { align-items: start; flex-direction: column; }
   .comparison-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .comparison-character { padding: 15px; }
+  .comparison-timeline header { align-items: start; flex-direction: column; }
 }

@@ -5,6 +5,19 @@ import { drawGridWarp, eyeWarpGrids } from "./warp.js";
 
 export type StatePatch = Partial<ControlState>;
 
+/** Shared pulse shape for interactive blinks and deterministic visual checks. */
+export const DEFAULT_BLINK_PULSE_DURATION_SECONDS = 0.16;
+export const BLINK_PULSE_CLOSE_FRACTION = 0.42;
+
+export function blinkPulseAmount(elapsedSeconds: number, durationSeconds: number): number {
+  if (!Number.isFinite(elapsedSeconds) || !Number.isFinite(durationSeconds) || durationSeconds <= 0) return 0;
+  const phase = elapsedSeconds / durationSeconds;
+  if (phase < 0 || phase > 1) return 0;
+  return phase < BLINK_PULSE_CLOSE_FRACTION
+    ? phase / BLINK_PULSE_CLOSE_FRACTION
+    : (1 - phase) / (1 - BLINK_PULSE_CLOSE_FRACTION);
+}
+
 export class LivingImagePlayer {
   private readonly context: CanvasRenderingContext2D;
   private manifest: LivingImageManifest | null = null;
@@ -17,7 +30,7 @@ export class LivingImagePlayer {
   private previousTimestamp: number | null = null;
   private animationFrame: number | null = null;
   private blinkPulseStart = Number.NEGATIVE_INFINITY;
-  private blinkPulseDuration = 0.16;
+  private blinkPulseDuration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext("2d", { alpha: false });
@@ -63,7 +76,7 @@ export class LivingImagePlayer {
     this.autoIdle = enabled;
   }
 
-  triggerBlink(duration = 0.16): void {
+  triggerBlink(duration = DEFAULT_BLINK_PULSE_DURATION_SECONDS): void {
     this.blinkPulseDuration = Math.max(0.06, duration);
     this.blinkPulseStart = this.elapsed;
   }
@@ -93,12 +106,7 @@ export class LivingImagePlayer {
     const delta = clamp(deltaSeconds, 0, 0.1);
     this.elapsed += delta;
     const idle = this.autoIdle ? this.behavior.sample(this.elapsed) : ZERO_STATE;
-    const pulsePhase = (this.elapsed - this.blinkPulseStart) / this.blinkPulseDuration;
-    const pulse = pulsePhase >= 0 && pulsePhase <= 1
-      ? pulsePhase < 0.42
-        ? pulsePhase / 0.42
-        : (1 - pulsePhase) / 0.58
-      : 0;
+    const pulse = blinkPulseAmount(this.elapsed - this.blinkPulseStart, this.blinkPulseDuration);
     const target = clampState({
       blinkLeft: Math.max(this.manualState.blinkLeft, idle.blinkLeft, pulse),
       blinkRight: Math.max(this.manualState.blinkRight, idle.blinkRight, pulse),
@@ -192,4 +200,3 @@ export class LivingImagePlayer {
     context.restore();
   }
 }
-

@@ -16,3 +16,5 @@ fixtures/validation/overlays/
 fixtures/holdout/artifacts/
 fixtures/holdout/overlays/
 fixtures/holdout/source/*.png
+fixtures/domain-calibration/source/
+fixtures/holdout-b/source/

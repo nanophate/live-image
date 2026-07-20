@@ -1,4 +1,8 @@
 import { ZERO_STATE, type ControlState } from "./behavior.js";
+import {
+  blinkPulseAmount,
+  DEFAULT_BLINK_PULSE_DURATION_SECONDS,
+} from "./runtime.js";
 import type { LivingImageManifest } from "./schema.js";
 
 export type MotionCapability = "blink" | "gaze" | "mouth";
@@ -7,6 +11,13 @@ export type MotionComparisonPhase = "reference" | "acceptance" | "stress";
 export const MOTION_SETTLE_FRAMES = 30;
 export const MOTION_SETTLE_DELTA_SECONDS = 1 / 60;
 export const MOTION_STATE_TOLERANCE = 0.005;
+/**
+ * A compact, fixed sampling of the runtime's actual blink pulse. The peak is
+ * represented explicitly so an eyelid seam cannot be hidden between samples.
+ */
+export const BLINK_TRANSITION_TIME_FRACTIONS = [
+  0, 0.1, 0.2, 0.3, 0.4, 0.42, 0.5, 0.625, 0.75, 0.875, 1,
+] as const;
 
 export interface MotionComparisonCell {
   id: string;
@@ -24,6 +35,25 @@ interface MotionScenario {
   capability: MotionCapability | null;
   phase: MotionComparisonPhase;
   patch: Partial<ControlState>;
+}
+
+export interface BlinkTransitionFrame {
+  id: string;
+  label: string;
+  timeSeconds: number;
+  blinkAmount: number;
+  requestedState: ControlState;
+}
+
+export interface BlinkTransitionPlan {
+  status: "available" | "skipped";
+  reason: string | null;
+  frames: BlinkTransitionFrame[];
+}
+
+export interface PixelDifference {
+  differingPixels: number;
+  maxChannelDelta: number;
 }
 
 const SCENARIOS: readonly MotionScenario[] = [
@@ -69,6 +99,64 @@ export function planMotionComparison(manifest: LivingImageManifest): MotionCompa
       reason,
     };
   });
+}
+
+/**
+ * Plan a bounded close/reopen strip from the exact pulse curve used by the
+ * runtime. The same frame list is used for every character; only its rig maps
+ * normalized blink values into pixels.
+ */
+export function planBlinkTransition(manifest: LivingImageManifest): BlinkTransitionPlan {
+  const rejected = manifest.quality.status === "reject";
+  const blinkDisabled = manifest.quality.disabledCapabilities.includes("blink");
+  if (rejected || blinkDisabled) {
+    return {
+      status: "skipped",
+      reason: rejected ? "Asset rejected by compiler" : "blink disabled by compiler",
+      frames: [],
+    };
+  }
+
+  return {
+    status: "available",
+    reason: null,
+    frames: BLINK_TRANSITION_TIME_FRACTIONS.map((fraction, index) => {
+      const timeSeconds = fraction * DEFAULT_BLINK_PULSE_DURATION_SECONDS;
+      const blinkAmount = blinkPulseAmount(timeSeconds, DEFAULT_BLINK_PULSE_DURATION_SECONDS);
+      const direction = fraction <= 0.42 ? "close" : "reopen";
+      return {
+        id: `blink-transition-${index}`,
+        label: index === 0 || index === BLINK_TRANSITION_TIME_FRACTIONS.length - 1
+          ? "open"
+          : `${direction} ${Math.round(blinkAmount * 100)}%`,
+        timeSeconds,
+        blinkAmount,
+        requestedState: { ...ZERO_STATE, blinkLeft: blinkAmount, blinkRight: blinkAmount },
+      };
+    }),
+  };
+}
+
+/** Compare equally-sized RGBA frames without retaining full-resolution canvases. */
+export function compareRgbaPixels(
+  first: Uint8ClampedArray,
+  second: Uint8ClampedArray,
+): PixelDifference {
+  if (first.length !== second.length || first.length % 4 !== 0) {
+    throw new Error("RGBA frames must have the same pixel dimensions");
+  }
+  let differingPixels = 0;
+  let maxChannelDelta = 0;
+  for (let offset = 0; offset < first.length; offset += 4) {
+    let pixelDiffers = false;
+    for (let channel = 0; channel < 4; channel += 1) {
+      const delta = Math.abs((first[offset + channel] ?? 0) - (second[offset + channel] ?? 0));
+      if (delta > 0) pixelDiffers = true;
+      maxChannelDelta = Math.max(maxChannelDelta, delta);
+    }
+    if (pixelDiffers) differingPixels += 1;
+  }
+  return { differingPixels, maxChannelDelta };
 }
 
 export function controlStateMaxError(expected: ControlState, actual: Readonly<ControlState>): number {
