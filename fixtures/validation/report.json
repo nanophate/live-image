@@ -1,14 +1,46 @@
 {
   "cases": [
     {
+      "artifactSha256": "782ac4d5ae2d0b17893f7ef95be495dfe7c6fcb4d6a104efd71b93ce3d5bc977",
       "artifacts": {
         "limg": "artifacts/clean-teal/clean-teal.limg",
         "overlay": "overlays/clean-teal/clean-teal.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "clean-frontal",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.26824777994368637,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.1814900476590973,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 202.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "clean-teal",
       "matched": true,
@@ -21,6 +53,7 @@
           "meanLandmarkScore": 0.9598621726036072,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8665257055899411,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -28,17 +61,50 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/clean-teal.png"
+      "source": "source/clean-teal.png",
+      "sourceSha256": "4480e53d53959ac7aa8665a91166ec3c5e839bb10bd53aaa96d708607b5798e6"
     },
     {
+      "artifactSha256": "348db235b421c3ce5253b975a7d489d8945f7bfb9fdccedc9bde25e4377ed863",
       "artifacts": {
         "limg": "artifacts/clean-copper/clean-copper.limg",
         "overlay": "overlays/clean-copper/clean-copper.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "clean-frontal",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.2880254154447703,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.2611702127659574,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 86.38,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "clean-copper",
       "matched": true,
@@ -51,6 +117,7 @@
           "meanLandmarkScore": 0.9580478072166443,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9774035960435867,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.8535084078799204
         },
         "rejectionReasons": [],
@@ -58,17 +125,50 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/clean-copper.png"
+      "source": "source/clean-copper.png",
+      "sourceSha256": "440b6c5625ed15549243bd9b979f88dbb6c0cb10a64b9415acec4a7b80918dd4"
     },
     {
+      "artifactSha256": "aadc19ed29647ce3a309fd51c26b28c564b82afaaeece95353ea0c5de2f816c9",
       "artifacts": {
         "limg": "artifacts/clean-coral/clean-coral.limg",
         "overlay": "overlays/clean-coral/clean-coral.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "clean-frontal",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.26100747440487404,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.21487654899023004,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 159.38,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "clean-coral",
       "matched": true,
@@ -81,6 +181,7 @@
           "meanLandmarkScore": 0.964948832988739,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8626856397194316,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -88,17 +189,50 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/clean-coral.png"
+      "source": "source/clean-coral.png",
+      "sourceSha256": "d180bd1a2afa8dff22a0a55f722c36cd981383f0f5acdc29809b581bf891dc59"
     },
     {
+      "artifactSha256": "d39bd0224ae3c0decbbb47ddfb5e3a58d880fd3e3aeff75cd77c55e939d80a1e",
       "artifacts": {
         "limg": "artifacts/clean-lavender/clean-lavender.limg",
         "overlay": "overlays/clean-lavender/clean-lavender.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "clean-frontal",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.30186170212765956,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.28668038812114083,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 165.44,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "clean-lavender",
       "matched": true,
@@ -111,6 +245,7 @@
           "meanLandmarkScore": 0.9386937022209167,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8694293082521667,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -118,17 +253,50 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/clean-lavender.png"
+      "source": "source/clean-lavender.png",
+      "sourceSha256": "1b38643b433f1c609a8595a25a92e52e953c8ce88142c9a964b11ca43bf12069"
     },
     {
+      "artifactSha256": "59aa380fc3269bdc9df192f89bc1b92df988095e2b7c3c9aa3e7bf39908b93a5",
       "artifacts": {
         "limg": "artifacts/dark-iris-navy/dark-iris-navy.limg",
         "overlay": "overlays/dark-iris-navy/dark-iris-navy.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "dark-iris",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.30882841022236973,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.27303502597620244,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 181.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "dark-iris-navy",
       "matched": true,
@@ -141,6 +309,7 @@
           "meanLandmarkScore": 0.8780241012573242,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8841284016436788,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.8698913800008405
         },
         "rejectionReasons": [],
@@ -148,17 +317,50 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/dark-iris-navy.png"
+      "source": "source/dark-iris-navy.png",
+      "sourceSha256": "c0bec89d72c9a890bb21eba0c6fedd59770538d50abc85e947049512ece8e1ab"
     },
     {
+      "artifactSha256": "27197fad33b80db3454482a5141545e50af967d5c46a5fb7c0934a0458cde7ef",
       "artifacts": {
         "limg": "artifacts/dark-iris-auburn/dark-iris-auburn.limg",
         "overlay": "overlays/dark-iris-auburn/dark-iris-auburn.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "dark-iris",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.23495238095238094,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.18838028169014084,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 154.1,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "dark-iris-auburn",
       "matched": true,
@@ -171,6 +373,7 @@
           "meanLandmarkScore": 0.892257571220398,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9267698039164387,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.6921205006499968
         },
         "rejectionReasons": [],
@@ -178,9 +381,11 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/dark-iris-auburn.png"
+      "source": "source/dark-iris-auburn.png",
+      "sourceSha256": "509b20244aec20d421f531da05344c3773340957eef792270fda0be77cffd49d"
     },
     {
+      "artifactSha256": "8ab4b2fa2c0a8f109335ac1ce6710d041c834c5d0acf155040c07990eb7cefe2",
       "artifacts": {
         "limg": "artifacts/light-iris-silver/light-iris-silver.limg",
         "overlay": "overlays/light-iris-silver/light-iris-silver.png"
@@ -188,9 +393,39 @@
       "capabilities": {
         "disabled": [
           "gaze"
+        ],
+        "enabled": [
+          "blink",
+          "mouth"
         ]
       },
       "category": "light-low-contrast-iris",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.41179054054054054,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.359636537541846,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 111.0,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
       "id": "light-iris-silver",
       "matched": true,
@@ -203,6 +438,7 @@
           "meanLandmarkScore": 0.9255689382553101,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9381485270581058,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.4874800653631455
         },
         "rejectionReasons": [],
@@ -212,9 +448,11 @@
         ]
       },
       "result": "limited",
-      "source": "source/light-iris-silver.png"
+      "source": "source/light-iris-silver.png",
+      "sourceSha256": "45e890d2bc07352e1b363ed27f273c24d4144cf51263f53cfb703044377fb603"
     },
     {
+      "artifactSha256": "13b3eedc5176995bd15d406f0aadf89f92b5d82db1e61d65a206e7991e08f3be",
       "artifacts": {
         "limg": "artifacts/light-iris-peach/light-iris-peach.limg",
         "overlay": "overlays/light-iris-peach/light-iris-peach.png"
@@ -222,9 +460,39 @@
       "capabilities": {
         "disabled": [
           "gaze"
+        ],
+        "enabled": [
+          "blink",
+          "mouth"
         ]
       },
       "category": "light-low-contrast-iris",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.4549214975845411,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.5216180948238365,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 84.53999999999999,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
       "id": "light-iris-peach",
       "matched": true,
@@ -237,6 +505,7 @@
           "meanLandmarkScore": 0.9412669539451599,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.916861118138964,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.4452753381894251
         },
         "rejectionReasons": [],
@@ -246,9 +515,11 @@
         ]
       },
       "result": "limited",
-      "source": "source/light-iris-peach.png"
+      "source": "source/light-iris-peach.png",
+      "sourceSha256": "72a85ef3b23e0301c5ff99e2971a9531d2dcc83204275aa77d56aee1a03b1807"
     },
     {
+      "artifactSha256": "a4b6183f7f6a42374fcebac178a6bccd4411575de42b2b42151e081f71d13bde",
       "artifacts": {
         "limg": "artifacts/occluded-left-eye/occluded-left-eye.limg",
         "overlay": "overlays/occluded-left-eye/occluded-left-eye.png"
@@ -257,9 +528,38 @@
         "disabled": [
           "blink",
           "gaze"
+        ],
+        "enabled": [
+          "mouth"
         ]
       },
       "category": "eye-occlusion",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.3257303059670497,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.28364541692965844,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 197.48000000000002,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
       "id": "occluded-left-eye",
       "matched": true,
@@ -272,6 +572,7 @@
           "meanLandmarkScore": 0.7666249871253967,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8933862828470566,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.5368398143759769
         },
         "rejectionReasons": [],
@@ -283,17 +584,50 @@
         ]
       },
       "result": "limited",
-      "source": "source/occluded-left-eye.png"
+      "source": "source/occluded-left-eye.png",
+      "sourceSha256": "d225d7ae7eb524f7757ce070a5f413cbd3843f74bf9d723de9fed110d67de582"
     },
     {
+      "artifactSha256": "38af78789300f0beba16927429d0adce39a5286c0a593a2aa495b763bfeba078",
       "artifacts": {
         "limg": "artifacts/glasses-round/glasses-round.limg",
         "overlay": "overlays/glasses-round/glasses-round.png"
       },
       "capabilities": {
-        "disabled": []
+        "disabled": [],
+        "enabled": [
+          "blink",
+          "gaze",
+          "mouth"
+        ]
       },
       "category": "glasses",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.28930606771706335,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.26010550835845436,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 192.84,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "full",
       "id": "glasses-round",
       "matched": true,
@@ -306,6 +640,7 @@
           "meanLandmarkScore": 0.9043170809745789,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.9824976896713826,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -313,9 +648,11 @@
         "warnings": []
       },
       "result": "full",
-      "source": "source/glasses-round.png"
+      "source": "source/glasses-round.png",
+      "sourceSha256": "1768a0f572d400100ec15e3a0ab9030e75b6c57ad7f2b979765760d954a01d74"
     },
     {
+      "artifactSha256": "47aa3eb20fc8e3f70cf7eeefa42ad8175ab7cebaa3452173eca7cd8675694d77",
       "artifacts": {
         "limg": "artifacts/three-quarter/three-quarter.limg",
         "overlay": "overlays/three-quarter/three-quarter.png"
@@ -323,9 +660,39 @@
       "capabilities": {
         "disabled": [
           "blink"
+        ],
+        "enabled": [
+          "gaze",
+          "mouth"
         ]
       },
       "category": "three-quarter-pose",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.20733038432814385,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.26757047259110295,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 184.22,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
       "id": "three-quarter",
       "matched": true,
@@ -338,6 +705,7 @@
           "meanLandmarkScore": 0.8525644540786743,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8401473619255577,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -347,9 +715,11 @@
         ]
       },
       "result": "limited",
-      "source": "source/three-quarter.png"
+      "source": "source/three-quarter.png",
+      "sourceSha256": "b7c68c42bfb0ff9aec9477d5802c037f084bdcfc1c5047bc4c7a4b48862e94d9"
     },
     {
+      "artifactSha256": "75fcba07698d967057198be2b7153ba507f966456f953620cc11e803f6216b87",
       "artifacts": {
         "limg": "artifacts/low-resolution-192/low-resolution-192.limg",
         "overlay": "overlays/low-resolution-192/low-resolution-192.png"
@@ -358,9 +728,38 @@
         "disabled": [
           "blink",
           "gaze"
+        ],
+        "enabled": [
+          "mouth"
         ]
       },
       "category": "low-resolution",
+      "compiler": {
+        "detectorVersion": "0.1.0",
+        "name": "living-image-compiler",
+        "version": "0.3.0"
+      },
+      "deformation": {
+        "eyes": [
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.47448275862068967,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "left"
+          },
+          {
+            "method": "fixed-boundary-piecewise-affine-v1",
+            "protectedLineCoverage": 0.4126984126984127,
+            "protectedLineMethod": "canny-active-aperture-v1",
+            "side": "right"
+          }
+        ],
+        "mouth": {
+          "lineConfidence": 1.0,
+          "lineContrast": 61.01999999999998,
+          "method": "bounded-lip-bands-v1"
+        }
+      },
       "expected": "limited",
       "id": "low-resolution-192",
       "matched": true,
@@ -373,6 +772,7 @@
           "meanLandmarkScore": 0.9304707646369934,
           "minImageDimensionPixels": 192,
           "mouthConfidence": 0.962312272346186,
+          "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
@@ -382,7 +782,8 @@
         ]
       },
       "result": "limited",
-      "source": "source/low-resolution-192.png"
+      "source": "source/low-resolution-192.png",
+      "sourceSha256": "677220439c0c6c7da693a05241c9626fa712023d2e9e2d4893398c84718e4705"
     }
   ],
   "generatedAt": "reproducible-validation-does-not-store-wall-clock",

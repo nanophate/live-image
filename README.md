@@ -152,23 +152,35 @@ are gated by the player.
 ```bash
 npm test
 npm run build
+npx playwright install --only-shell chromium
+npm run test:browser
 ```
+
+The browser suite uses the Compiler 0.3.0 automatic rigs for both primary
+fixtures, reads the real full-resolution Canvas, and requires every enabled
+blink, wink, gaze, and mouth state to change pixels only inside its
+compiler-authored feature region. It also requires exact open-state recovery
+and makes no external page requests. Playwright's browser and FFmpeg downloads
+are development/CI-only and are not bundled into the Viewer.
 
 The animation and multi-image validation results are in
 [`research/experiments/2026-07-19-animation-validation.md`](research/experiments/2026-07-19-animation-validation.md)
 and [`research/experiments/2026-07-19-validation-matrix.md`](research/experiments/2026-07-19-validation-matrix.md).
 The independent hold-out and common-state renderer are documented in
 [`research/experiments/2026-07-20-holdout-motion-validation.md`](research/experiments/2026-07-20-holdout-motion-validation.md).
+The real-browser locality gate is documented in
+[`research/experiments/2026-07-20-browser-locality-validation.md`](research/experiments/2026-07-20-browser-locality-validation.md).
 The complete evidence index is [`research/README.md`](research/README.md).
 
 ## Current limitations
 
-- Canvas 2D piecewise-affine patches, not a full WebGL2 semantic mesh yet.
+- Compiler-authored Canvas 2D piecewise-affine feature meshes with protected
+  eye-line masks, not a full WebGL2 semantic mesh yet.
 - Mouth motion is deliberately small because a closed source image has no real
   teeth or oral cavity to reveal.
 - Pupil location is deterministic local image analysis seeded by eye landmarks;
   it is not an iris-specific trained detector.
-- No hair separation/lag, protected line-art field, TPS/ARAP, or head rotation yet.
+- No hair separation/lag, rigid iris/highlight layer, TPS/ARAP, or head rotation yet.
 - The detector/model cards say MIT, but do not warrant training-data provenance;
   a commercial compiler bundle still needs the review recorded in
   `research/license-matrix.md`.

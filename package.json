@@ -10,8 +10,10 @@
   "packageManager": "npm@11.16.0",
   "scripts": {
     "dev": "vite",
+    "preview": "vite preview",
     "build": "tsc --noEmit && vite build",
     "test:ts": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
+    "test:browser": "playwright test",
     "test:py": "PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v",
     "test": "npm run test:ts && npm run test:py",
     "compile:fixtures": "PYTHONPATH=. .venv/bin/python -m compiler.compile_character fixtures/source/copper-courier.png fixtures/source/teal-librarian.png",
@@ -22,6 +24,7 @@
     "validate:holdout:offline": "PYTHONPATH=. .venv/bin/python -m compiler.validate_suite fixtures/holdout/manifest.json --output-dir fixtures/holdout --offline"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "@types/node": "^24.0.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.0"

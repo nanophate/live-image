@@ -152,6 +152,130 @@ def detect_pupil(image: np.ndarray, polygon: np.ndarray) -> dict[str, float | Po
     }
 
 
+def _alpha_mask_data_url(mask: np.ndarray) -> str:
+    """Encode one deterministic alpha mask without adding a runtime dependency."""
+
+    rgba = np.full((*mask.shape, 4), 255, dtype=np.uint8)
+    rgba[:, :, 3] = mask
+    encoded, payload = cv2.imencode(".png", rgba)
+    if not encoded:
+        raise RuntimeError("could not encode protected line-art mask")
+    return "data:image/png;base64," + base64.b64encode(payload.tobytes()).decode("ascii")
+
+
+def protected_line_art_mask(
+    image: np.ndarray,
+    polygon: np.ndarray,
+    region: tuple[int, int, int, int],
+) -> dict[str, Any]:
+    """Protect strong unrelated strokes while leaving the eyelid corridor movable.
+
+    The mask is generated once by the compiler. White alpha restores original
+    pixels after the local warp; transparent pixels allow the intended eyelid
+    deformation to remain visible.
+    """
+
+    x0, y0, x1, y1 = region
+    crop = image[y0:y1, x0:x1]
+    if crop.size == 0:
+        raise ValueError("eye protection region is empty")
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 0.8)
+    gradient_x = cv2.Sobel(blurred, cv2.CV_32F, 1, 0, ksize=3)
+    gradient_y = cv2.Sobel(blurred, cv2.CV_32F, 0, 1, ksize=3)
+    magnitude = cv2.magnitude(gradient_x, gradient_y)
+    nonzero = magnitude[magnitude > 0]
+    high = float(np.quantile(nonzero, 0.85)) if nonzero.size else 64.0
+    high = clamp(high, 24.0, 224.0)
+    low = high * 0.4
+    edges = cv2.Canny(blurred, low, high, L2gradient=True)
+
+    local_polygon = np.rint(polygon - np.array([x0, y0])).astype(np.int32)
+    eye_height = max(2.0, float(polygon[:, 1].max() - polygon[:, 1].min()))
+    active_eye = np.zeros_like(edges)
+    cv2.fillPoly(active_eye, [local_polygon], 255)
+    active_padding = max(2, int(round(eye_height * 0.18)))
+    active_kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE,
+        (active_padding * 2 + 1, active_padding * 2 + 1),
+    )
+    active_eye = cv2.dilate(active_eye, active_kernel)
+
+    unrelated = cv2.bitwise_and(edges, cv2.bitwise_not(active_eye))
+    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        edges,
+        connectivity=8,
+    )
+    boundary_components = np.zeros_like(edges)
+    minimum_length = max(3, int(round((polygon[:, 0].max() - polygon[:, 0].min()) * 0.60)))
+    crop_height, crop_width = edges.shape
+    for component in range(1, component_count):
+        component_mask = labels == component
+        ys, xs = np.nonzero(component_mask)
+        if not len(xs):
+            continue
+        touches_boundary = bool(
+            np.any(xs == 0)
+            or np.any(xs == crop_width - 1)
+            or np.any(ys == 0)
+            or np.any(ys == crop_height - 1)
+        )
+        if touches_boundary and int(stats[component, cv2.CC_STAT_AREA]) >= minimum_length:
+            boundary_components[component_mask & (active_eye == 0)] = 255
+
+    protected = cv2.bitwise_or(unrelated, boundary_components)
+    dilation = int(clamp(round((polygon[:, 0].max() - polygon[:, 0].min()) * 0.02), 1, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (dilation * 2 + 1, dilation * 2 + 1))
+    hard_core = cv2.dilate(protected, kernel)
+    feather = cv2.GaussianBlur(hard_core, (3, 3), 0.8)
+    mask = np.maximum(hard_core, feather)
+    return {
+        "dataUrl": _alpha_mask_data_url(mask),
+        "width": int(crop_width),
+        "height": int(crop_height),
+        "coverage": float(np.count_nonzero(mask) / mask.size),
+        "method": "canny-active-aperture-v1",
+        "cannyLow": low,
+        "cannyHigh": high,
+    }
+
+
+def _eye_deformation(
+    image: np.ndarray,
+    polygon: np.ndarray,
+    region: tuple[int, int, int, int],
+    image_width: int,
+    image_height: int,
+    blink_floor: float,
+) -> dict[str, Any]:
+    x0, y0, x1, y1 = region
+    eye_top = float(polygon[:, 1].min())
+    eye_bottom = float(polygon[:, 1].max())
+    eye_height = max(2.0, eye_bottom - eye_top)
+    guard_top = eye_top - max(1.0, (eye_top - y0) * 0.42)
+    guard_bottom = eye_bottom + max(1.0, (y1 - eye_bottom) * 0.42)
+    close_centre = eye_top + eye_height * 0.68
+    closed_top = close_centre - blink_floor * 0.5
+    closed_bottom = close_centre + blink_floor * 0.5
+    source_rows = [float(y0), guard_top, eye_top, eye_bottom, guard_bottom, float(y1)]
+    closed_rows = [
+        float(y0),
+        guard_top + (closed_top - eye_top) * 0.18,
+        closed_top,
+        closed_bottom,
+        guard_bottom + (closed_bottom - eye_bottom) * 0.18,
+        float(y1),
+    ]
+    return {
+        "method": "fixed-boundary-piecewise-affine-v1",
+        "sourceRows": [value / image_height for value in source_rows],
+        "closedRows": [value / image_height for value in closed_rows],
+        "gazeRowWeights": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+        "protectedLineArtMask": protected_line_art_mask(image, polygon, region),
+        "region": normalise_box(region, image_width, image_height),
+    }
+
+
 def compile_eye(
     side: str,
     image: np.ndarray,
@@ -185,6 +309,7 @@ def compile_eye(
     )
 
     gaze_scale = 0.35 + 0.65 * pupil_confidence
+    blink_floor_pixels = max(0.8, eye_height * 0.035)
     return {
         "side": side,
         "landmarkIndices": list(indices),
@@ -207,7 +332,15 @@ def compile_eye(
         "rig": {
             "maxGazeX": (eye_width * 0.075 * gaze_scale) / image_width,
             "maxGazeY": (eye_height * 0.075 * gaze_scale) / image_height,
-            "blinkFloor": max(0.8, eye_height * 0.035) / image_height,
+            "blinkFloor": blink_floor_pixels / image_height,
+            "deformation": _eye_deformation(
+                image,
+                polygon,
+                (x0, y0, x1, y1),
+                image_width,
+                image_height,
+                blink_floor_pixels,
+            ),
         },
         "confidence": confidence,
         "landmarkConfidence": landmark_confidence,
@@ -228,7 +361,7 @@ def _dark_colour(image: np.ndarray, box: tuple[int, int, int, int]) -> str:
     selected = crop[gray <= threshold]
     if len(selected) == 0:
         selected = crop.reshape(-1, 3)
-    b, g, r = np.median(selected, axis=0).astype(int)
+    b, g, r = np.clip(np.median(selected, axis=0) * 0.55, 0, 255).astype(int)
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
@@ -256,6 +389,42 @@ def compile_mouth(
     width_score = clamp((mouth_width / max(1.0, float(face_box[2] - face_box[0])) - 0.08) / 0.18, 0.0, 1.0)
     confidence = clamp(0.75 * landmark_confidence + 0.25 * width_score, 0.0, 1.0)
     max_open = clamp(face_height * 0.020, 3.0, 13.0)
+    crop = image[y0:y1, x0:x1]
+    focus_x0 = max(0, int(round(left - x0 - mouth_width * 0.08)))
+    focus_x1 = min(crop.shape[1], int(round(right - x0 + mouth_width * 0.08)))
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    local_centre_y = int(round(centre_y - y0))
+    search_radius = max(2, int(round(half_region_height * 0.45)))
+    search_y0 = max(0, local_centre_y - search_radius)
+    search_y1 = min(gray.shape[0], local_centre_y + search_radius + 1)
+    focus = gray[search_y0:search_y1, focus_x0:focus_x1]
+    if focus.size:
+        darkness = 255.0 - np.quantile(focus, 0.18, axis=1)
+        line_y = float(y0 + search_y0 + int(np.argmax(darkness)))
+        line_contrast = float(np.max(darkness) - np.min(darkness))
+    else:
+        line_y = centre_y
+        line_contrast = 0.0
+    half_band = max(1.0, min(3.0, face_height * 0.004))
+    band_x0 = max(float(x0), left - mouth_width * 0.10)
+    band_x1 = min(float(x1), right + mouth_width * 0.10)
+    upper_band = (band_x0, max(float(y0), line_y - half_band), band_x1, line_y + 0.5)
+    lower_band = (band_x0, line_y - 0.5, band_x1, min(float(y1), line_y + half_band))
+    deformation = {
+        "method": "bounded-lip-bands-v1",
+        "upperBand": normalise_box(upper_band, image_width, image_height),
+        "lowerBand": normalise_box(lower_band, image_width, image_height),
+        "cavity": {
+            "centreX": centre_x / image_width,
+            "centreY": line_y / image_height,
+            "radiusX": (mouth_width * 0.40) / image_width,
+            "maxRadiusY": (max_open * 0.62) / image_height,
+        },
+        "upperTravel": (max_open * 0.45) / image_height,
+        "lowerTravel": (max_open * 0.55) / image_height,
+        "lineContrast": line_contrast,
+    }
+    line_confidence = clamp(line_contrast / 32.0, 0.0, 1.0)
     return {
         "landmarkIndices": list(MOUTH_GROUP),
         "landmarks": [normalise_point(point, image_width, image_height) for point in points],
@@ -266,9 +435,14 @@ def compile_mouth(
             "centreX": centre_x / image_width,
             "centreY": centre_y / image_height,
         },
-        "rig": {"maxOpen": max_open / image_height, "interiorColour": _dark_colour(image, (x0, y0, x1, y1))},
+        "rig": {
+            "maxOpen": max_open / image_height,
+            "interiorColour": _dark_colour(image, (x0, y0, x1, y1)),
+            "deformation": deformation,
+        },
         "confidence": confidence,
         "landmarkConfidence": landmark_confidence,
+        "lineConfidence": line_confidence,
     }
 
 
@@ -292,6 +466,7 @@ def assess_quality(
     min_image_dimension = min(image_width, image_height)
     eye_confidence = min(float(eye["confidence"]) for eye in eyes)
     mouth_confidence = float(mouth["confidence"])
+    mouth_line_confidence = float(mouth.get("lineConfidence", 1.0))
 
     eye_widths = [float(eye["anchors"]["right"] - eye["anchors"]["left"]) for eye in eyes]
     eye_symmetry = min(eye_widths) / max(1e-6, max(eye_widths))
@@ -319,9 +494,9 @@ def assess_quality(
         warnings.append(
             f"blink and gaze disabled because eye confidence is below {MIN_FULL_EYE_CONFIDENCE:.2f}"
         )
-    if mouth_confidence < 0.48:
+    if mouth_confidence < 0.48 or mouth_line_confidence < 0.25:
         disabled.append("mouth")
-        warnings.append("mouth control disabled because its region is unreliable")
+        warnings.append("mouth control disabled because its landmarks or source line are unreliable")
     if pupil_confidence < MIN_FULL_PUPIL_CONFIDENCE:
         disabled.append("gaze")
         warnings.append(
@@ -362,6 +537,7 @@ def assess_quality(
             "meanLandmarkScore": landmark_score,
             "eyeConfidence": eye_confidence,
             "mouthConfidence": mouth_confidence,
+            "mouthLineConfidence": mouth_line_confidence,
             "pupilConfidence": pupil_confidence,
             "eyeSymmetry": eye_symmetry,
             "faceScale": face_scale,

@@ -1,7 +1,7 @@
 import { clampState, IdleBehavior, ZERO_STATE, type ControlState } from "./behavior.js";
 import { clamp, smooth } from "./math.js";
-import type { EyeFeature, LivingImageManifest, MouthFeature } from "./schema.js";
-import { drawGridWarp, eyeWarpGrids } from "./warp.js";
+import { validateManifest, type EyeFeature, type LivingImageManifest, type MouthFeature } from "./schema.js";
+import { drawGridWarp, eyeWarpGrids, mouthOpenPlan } from "./warp.js";
 
 export type StatePatch = Partial<ControlState>;
 
@@ -31,6 +31,8 @@ export class LivingImagePlayer {
   private animationFrame: number | null = null;
   private blinkPulseStart = Number.NEGATIVE_INFINITY;
   private blinkPulseDuration = DEFAULT_BLINK_PULSE_DURATION_SECONDS;
+  private eyeProtectionLayers = new Map<string, HTMLCanvasElement>();
+  private loadGeneration = 0;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext("2d", { alpha: false });
@@ -41,6 +43,8 @@ export class LivingImagePlayer {
   }
 
   async load(manifest: LivingImageManifest): Promise<void> {
+    validateManifest(manifest);
+    const generation = ++this.loadGeneration;
     const image = new Image();
     image.decoding = "async";
     await new Promise<void>((resolve, reject) => {
@@ -48,8 +52,14 @@ export class LivingImagePlayer {
       image.onerror = () => reject(new Error("embedded source image could not be decoded"));
       image.src = manifest.image.dataUrl;
     });
+    if (image.naturalWidth !== manifest.image.width || image.naturalHeight !== manifest.image.height) {
+      throw new Error("embedded source image dimensions do not match its manifest");
+    }
+    const protectionLayers = await this.buildEyeProtectionLayers(manifest, image);
+    if (generation !== this.loadGeneration) return;
     this.manifest = manifest;
     this.image = image;
+    this.eyeProtectionLayers = protectionLayers;
     this.behavior = new IdleBehavior(manifest);
     this.elapsed = 0;
     this.previousTimestamp = null;
@@ -99,7 +109,10 @@ export class LivingImagePlayer {
     this.previousTimestamp = null;
   }
 
-  destroy(): void { this.stop(); }
+  destroy(): void {
+    this.loadGeneration += 1;
+    this.stop();
+  }
 
   step(deltaSeconds: number): void {
     if (!this.manifest || !this.image || !this.behavior) return;
@@ -135,7 +148,7 @@ export class LivingImagePlayer {
     if (disabled.has("gaze")) state.gazeX = state.gazeY = 0;
     if (disabled.has("mouth")) state.mouthOpen = 0;
     if (this.manifest.quality.status === "reject") {
-      state.blinkLeft = state.blinkRight = state.gazeX = state.gazeY = state.mouthOpen = 0;
+      state.blinkLeft = state.blinkRight = state.gazeX = state.gazeY = state.mouthOpen = state.breath = 0;
     }
   }
 
@@ -164,13 +177,78 @@ export class LivingImagePlayer {
 
   private drawEye(eye: EyeFeature, image: HTMLImageElement, width: number, height: number): void {
     const blink = eye.side === "left" ? this.renderedState.blinkLeft : this.renderedState.blinkRight;
+    if (blink <= 0.001 && Math.abs(this.renderedState.gazeX) <= 0.001 && Math.abs(this.renderedState.gazeY) <= 0.001) return;
     const grids = eyeWarpGrids(eye, width, height, blink, this.renderedState.gazeX, this.renderedState.gazeY);
     drawGridWarp(this.context, image, grids.source, grids.destination);
+    const protectedLayer = this.eyeProtectionLayers.get(eye.side);
+    const protectionRegion = eye.rig.deformation?.region;
+    if (protectedLayer && protectionRegion) {
+      this.context.drawImage(
+        protectedLayer,
+        protectionRegion.x * width,
+        protectionRegion.y * height,
+        protectionRegion.width * width,
+        protectionRegion.height * height,
+      );
+    }
   }
 
   private drawMouth(mouth: MouthFeature, image: HTMLImageElement, width: number, height: number): void {
     const open = this.renderedState.mouthOpen;
     if (open <= 0.001) return;
+    const boundedPlan = mouthOpenPlan(mouth, width, height, open);
+    if (boundedPlan) {
+      const context = this.context;
+      const region = mouth.region;
+      context.save();
+      context.beginPath();
+      context.rect(region.x * width, region.y * height, region.width * width, region.height * height);
+      context.clip();
+      context.fillStyle = mouth.rig.interiorColour;
+      context.beginPath();
+      context.ellipse(
+        boundedPlan.cavity.centreX,
+        boundedPlan.cavity.centreY,
+        boundedPlan.cavity.radiusX,
+        boundedPlan.cavity.radiusY,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      context.fill();
+
+      const bandClipRadiusY = boundedPlan.cavity.radiusY + Math.max(
+        boundedPlan.upper.source.height,
+        boundedPlan.lower.source.height,
+      );
+      context.beginPath();
+      context.ellipse(
+        boundedPlan.cavity.centreX,
+        boundedPlan.cavity.centreY,
+        boundedPlan.cavity.radiusX * 1.08,
+        bandClipRadiusY,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      context.clip();
+      for (const band of [boundedPlan.upper, boundedPlan.lower]) {
+        context.drawImage(
+          image,
+          band.source.x,
+          band.source.y,
+          band.source.width,
+          band.source.height,
+          band.destination.x,
+          band.destination.y,
+          band.destination.width,
+          band.destination.height,
+        );
+      }
+      context.restore();
+      return;
+    }
+
     const region = mouth.region;
     const x0 = region.x * width;
     const y0 = region.y * height;
@@ -198,5 +276,49 @@ export class LivingImagePlayer {
     const bottomDestinationY = centreY + gap * 0.5;
     context.drawImage(image, x0, centreY, x1 - x0, bottomSourceHeight, x0, bottomDestinationY, x1 - x0, Math.max(1, y1 - bottomDestinationY));
     context.restore();
+  }
+
+  private async buildEyeProtectionLayers(
+    manifest: LivingImageManifest,
+    image: HTMLImageElement,
+  ): Promise<Map<string, HTMLCanvasElement>> {
+    const layers = new Map<string, HTMLCanvasElement>();
+    await Promise.all(manifest.analysis.features.eyes.map(async (eye) => {
+      const deformation = eye.rig.deformation;
+      if (!deformation) return;
+      const maskDefinition = deformation.protectedLineArtMask;
+      const mask = new Image();
+      mask.decoding = "async";
+      await new Promise<void>((resolve, reject) => {
+        mask.onload = () => resolve();
+        mask.onerror = () => reject(new Error(`${eye.side} protected line-art mask could not be decoded`));
+        mask.src = maskDefinition.dataUrl;
+      });
+      if (mask.naturalWidth !== maskDefinition.width || mask.naturalHeight !== maskDefinition.height) {
+        throw new Error(`${eye.side} protected line-art mask dimensions do not match its manifest`);
+      }
+      const layer = document.createElement("canvas");
+      layer.width = maskDefinition.width;
+      layer.height = maskDefinition.height;
+      const layerContext = layer.getContext("2d");
+      if (!layerContext) throw new Error("Canvas 2D is not available for protected line art");
+      const region = deformation.region;
+      layerContext.drawImage(
+        image,
+        region.x * manifest.image.width,
+        region.y * manifest.image.height,
+        region.width * manifest.image.width,
+        region.height * manifest.image.height,
+        0,
+        0,
+        layer.width,
+        layer.height,
+      );
+      layerContext.globalCompositeOperation = "destination-in";
+      layerContext.drawImage(mask, 0, 0, layer.width, layer.height);
+      layerContext.globalCompositeOperation = "source-over";
+      layers.set(eye.side, layer);
+    }));
+    return layers;
   }
 }

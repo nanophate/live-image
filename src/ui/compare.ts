@@ -1,6 +1,7 @@
 import {
   compareRgbaPixels,
   controlStateMaxError,
+  measureRgbaLocality,
   MOTION_SETTLE_DELTA_SECONDS,
   MOTION_SETTLE_FRAMES,
   MOTION_STATE_TOLERANCE,
@@ -13,6 +14,7 @@ import {
   fetchLivingImage,
   loadLivingImageFile,
   type LivingImageManifest,
+  type Rect,
 } from "../schema.js";
 import { requireElement } from "./shared.js";
 
@@ -22,6 +24,7 @@ const loadUrlsButton = requireElement<HTMLButtonElement>("load-comparison-urls")
 const status = requireElement<HTMLElement>("comparison-status");
 const output = requireElement<HTMLElement>("comparison-output");
 const frameUrls = new Set<string>();
+const LOCALITY_PADDING_PIXELS = 1;
 
 interface NamedManifest {
   source: string;
@@ -66,13 +69,46 @@ function previewCanvas(source: HTMLCanvasElement, manifest: LivingImageManifest,
   return preview;
 }
 
-function previewPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
+function canvasPixels(canvas: HTMLCanvasElement): Uint8ClampedArray {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("Canvas 2D is not available for transition evidence");
   return context.getImageData(0, 0, canvas.width, canvas.height).data;
 }
 
-async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCell): Promise<HTMLElement> {
+function allowedMotionRegions(manifest: LivingImageManifest, cell: MotionComparisonCell): Rect[] {
+  if (cell.capability === "mouth") return [manifest.analysis.features.mouth.region];
+  if (cell.capability === "gaze") return manifest.analysis.features.eyes.map((eye) => eye.region);
+  if (cell.capability === "blink") {
+    return manifest.analysis.features.eyes
+      .filter((eye) => eye.side === "left"
+        ? cell.requestedState.blinkLeft > 0
+        : cell.requestedState.blinkRight > 0)
+      .map((eye) => eye.region);
+  }
+  return [];
+}
+
+async function neutralPixels(manifest: LivingImageManifest): Promise<Uint8ClampedArray> {
+  const canvas = document.createElement("canvas");
+  const player = new LivingImagePlayer(canvas);
+  try {
+    await player.load(manifest);
+    player.setAutoIdle(false);
+    player.resetState();
+    player.step(MOTION_SETTLE_DELTA_SECONDS);
+    return canvasPixels(canvas);
+  } finally {
+    player.destroy();
+    canvas.width = 1;
+    canvas.height = 1;
+  }
+}
+
+async function makeCell(
+  manifest: LivingImageManifest,
+  cell: MotionComparisonCell,
+  baselinePixels: Uint8ClampedArray,
+): Promise<HTMLElement> {
   const article = document.createElement("article");
   article.className = `comparison-cell comparison-cell-${cell.status}`;
   article.dataset.state = cell.id;
@@ -100,6 +136,18 @@ async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCel
   try {
     await player.load(manifest);
     const stateError = settlePlayer(player, cell);
+    const locality = measureRgbaLocality(
+      baselinePixels,
+      canvasPixels(renderCanvas),
+      manifest.image.width,
+      manifest.image.height,
+      allowedMotionRegions(manifest, cell),
+      LOCALITY_PADDING_PIXELS,
+    );
+    article.dataset.insideChangedPixels = String(locality.insideChangedPixels);
+    article.dataset.outsideChangedPixels = String(locality.outsideChangedPixels);
+    article.dataset.maxChannelDelta = String(locality.maxChannelDelta);
+    article.dataset.visibleEffect = String(locality.visibleEffect);
     article.append(previewCanvas(renderCanvas, manifest, 420, `${manifest.id}: ${cell.label}`));
 
     const evidence = document.createElement("div");
@@ -112,11 +160,20 @@ async function makeCell(manifest: LivingImageManifest, cell: MotionComparisonCel
       article.classList.add("comparison-cell-error");
       error.classList.add("comparison-error-text");
     }
+    const localityEvidence = document.createElement("span");
+    localityEvidence.textContent = cell.capability === null
+      ? `canonical Δ ${locality.insideChangedPixels + locality.outsideChangedPixels}`
+      : `local Δ ${locality.insideChangedPixels} · outside ${locality.outsideChangedPixels} · max ${locality.maxChannelDelta}`;
+    const missingEffect = cell.capability !== null && !locality.visibleEffect;
+    if (locality.outsideChangedPixels > 0 || missingEffect) {
+      article.classList.add("comparison-cell-error");
+      localityEvidence.classList.add("comparison-error-text");
+    }
     const download = document.createElement("a");
     download.href = await canvasPngUrl(renderCanvas);
     download.download = `${manifest.id}-${cell.id}.png`;
     download.textContent = "Full PNG";
-    evidence.append(phase, error, download);
+    evidence.append(phase, error, localityEvidence, download);
     article.append(evidence);
   } catch (error) {
     article.classList.add("comparison-cell-error");
@@ -175,8 +232,8 @@ async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLE
       cell.dataset.blinkAmount = frame.blinkAmount.toFixed(4);
       const preview = previewCanvas(renderCanvas, manifest, 180, `${manifest.id}: ${frame.label}`);
       cell.append(preview);
-      if (index === 0) openingPixels = previewPixels(preview);
-      if (index === transition.frames.length - 1) reopenedPixels = previewPixels(preview);
+      if (index === 0) openingPixels = canvasPixels(renderCanvas);
+      if (index === transition.frames.length - 1) reopenedPixels = canvasPixels(renderCanvas);
       const caption = document.createElement("figcaption");
       caption.textContent = `${frame.label} · ${Math.round(frame.timeSeconds * 1000)}ms`;
       cell.append(caption);
@@ -194,7 +251,7 @@ async function makeBlinkTransition(manifest: LivingImageManifest): Promise<HTMLE
     const evidence = document.createElement("p");
     evidence.className = "comparison-timeline-evidence";
     evidence.dataset.differingPixels = String(difference.differingPixels);
-    evidence.textContent = `Open → reopened difference: ${difference.differingPixels} pixels · max channel delta ${difference.maxChannelDelta}`;
+    evidence.textContent = `Full-resolution open → reopened difference: ${difference.differingPixels} pixels · max channel delta ${difference.maxChannelDelta}`;
     if (difference.differingPixels > 0) {
       section.classList.add("comparison-cell-error");
       evidence.classList.add("comparison-error-text");
@@ -234,7 +291,10 @@ async function renderManifest({ source, manifest }: NamedManifest): Promise<HTML
 
   const grid = document.createElement("div");
   grid.className = "comparison-grid";
-  for (const cell of planMotionComparison(manifest)) grid.append(await makeCell(manifest, cell));
+  const baselinePixels = await neutralPixels(manifest);
+  for (const cell of planMotionComparison(manifest)) {
+    grid.append(await makeCell(manifest, cell, baselinePixels));
+  }
   section.append(heading, grid, await makeBlinkTransition(manifest));
   return section;
 }

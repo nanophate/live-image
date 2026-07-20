@@ -22,6 +22,7 @@ from typing import Any
 
 
 OUTCOMES = ("full", "limited", "reject", "error")
+MOTION_CAPABILITIES = ("blink", "gaze", "mouth")
 _SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -38,6 +39,8 @@ class ValidationCase:
     source_path: Path
     source_sha256: str | None
     expected: str
+    expected_enabled_capabilities: tuple[str, ...] | None
+    expected_disabled_capabilities: tuple[str, ...] | None
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,21 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _optional_capabilities(value: Any, label: str) -> tuple[str, ...] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ValidationManifestError(f"{label} must be an array of capability names")
+    if len(value) != len(set(value)):
+        raise ValidationManifestError(f"{label} must not contain duplicates")
+    unknown = sorted(set(value) - set(MOTION_CAPABILITIES))
+    if unknown:
+        raise ValidationManifestError(
+            f"{label} contains unknown capabilities: {', '.join(unknown)}"
+        )
+    return tuple(sorted(value))
 
 
 def load_manifest(manifest_path: Path) -> list[ValidationCase]:
@@ -137,9 +155,31 @@ def load_manifest(manifest_path: Path) -> list[ValidationCase]:
             raise ValidationManifestError(
                 f"{label}.expected must be one of: {', '.join(OUTCOMES)}"
             )
+        expected_enabled = _optional_capabilities(
+            raw_case.get("expectedEnabledCapabilities"),
+            f"{label}.expectedEnabledCapabilities",
+        )
+        expected_disabled = _optional_capabilities(
+            raw_case.get("expectedDisabledCapabilities"),
+            f"{label}.expectedDisabledCapabilities",
+        )
+        if expected_enabled is not None and expected_disabled is not None:
+            overlap = sorted(set(expected_enabled) & set(expected_disabled))
+            if overlap:
+                raise ValidationManifestError(
+                    f"{label} lists capabilities as both enabled and disabled: "
+                    f"{', '.join(overlap)}"
+                )
         cases.append(
             ValidationCase(
-                case_id, category, source, source_path, source_sha256, expected
+                case_id,
+                category,
+                source,
+                source_path,
+                source_sha256,
+                expected,
+                expected_enabled,
+                expected_disabled,
             )
         )
     return cases
@@ -200,6 +240,75 @@ def _read_artifact(path: Path) -> Any:
         raise ValueError(f"could not read compiler artifact {path.name}: {error}") from error
 
 
+def _extract_build_evidence(document: Any) -> dict[str, Any]:
+    """Keep small deterministic compiler/deformation facts in tracked reports."""
+
+    if not isinstance(document, dict):
+        return {}
+    evidence: dict[str, Any] = {}
+    compiler = document.get("compiler")
+    if isinstance(compiler, dict):
+        selected = {
+            field: compiler[field]
+            for field in ("name", "version", "detectorVersion")
+            if isinstance(compiler.get(field), str)
+        }
+        if selected:
+            evidence["compiler"] = selected
+
+    analysis = document.get("analysis")
+    features = analysis.get("features") if isinstance(analysis, dict) else None
+    if not isinstance(features, dict):
+        return evidence
+    deformation: dict[str, Any] = {}
+    eyes = features.get("eyes")
+    eye_evidence: list[dict[str, Any]] = []
+    if isinstance(eyes, list):
+        for eye in eyes:
+            if not isinstance(eye, dict):
+                continue
+            rig = eye.get("rig")
+            eye_deformation = rig.get("deformation") if isinstance(rig, dict) else None
+            if not isinstance(eye_deformation, dict):
+                continue
+            mask = eye_deformation.get("protectedLineArtMask")
+            item: dict[str, Any] = {}
+            if isinstance(eye.get("side"), str):
+                item["side"] = eye["side"]
+            if isinstance(eye_deformation.get("method"), str):
+                item["method"] = eye_deformation["method"]
+            if isinstance(mask, dict):
+                coverage = mask.get("coverage")
+                if isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and math.isfinite(coverage):
+                    item["protectedLineCoverage"] = coverage
+                if isinstance(mask.get("method"), str):
+                    item["protectedLineMethod"] = mask["method"]
+            if item:
+                eye_evidence.append(item)
+    if eye_evidence:
+        deformation["eyes"] = eye_evidence
+
+    mouth = features.get("mouth")
+    if isinstance(mouth, dict):
+        rig = mouth.get("rig")
+        mouth_deformation = rig.get("deformation") if isinstance(rig, dict) else None
+        if isinstance(mouth_deformation, dict):
+            item = {}
+            if isinstance(mouth_deformation.get("method"), str):
+                item["method"] = mouth_deformation["method"]
+            contrast = mouth_deformation.get("lineContrast")
+            if isinstance(contrast, (int, float)) and not isinstance(contrast, bool) and math.isfinite(contrast):
+                item["lineContrast"] = contrast
+            line_confidence = mouth.get("lineConfidence")
+            if isinstance(line_confidence, (int, float)) and not isinstance(line_confidence, bool) and math.isfinite(line_confidence):
+                item["lineConfidence"] = line_confidence
+            if item:
+                deformation["mouth"] = item
+    if deformation:
+        evidence["deformation"] = deformation
+    return evidence
+
+
 def _clean_expected_outputs(source_path: Path, artifact_dir: Path, overlay_dir: Path) -> None:
     """Remove only files this case's compiler invocation can regenerate."""
 
@@ -242,8 +351,16 @@ def _case_result(
         "id": case.id,
         "category": case.category,
         "source": case.source,
+        "sourceSha256": _sha256_file(case.source_path),
         "expected": case.expected,
     }
+    expected_capabilities: dict[str, list[str]] = {}
+    if case.expected_enabled_capabilities is not None:
+        expected_capabilities["enabled"] = list(case.expected_enabled_capabilities)
+    if case.expected_disabled_capabilities is not None:
+        expected_capabilities["disabled"] = list(case.expected_disabled_capabilities)
+    if expected_capabilities:
+        result["expectedCapabilities"] = expected_capabilities
     try:
         artifact_dir = _prepare_output_directory(
             output_dir, Path("artifacts") / case.id
@@ -262,6 +379,8 @@ def _case_result(
         if not artifact_path.is_file():
             raise RuntimeError("compiler did not produce a .limg or diagnostic artifact")
         document = _read_artifact(artifact_path)
+        result["artifactSha256"] = _sha256_file(artifact_path)
+        result.update(_extract_build_evidence(document))
         quality = _extract_quality(document)
         actual = quality["status"]
         expected_returncode = 2 if actual == "reject" else 0
@@ -299,8 +418,24 @@ def _case_result(
         if quality_report:
             result["quality"] = quality_report
         disabled = quality.get("disabledCapabilities")
-        if isinstance(disabled, list) and all(isinstance(item, str) for item in disabled):
-            result["capabilities"] = {"disabled": sorted(set(disabled))}
+        if disabled is None and actual == "reject" and artifact_path.name.endswith(".diagnostic.json"):
+            disabled = list(MOTION_CAPABILITIES)
+        if not isinstance(disabled, list) or not all(isinstance(item, str) for item in disabled):
+            raise ValueError("compiler artifact has invalid disabledCapabilities")
+        if len(disabled) != len(set(disabled)):
+            raise ValueError("compiler artifact has duplicate disabledCapabilities")
+        unknown_disabled = sorted(set(disabled) - set(MOTION_CAPABILITIES))
+        if unknown_disabled:
+            raise ValueError(
+                "compiler artifact has unknown disabledCapabilities: "
+                + ", ".join(unknown_disabled)
+            )
+        actual_disabled = sorted(disabled)
+        actual_enabled = sorted(set(MOTION_CAPABILITIES) - set(actual_disabled))
+        result["capabilities"] = {
+            "enabled": actual_enabled,
+            "disabled": actual_disabled,
+        }
     except Exception as error:  # Continue the suite after compiler and artifact failures.
         message = str(error) or error.__class__.__name__
         message = message.replace(str(case.source_path), case.source)
@@ -308,7 +443,17 @@ def _case_result(
         result["result"] = "error"
         result["message"] = message
 
-    result["matched"] = result["result"] == case.expected
+    matched = result["result"] == case.expected
+    actual_capabilities = result.get("capabilities", {})
+    if case.expected_enabled_capabilities is not None:
+        matched = matched and actual_capabilities.get("enabled") == list(
+            case.expected_enabled_capabilities
+        )
+    if case.expected_disabled_capabilities is not None:
+        matched = matched and actual_capabilities.get("disabled") == list(
+            case.expected_disabled_capabilities
+        )
+    result["matched"] = matched
     return result
 
 

@@ -42,7 +42,30 @@ Mouth opening is deliberately small because the source image contains no hidden
 teeth or oral texture.
 
 WebGL2 mesh rendering, protected line-art weights, TPS/ARAP and semantic hair lag
-are the next layer after the cross-image proof, not prerequisites for it.
+were identified as the next layer after the cross-image proof, not prerequisites
+for it.
+
+**Confirmed update (2026-07-20):** Compiler `0.3.0` subsequently added an
+optional compiler-authored six-row eye mesh, embedded protected-line alpha
+mask, and bounded mouth bands while retaining `.limg` version 1 fallback. Low
+mouth-line confidence disables mouth motion instead of forcing an unreliable
+band. Player loads are transactional: a failed replacement image or mask keeps
+the last playable character. See
+[`experiments/2026-07-20-local-deformation-validation.md`](experiments/2026-07-20-local-deformation-validation.md).
+
+**Decision:** The JSON Schema is the portable structural contract. Cross-field
+constraints that JSON Schema cannot express directly—strict row ordering,
+feature-region containment, matching declared mask dimensions, and ordered Canny
+thresholds—are enforced by `validateManifest` before runtime allocation or
+drawing. The player then verifies the decoded PNG's natural dimensions before
+allocating its protection layer. Both validation layers reject unsupported
+deformation method identifiers.
+
+**Decision:** Version-1 source images are limited to 8192 pixels per side and
+33,554,432 total pixels. The player verifies the decoded source image's natural
+dimensions against the manifest before resizing its main Canvas. Eye and mouth
+anchors/ranges must be finite, ordered, feature-local values, and an asset must
+contain exactly one left and one right eye.
 
 ## Public state API
 

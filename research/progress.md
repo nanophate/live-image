@@ -1,6 +1,6 @@
 # Progress checkpoints
 
-Branch: `codex/transition-domain-probe`
+Branch: `codex/protected-local-deformation`
 
 | Commit / PR | Checkpoint | Evidence |
 | --- | --- | --- |
@@ -15,7 +15,10 @@ Branch: `codex/transition-domain-probe`
 | `55421e1` | multi-image validation harness | 12-case frozen manifest, public original fixtures, batch compiler, report viewer, and preserved 7/12 first-run result |
 | `cc04001` | quality gate v2 | compiler 0.2.0 confidence/symmetry/resolution gates, 12/12 calibrated result, safety review fixes, tests, and research record |
 | PR #3 | local external hold-out motion validation | frozen manifest and hashes without source-media redistribution, preserved 3/5 first run, deterministic comparison Viewer, browser evidence, capability skips, and local SHA-256 preflight |
-| current branch | blink transition and support-domain decision | single-player close/reopen strip with pixel-exact recovery, plus licensed review of deterministic descriptors, CLIP, and WD Tagger |
+| PR #4 / `8c35279` | blink transition and support-domain decision | single-player close/reopen strip with pixel-exact recovery, plus licensed review of deterministic descriptors, CLIP, and WD Tagger |
+| `de8a80b` | validation capability contracts | frozen enabled/disabled capability expectations are now checked in addition to status |
+| `f0308e4` | protected local deformation | compiler-authored eye rows and protected-line masks, bounded mouth bands, full-resolution recovery, 12/12 matrix and preserved 3/5 hold-out result |
+| PR #5 / `0a56bb7` | real-browser motion-locality gate | exact Playwright 1.61.1 + Chromium validates 2 automatic rigs across 26 blink, wink, gaze, and mouth states with visible local effects, zero ROI leakage, and pixel-exact blink recovery |
 
 Commit signing was disabled for these checkpoints because the configured
 1Password signing integration failed to fill its buffer; source and test results
