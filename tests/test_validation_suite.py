@@ -100,7 +100,10 @@ class ValidationSuiteTests(unittest.TestCase):
         self.assertEqual(first["cases"][0]["artifacts"]["limg"], "artifacts/normal/full.limg")
         self.assertEqual(first["cases"][0]["artifacts"]["overlay"], "overlays/normal/full.png")
         self.assertEqual(first["cases"][0]["quality"]["metrics"], {"faceScore": 0.9})
-        self.assertEqual(first["cases"][1]["capabilities"], {"disabled": ["gaze"]})
+        self.assertEqual(
+            first["cases"][1]["capabilities"],
+            {"enabled": ["blink", "mouth"], "disabled": ["gaze"]},
+        )
         self.assertEqual(first["cases"][2]["artifacts"]["diagnostic"], "artifacts/no_face/reject.diagnostic.json")
         self.assertIn("synthetic compiler failure", first["cases"][3]["message"])
         self.assertNotIn(str(self.root), first_text)
@@ -165,6 +168,119 @@ class ValidationSuiteTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValidationManifestError, "SHA-256 mismatch"):
             load_manifest(invalid)
+
+    def test_matches_optional_capability_expectations_exactly(self) -> None:
+        self._source("limited.png")
+        manifest = self._manifest(
+            [
+                {
+                    "id": "capabilities",
+                    "category": "contract",
+                    "source": "images/limited.png",
+                    "expected": "limited",
+                    "expectedEnabledCapabilities": ["blink", "mouth"],
+                    "expectedDisabledCapabilities": ["gaze"],
+                }
+            ]
+        )
+
+        def fake_runner(
+            source: Path,
+            artifact_dir: Path,
+            _overlay_dir: Path,
+            _offline: bool,
+            _flip_test: bool,
+        ) -> CompilerResult:
+            artifact_dir.joinpath(f"{source.stem}.limg").write_text(
+                json.dumps(
+                    {
+                        "quality": {
+                            "status": "limited",
+                            "disabledCapabilities": ["gaze"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return CompilerResult(0)
+
+        report = validate_suite(manifest, self.root / "report", runner=fake_runner)
+
+        self.assertTrue(report["cases"][0]["matched"])
+        self.assertEqual(
+            report["cases"][0]["expectedCapabilities"],
+            {"enabled": ["blink", "mouth"], "disabled": ["gaze"]},
+        )
+
+    def test_status_match_is_capability_mismatch_when_contract_is_wrong(self) -> None:
+        self._source("limited.png")
+        manifest = self._manifest(
+            [
+                {
+                    "id": "wrong-capability",
+                    "category": "contract",
+                    "source": "images/limited.png",
+                    "expected": "limited",
+                    "expectedDisabledCapabilities": ["blink"],
+                }
+            ]
+        )
+
+        def fake_runner(
+            source: Path,
+            artifact_dir: Path,
+            _overlay_dir: Path,
+            _offline: bool,
+            _flip_test: bool,
+        ) -> CompilerResult:
+            artifact_dir.joinpath(f"{source.stem}.limg").write_text(
+                json.dumps(
+                    {
+                        "quality": {
+                            "status": "limited",
+                            "disabledCapabilities": ["gaze"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return CompilerResult(0)
+
+        report = validate_suite(manifest, self.root / "report", runner=fake_runner)
+
+        self.assertFalse(report["cases"][0]["matched"])
+        self.assertEqual(report["summary"]["mismatched"], 1)
+
+    def test_rejects_unknown_or_overlapping_capability_expectations(self) -> None:
+        self._source("portrait.png")
+        unknown = self._manifest(
+            [
+                {
+                    "id": "unknown",
+                    "category": "contract",
+                    "source": "images/portrait.png",
+                    "expected": "full",
+                    "expectedEnabledCapabilities": ["hair"],
+                }
+            ]
+        )
+        with self.assertRaisesRegex(ValidationManifestError, "unknown capabilities"):
+            load_manifest(unknown)
+
+        overlap = self._manifest(
+            [
+                {
+                    "id": "overlap",
+                    "category": "contract",
+                    "source": "images/portrait.png",
+                    "expected": "limited",
+                    "expectedEnabledCapabilities": ["blink"],
+                    "expectedDisabledCapabilities": ["blink"],
+                }
+            ]
+        )
+        with self.assertRaisesRegex(ValidationManifestError, "both enabled and disabled"):
+            load_manifest(overlap)
 
     def test_default_runner_invokes_existing_compiler_with_passthrough_flags(self) -> None:
         source = self.root / "portrait.png"

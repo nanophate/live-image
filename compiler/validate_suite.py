@@ -22,6 +22,7 @@ from typing import Any
 
 
 OUTCOMES = ("full", "limited", "reject", "error")
+MOTION_CAPABILITIES = ("blink", "gaze", "mouth")
 _SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -38,6 +39,8 @@ class ValidationCase:
     source_path: Path
     source_sha256: str | None
     expected: str
+    expected_enabled_capabilities: tuple[str, ...] | None
+    expected_disabled_capabilities: tuple[str, ...] | None
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,21 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _optional_capabilities(value: Any, label: str) -> tuple[str, ...] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise ValidationManifestError(f"{label} must be an array of capability names")
+    if len(value) != len(set(value)):
+        raise ValidationManifestError(f"{label} must not contain duplicates")
+    unknown = sorted(set(value) - set(MOTION_CAPABILITIES))
+    if unknown:
+        raise ValidationManifestError(
+            f"{label} contains unknown capabilities: {', '.join(unknown)}"
+        )
+    return tuple(sorted(value))
 
 
 def load_manifest(manifest_path: Path) -> list[ValidationCase]:
@@ -137,9 +155,31 @@ def load_manifest(manifest_path: Path) -> list[ValidationCase]:
             raise ValidationManifestError(
                 f"{label}.expected must be one of: {', '.join(OUTCOMES)}"
             )
+        expected_enabled = _optional_capabilities(
+            raw_case.get("expectedEnabledCapabilities"),
+            f"{label}.expectedEnabledCapabilities",
+        )
+        expected_disabled = _optional_capabilities(
+            raw_case.get("expectedDisabledCapabilities"),
+            f"{label}.expectedDisabledCapabilities",
+        )
+        if expected_enabled is not None and expected_disabled is not None:
+            overlap = sorted(set(expected_enabled) & set(expected_disabled))
+            if overlap:
+                raise ValidationManifestError(
+                    f"{label} lists capabilities as both enabled and disabled: "
+                    f"{', '.join(overlap)}"
+                )
         cases.append(
             ValidationCase(
-                case_id, category, source, source_path, source_sha256, expected
+                case_id,
+                category,
+                source,
+                source_path,
+                source_sha256,
+                expected,
+                expected_enabled,
+                expected_disabled,
             )
         )
     return cases
@@ -244,6 +284,13 @@ def _case_result(
         "source": case.source,
         "expected": case.expected,
     }
+    expected_capabilities: dict[str, list[str]] = {}
+    if case.expected_enabled_capabilities is not None:
+        expected_capabilities["enabled"] = list(case.expected_enabled_capabilities)
+    if case.expected_disabled_capabilities is not None:
+        expected_capabilities["disabled"] = list(case.expected_disabled_capabilities)
+    if expected_capabilities:
+        result["expectedCapabilities"] = expected_capabilities
     try:
         artifact_dir = _prepare_output_directory(
             output_dir, Path("artifacts") / case.id
@@ -300,7 +347,12 @@ def _case_result(
             result["quality"] = quality_report
         disabled = quality.get("disabledCapabilities")
         if isinstance(disabled, list) and all(isinstance(item, str) for item in disabled):
-            result["capabilities"] = {"disabled": sorted(set(disabled))}
+            actual_disabled = sorted(set(disabled) & set(MOTION_CAPABILITIES))
+            actual_enabled = sorted(set(MOTION_CAPABILITIES) - set(actual_disabled))
+            result["capabilities"] = {
+                "enabled": actual_enabled,
+                "disabled": actual_disabled,
+            }
     except Exception as error:  # Continue the suite after compiler and artifact failures.
         message = str(error) or error.__class__.__name__
         message = message.replace(str(case.source_path), case.source)
@@ -308,7 +360,17 @@ def _case_result(
         result["result"] = "error"
         result["message"] = message
 
-    result["matched"] = result["result"] == case.expected
+    matched = result["result"] == case.expected
+    actual_capabilities = result.get("capabilities", {})
+    if case.expected_enabled_capabilities is not None:
+        matched = matched and actual_capabilities.get("enabled") == list(
+            case.expected_enabled_capabilities
+        )
+    if case.expected_disabled_capabilities is not None:
+        matched = matched and actual_capabilities.get("disabled") == list(
+            case.expected_disabled_capabilities
+        )
+    result["matched"] = matched
     return result
 
 
