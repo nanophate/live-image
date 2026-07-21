@@ -70,6 +70,10 @@ before attaching any external route.
   billing starts only when a request is sent to a Container or it is manually
   started; unused pre-warmed images are not billed. This is not evidence of an
   addressable or inference-running instance.
+- **Confirmed:** after rollout settled, application state became `ready` and
+  `wrangler containers info` reported health `active: 0`, `assigned: 0`, and
+  `healthy: 1`. The one healthy slot is therefore unassigned pre-warmed capacity,
+  not a request-started Compiler process. No inference request was made.
 - **Confirmed:** the complete Chromium product suite passed with 14 tests and 2
   documented local-only skips after the correction, in addition to the unit,
   Python, build, dry-run, and startup checks below.
