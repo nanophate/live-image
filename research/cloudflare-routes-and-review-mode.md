@@ -2,7 +2,7 @@
 
 Reviewed: 2026-07-21
 
-Status: implemented locally; normal Access-protected deployment pending
+Status: implemented and deployed in normal Access-protected mode
 
 ## Question
 
@@ -102,3 +102,22 @@ session without leaving an indefinite public compute endpoint?
   dataset, or sample asset. The deployment helper uses only Node.js built-ins,
   so `research/license-matrix.md` and `THIRD_PARTY_NOTICES.md` require no
   new license entry.
+
+## Deployment evidence
+
+- **Confirmed:** `nodenv exec npm run deploy:cloudflare:private` registered
+  Worker version `35974c1b-7762-4349-9538-3c6bad1e574c` with
+  `--containers-rollout=none`. It uploaded the distinct Compiler/Viewer assets
+  and retained the existing Container image.
+- **Confirmed:** the Access-authenticated live `/compiler.html` displayed
+  `Access-protected Compiler`, enabled the PNG/JPEG picker, linked to the
+  Viewer, and disclosed that images pass through Cloudflare Access to the
+  private Compiler.
+- **Confirmed:** the live `/viewer.html` displayed `Portable Viewer`,
+  exposed only the `.limg` picker, linked to the Compiler, and disclosed that
+  character files remain in the browser.
+- **Confirmed:** after both page/config checks, Wrangler reported the named
+  `primary` Container instance as `inactive`; merely loading the pages did
+  not start the Compiler process.
+- **Decision:** the public-review command was dry-run only. Access was not
+  disabled and no unauthenticated endpoint was created during this deployment.
