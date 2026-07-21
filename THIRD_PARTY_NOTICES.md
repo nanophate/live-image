@@ -33,9 +33,12 @@ only the generated `dist` files are copied into the Hugging Face target.
   <https://github.com/cloudflare/workers-sdk>
 - @cloudflare/workers-types 5.20260719.1 — MIT OR Apache License 2.0 —
   <https://github.com/cloudflare/workerd>
+- jose 6.2.3 — MIT License —
+  <https://github.com/panva/jose>
 
 Wrangler and the Workers type package are development/deployment tools.
-`@cloudflare/containers` is bundled into the deployed Worker gateway, but none
+`@cloudflare/containers` and `jose` are bundled into the deployed Worker
+gateway, but none
 of these packages are copied into the browser Runtime. The private compiler
 image uses Python 3.12 slim-bookworm,
 Debian packages, `libgomp1`, and the compiler stack below. Capture the exact

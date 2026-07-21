@@ -43,6 +43,7 @@ research/              findings, primary references, licenses, experiments
 schemas/               .limg v1 JSON schema
 tests/                 Python and TypeScript regression tests
 inspect.html           detection-result viewer
+compiler.html          PNG/JPEG compiler, quality review, and .limg download
 viewer.html            independent .limg player
 compare.html           deterministic multi-character motion comparison
 ```
@@ -75,7 +76,7 @@ After setup, the shortest product path is:
 nodenv exec npm run studio
 ```
 
-Open [http://127.0.0.1:8787/viewer.html](http://127.0.0.1:8787/viewer.html),
+Open [http://127.0.0.1:8787/compiler.html](http://127.0.0.1:8787/compiler.html),
 select a PNG or JPEG, and wait for one of three explicit outcomes:
 
 - `full`: download the `.limg`, use every available control, play the review
@@ -100,10 +101,11 @@ endpoint. Details and the verified security/recording boundary are in
 
 ## Validate the hosted compiler targets
 
-The hosted design keeps the Viewer and upload flow on one origin: Worker Assets
-serve the browser build, while only `/api/compile` reaches a private Python
-Container. Hosted compilation is disabled by default in `wrangler.jsonc`; no
-deployment or billing is triggered by these checks.
+The hosted design keeps the distinct Compiler and Viewer paths on one origin.
+Worker Assets serve both browser builds, while only `/api/compile` reaches a
+private Python Container. The checked-in mode keeps the Compiler available
+behind Cloudflare Access; the Container remains on-demand and sleeps after five
+idle minutes.
 
 ```bash
 nodenv exec npm run build:worker
@@ -123,11 +125,39 @@ from the host. At a local 1 CPU / 6 GiB limit, the final HTTP path measured
 10.06 seconds on its first request and 4.95 seconds warm, with byte-identical
 artifacts. This makes standard-2 a private-staging candidate, not a confirmed
 Cloudflare SLO; actual provider timing and cost remain required.
-The checked-in deployment is deliberately inaccessible: `workers_dev` is off,
-there is no public route, the compile flag is false, and the gateway expects a
-Cloudflare Access assertion. Do not run `npm run deploy:cloudflare` until a
-custom route protected by Cloudflare Access, the Workers Paid account, quotas,
-privacy copy, cost alerts, and the enable flag are configured.
+The current `workers.dev` route is protected by Cloudflare Access and Preview
+URLs remain off. Store Access values interactively (never on a command line or
+in Git):
+
+```bash
+nodenv exec npx wrangler secret put ACCESS_TEAM_DOMAIN
+nodenv exec npx wrangler secret put ACCESS_POLICY_AUD
+```
+
+The gateway verifies the Access JWT's RS256 signature, issuer, application AUD,
+and expiry using the account JWKS. A missing, invalid, or misspelled
+configuration fails closed. Deploy the normal mode with:
+
+```bash
+nodenv exec npm run deploy:cloudflare:private
+```
+
+For a short judging session, this command creates a two-hour origin window:
+
+```bash
+nodenv exec npm run deploy:cloudflare:review
+```
+
+Cloudflare Access is an edge gate and is not changed by Worker deployment.
+After the review command succeeds, disable the Access application manually.
+The current Access application covers the entire workers.dev hostname, so this
+temporarily opens the landing page, Compiler, Viewer, and engineering pages—not
+only `/compiler.html`.
+When judging ends, run the private command first and then re-enable Access.
+Public review applies an exact-Origin browser/CSRF check and automatically fails
+closed after the two-hour window. Origin is not caller authentication and can be
+forged by non-browser clients. This is not a general public production mode;
+add rate limiting or Turnstile before broader access.
 The implementation and Cloudflare/Hugging Face comparison are recorded in
 [`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
 
@@ -143,7 +173,10 @@ docker run --rm -p 8789:8080 \
   living-image:huggingface
 ```
 
-Open [http://127.0.0.1:8789/viewer.html](http://127.0.0.1:8789/viewer.html).
+Open [http://127.0.0.1:8789/compiler.html](http://127.0.0.1:8789/compiler.html)
+to compile, then use
+[http://127.0.0.1:8789/viewer.html](http://127.0.0.1:8789/viewer.html) to open
+an existing character.
 For a private Hugging Face Docker Space, the README metadata above selects port
 8080 and the platform-provided `SPACE_HOST` supplies the trusted public origin;
 set `HOSTED_COMPILER_ENABLED=true` only after reviewing the Space visibility.
@@ -167,6 +200,7 @@ nodenv exec npm run dev
 Open:
 
 - [http://127.0.0.1:5173/inspect.html](http://127.0.0.1:5173/inspect.html) for detector evidence
+- [http://127.0.0.1:5173/compiler.html](http://127.0.0.1:5173/compiler.html) for PNG/JPEG compilation
 - [http://127.0.0.1:5173/viewer.html](http://127.0.0.1:5173/viewer.html) for the separate player
 - [http://127.0.0.1:5173/validate.html](http://127.0.0.1:5173/validate.html) for the multi-image validation report
 - [http://127.0.0.1:5173/compare.html](http://127.0.0.1:5173/compare.html) for fixed blink, gaze, and mouth comparisons plus a sequential blink close/reopen strip; use its Eye renderer selector to compare the bounded baseline, required semantic mesh, and experimental semantic mesh + closed-eye corrective

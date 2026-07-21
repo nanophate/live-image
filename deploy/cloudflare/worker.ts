@@ -2,17 +2,22 @@ import { Container, getContainer } from "@cloudflare/containers";
 
 import {
   forwardedHeaders,
+  hostedCompilerPolicy,
   json,
   requireAccessAssertion,
   uploadLength,
   validateCompileRequest,
 } from "./request-policy.js";
 
-interface Env {
-  ASSETS: Fetcher;
-  COMPILER: DurableObjectNamespace<CompilerContainer>;
-  HOSTED_COMPILER_ENABLED?: string;
-  REQUIRE_ACCESS_JWT?: string;
+function policy(env: Env) {
+  return hostedCompilerPolicy({
+    accessAudience: env.ACCESS_POLICY_AUD,
+    accessTeamDomain: env.ACCESS_TEAM_DOMAIN,
+    compilerEnabled: env.HOSTED_COMPILER_ENABLED,
+    publicReviewExpiresAt: env.PUBLIC_REVIEW_EXPIRES_AT,
+    publicReviewNotBefore: env.PUBLIC_REVIEW_NOT_BEFORE,
+    requireAccessJwt: env.REQUIRE_ACCESS_JWT,
+  });
 }
 
 export class CompilerContainer extends Container {
@@ -27,9 +32,12 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/config") {
+      const compilerPolicy = policy(env);
       return json(200, {
         compiler: "hosted",
-        enabled: env.HOSTED_COMPILER_ENABLED === "true",
+        enabled: compilerPolicy.enabled,
+        authentication: compilerPolicy.authenticationRequired ? "cloudflare-access" : "none",
+        reviewExpiresAt: compilerPolicy.authenticationRequired ? undefined : env.PUBLIC_REVIEW_EXPIRES_AT,
         samplesAvailable: false,
         provider: "cloudflare",
       });
@@ -41,16 +49,26 @@ export default {
     }
 
     const requestId = crypto.randomUUID();
-    if (env.HOSTED_COMPILER_ENABLED !== "true") {
+    const compilerPolicy = policy(env);
+    if (!compilerPolicy.enabled) {
       return json(
         503,
         { status: "error", message: "Hosted compilation is not enabled for this deployment" },
         requestId,
       );
     }
-    const unauthorized = requireAccessAssertion(request, env.REQUIRE_ACCESS_JWT !== "false", requestId);
-    if (unauthorized) return unauthorized;
-    const invalid = validateCompileRequest(request, requestId);
+    if (compilerPolicy.authenticationRequired) {
+      const unauthorized = await requireAccessAssertion(
+        request,
+        {
+          audience: env.ACCESS_POLICY_AUD,
+          teamDomain: env.ACCESS_TEAM_DOMAIN,
+        },
+        requestId,
+      );
+      if (unauthorized) return unauthorized;
+    }
+    const invalid = validateCompileRequest(request, requestId, compilerPolicy.requireExactOrigin);
     if (invalid) return invalid;
 
     if (!request.body) {

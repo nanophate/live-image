@@ -145,8 +145,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     root = args.root.resolve()
-    if not (root / "viewer.html").is_file():
-        raise SystemExit(f"built Viewer not found under {root}; run nodenv exec npm run build")
+    if not (root / "compiler.html").is_file() or not (root / "viewer.html").is_file():
+        raise SystemExit(f"built Compiler/Viewer not found under {root}; run nodenv exec npm run build")
     handler = partial(StudioHandler, directory=str(root))
     server = StudioServer(
         ("127.0.0.1", args.port),
@@ -154,7 +154,8 @@ def main() -> int:
         compiler=CompilerService(offline=args.offline, flip_test=args.flip_test),
         samples=args.samples.resolve(),
     )
-    print(f"Living Image Studio: http://127.0.0.1:{args.port}/viewer.html", flush=True)
+    print(f"Living Image Compiler: http://127.0.0.1:{args.port}/compiler.html", flush=True)
+    print(f"Living Image Viewer:   http://127.0.0.1:{args.port}/viewer.html", flush=True)
     print("Images compile locally. Stop with Ctrl+C.", flush=True)
     try:
         server.serve_forever()

@@ -31,8 +31,9 @@ They should not be treated as one hosting target.
   reviewed machine. Its cached weights are approximately 272 MiB: YOLOv3 is
   235 MiB and HRNetV2 is 37 MiB.
 - **Confirmed:** `vite.config.ts` and the HTML currently use root-absolute URLs
-  such as `/viewer.html`; the product Viewer also calls `/api/compile` and
-  expects the local Studio to provide generated sample `.limg` routes.
+  such as `/viewer.html`. The distinct `/compiler.html` page owns
+  `/api/config` and `/api/compile`; the Viewer accepts only local `.limg`
+  files and makes neither request.
 - **Confirmed:** `dist/` does not contain the sample `.limg` files. A plain
   static deployment can load a user-selected `.limg`, but the automatic sample
   and PNG compilation paths will be unavailable.

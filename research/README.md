@@ -11,8 +11,10 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
 - [`product-studio-and-recording.md`](product-studio-and-recording.md) — local PNG-to-Viewer product flow, capability/reaction API, Canvas WebM review recording, and security/license boundary
+- [`compiler-viewer-handoff.md`](compiler-viewer-handoff.md) — one-time browser-local `.limg` transfer from Compiler to Viewer, expiry, validation, fallback, and privacy boundary
 - [`hosting-and-public-deployment.md`](hosting-and-public-deployment.md) — GitHub Pages, Cloudflare Pages/Workers/Containers, and Codex Sites feasibility, current deployment blockers, and staged public-release gates
 - [`hosted-compiler-platforms.md`](hosted-compiler-platforms.md) — Cloudflare Container and Hugging Face Docker Space comparison, private-alpha gateway implementation, local validation, and deployment gates
+- [`cloudflare-routes-and-review-mode.md`](cloudflare-routes-and-review-mode.md) — separate Compiler/Viewer paths, always-available private Compiler, fail-closed Access toggle, and time-boxed unauthenticated judging mode
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`browser-visual-ci.md`](browser-visual-ci.md) — headless-browser options, minimal Canvas 2D CI decision, cost, compatibility, and license boundaries
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
@@ -51,6 +53,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-21-container-benchmark.md`](experiments/2026-07-21-container-benchmark.md) — real linux/amd64 image build, frozen model hashes, 0.5/1 CPU cold/warm/reject latency, memory, healthcheck, SIGTERM failure reproduction and fix, and deployment decision
 - [`experiments/2026-07-21-container-thread-profile.md`](experiments/2026-07-21-container-thread-profile.md) — YOLO/HRNet stage split, reproduced cgroup thread oversubscription, 6.7× profiled warm improvement, deterministic one-thread reports, final 1-CPU HTTP first/warm timing, and revised private-staging decision
 - [`experiments/2026-07-21-dual-target-container-validation.md`](experiments/2026-07-21-dual-target-container-validation.md) — one pinned multi-stage Dockerfile, isolated Cloudflare/Hugging Face targets, same-origin public-server controls, exact Python container lock, real cross-target `.limg` byte equality, and private-before-public release boundary
+- [`experiments/2026-07-21-cloudflare-private-staging.md`](experiments/2026-07-21-cloudflare-private-staging.md) — Workers Paid entitlement, Access JWT correction, narrow one-time-PIN staging policy, protected workers.dev activation, anonymous denial evidence, authenticated one-image cold/warm Compiler proof, rollback, and remaining rollout gates
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

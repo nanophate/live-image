@@ -33,6 +33,7 @@ class HostedServerTests(unittest.TestCase):
         self.web_root = temporary / "dist"
         (self.web_root / "assets").mkdir(parents=True)
         (self.web_root / "index.html").write_text("<h1>Living Image</h1>", encoding="utf-8")
+        (self.web_root / "compiler.html").write_text("<main>Compiler</main>", encoding="utf-8")
         (self.web_root / "viewer.html").write_text("<main>Viewer</main>", encoding="utf-8")
         (self.web_root / "assets" / "viewer-test.js").write_text("export {};", encoding="utf-8")
         self.outside = temporary / "outside.txt"
@@ -110,6 +111,10 @@ class HostedServerTests(unittest.TestCase):
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
         self.assertIn(b"Viewer", body)
 
+        status, _, body = self.request("GET", "/compiler.html")
+        self.assertEqual(status, HTTPStatus.OK)
+        self.assertIn(b"Compiler", body)
+
         status, headers, _ = self.request("GET", "/assets/viewer-test.js")
         self.assertEqual(status, HTTPStatus.OK)
         self.assertEqual(headers["Cache-Control"], "public, max-age=31536000, immutable")
@@ -122,6 +127,7 @@ class HostedServerTests(unittest.TestCase):
             {
                 "compiler": "hosted",
                 "enabled": True,
+                "authentication": "platform",
                 "samplesAvailable": False,
                 "provider": "hugging-face",
             },

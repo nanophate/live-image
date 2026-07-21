@@ -20,6 +20,7 @@ export default defineConfig({
         inspector: resolve(__dirname, "inspect.html"),
         comparison: resolve(__dirname, "compare.html"),
         validation: resolve(__dirname, "validate.html"),
+        compiler: resolve(__dirname, "compiler.html"),
         viewer: resolve(__dirname, "viewer.html"),
       },
     },

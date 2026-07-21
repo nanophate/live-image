@@ -1,4 +1,11 @@
+import {
+  createRemoteJWKSet,
+  jwtVerify,
+  type JWTVerifyGetKey,
+} from "jose";
+
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+export const MAX_PUBLIC_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
 
 const ALLOWED_MEDIA_TYPES = new Set(["image/png", "image/jpeg"]);
 const MAX_FILENAME_HEADER_LENGTH = 512;
@@ -13,17 +20,133 @@ export function json(status: number, body: Record<string, unknown>, requestId?: 
   return Response.json(body, { status, headers });
 }
 
-export function requireAccessAssertion(
-  request: Request,
-  required: boolean,
-  requestId: string,
-): Response | null {
-  if (!required) return null;
-  if (request.headers.get("Cf-Access-Jwt-Assertion")) return null;
-  return json(401, { status: "error", message: "Cloudflare Access authentication is required" }, requestId);
+interface AccessConfiguration {
+  audience?: string;
+  teamDomain?: string;
 }
 
-export function validateCompileRequest(request: Request, requestId: string): Response | null {
+type JwksFactory = (url: URL) => JWTVerifyGetKey;
+
+let cachedRemoteJwks: { issuer: string; keys: JWTVerifyGetKey } | undefined;
+
+export function accessAuthenticationRequired(value: string | undefined): boolean {
+  return value !== "false";
+}
+
+export function publicReviewWindowActive(
+  notBefore: string | undefined,
+  expiresAt: string | undefined,
+  now = Date.now(),
+): boolean {
+  if (!notBefore || !expiresAt) return false;
+  const start = Date.parse(notBefore);
+  const end = Date.parse(expiresAt);
+  return Number.isFinite(start)
+    && Number.isFinite(end)
+    && start <= now
+    && now < end
+    && end > start
+    && end - start <= MAX_PUBLIC_REVIEW_DURATION_MS;
+}
+
+interface HostedCompilerConfiguration {
+  accessAudience?: string;
+  accessTeamDomain?: string;
+  compilerEnabled?: string;
+  publicReviewExpiresAt?: string;
+  publicReviewNotBefore?: string;
+  requireAccessJwt?: string;
+}
+
+export interface HostedCompilerPolicy {
+  authenticationRequired: boolean;
+  enabled: boolean;
+  requireExactOrigin: boolean;
+}
+
+export function hostedCompilerPolicy(
+  configuration: HostedCompilerConfiguration,
+  now = Date.now(),
+): HostedCompilerPolicy {
+  const authenticationRequired = accessAuthenticationRequired(configuration.requireAccessJwt);
+  const privateReady = Boolean(configuration.accessAudience) && Boolean(configuration.accessTeamDomain);
+  const reviewReady = publicReviewWindowActive(
+    configuration.publicReviewNotBefore,
+    configuration.publicReviewExpiresAt,
+    now,
+  );
+  return {
+    authenticationRequired,
+    enabled: configuration.compilerEnabled === "true"
+      && (authenticationRequired ? privateReady : reviewReady),
+    requireExactOrigin: !authenticationRequired,
+  };
+}
+
+function accessIssuer(teamDomain: string | undefined): string | null {
+  if (!teamDomain) return null;
+  try {
+    const url = new URL(teamDomain);
+    if (
+      url.protocol !== "https:"
+      || url.username
+      || url.password
+      || url.port
+      || url.pathname !== "/"
+      || url.search
+      || url.hash
+      || !url.hostname.endsWith(".cloudflareaccess.com")
+    ) {
+      return null;
+    }
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function accessJwks(issuer: string, factory?: JwksFactory): JWTVerifyGetKey {
+  const certs = new URL("/cdn-cgi/access/certs", issuer);
+  if (factory) return factory(certs);
+  if (!cachedRemoteJwks || cachedRemoteJwks.issuer !== issuer) {
+    cachedRemoteJwks = { issuer, keys: createRemoteJWKSet(certs) };
+  }
+  return cachedRemoteJwks.keys;
+}
+
+export async function requireAccessAssertion(
+  request: Request,
+  configuration: AccessConfiguration,
+  requestId: string,
+  jwksFactory?: JwksFactory,
+): Promise<Response | null> {
+  const issuer = accessIssuer(configuration.teamDomain);
+  const audience = configuration.audience?.trim();
+  if (!issuer || !audience) {
+    return json(503, { status: "error", message: "Cloudflare Access authentication is not configured" }, requestId);
+  }
+  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (!token) {
+    return json(401, { status: "error", message: "Cloudflare Access authentication is required" }, requestId);
+  }
+  try {
+    const jwks = accessJwks(issuer, jwksFactory);
+    await jwtVerify(token, jwks, {
+      algorithms: ["RS256"],
+      audience,
+      issuer,
+    });
+    return null;
+  } catch {
+    return json(403, { status: "error", message: "Cloudflare Access authentication is invalid" }, requestId);
+  }
+}
+
+export function validateCompileRequest(
+  request: Request,
+  requestId: string,
+  requireExactOrigin = false,
+): Response | null {
   if (request.method !== "POST") {
     return json(405, { status: "error", message: "Method not allowed" }, requestId);
   }
@@ -40,7 +163,7 @@ export function validateCompileRequest(request: Request, requestId: string): Res
     return json(413, { status: "error", message: "The selected image exceeds 20 MiB" }, requestId);
   }
   const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  if ((requireExactOrigin && !origin) || (origin && origin !== new URL(request.url).origin)) {
     return json(403, { status: "error", message: "Cross-origin compilation is disabled" }, requestId);
   }
   const filename = request.headers.get("X-Living-Image-Filename");

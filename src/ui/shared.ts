@@ -36,8 +36,8 @@ export function renderRejectDiagnostic(
   const warnings = diagnostic.warnings ?? [];
   container.hidden = false;
   container.innerHTML = `
-    <div class="quality-head"><strong class="reject-text">reject</strong><output>no .limg</output></div>
-    <p>The compiler stopped safely instead of creating a broken character.</p>
+    <div class="quality-head"><strong class="reject-text">not supported</strong><output>no file created</output></div>
+    <p>Nothing is broken—the Compiler stopped safely because this image is outside the currently supported portrait range.</p>
     <ul>${[...reasons, ...warnings].map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul>
   `;
 }

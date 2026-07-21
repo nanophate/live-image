@@ -1,4 +1,5 @@
 import type { ControlState } from "../behavior.js";
+import { purgeExpiredCharacterHandoffs, stageCharacterHandoff, takeCharacterHandoff } from "../handoff.js";
 import { canvasRecordingSupported, recordCanvasAction } from "../recording.js";
 import { LivingImagePlayer, type RuntimeReaction } from "../runtime.js";
 import { SHOWCASE_DURATION_SECONDS, showcaseFrameAt } from "../showcase.js";
@@ -10,6 +11,7 @@ import {
 } from "../schema.js";
 import { renderQuality, renderRejectDiagnostic, requireElement, SAMPLE_URLS } from "./shared.js";
 
+const pageMode = document.body.dataset.productMode === "compiler" ? "compiler" : "viewer";
 const canvas = requireElement<HTMLCanvasElement>("character-canvas");
 const player = new LivingImagePlayer(canvas, { eyeDeformation: "best-available" });
 const fileInput = requireElement<HTMLInputElement>("file-input");
@@ -18,6 +20,15 @@ const status = requireElement<HTMLElement>("render-status");
 const name = requireElement<HTMLElement>("character-name");
 const meta = requireElement<HTMLElement>("character-meta");
 const qualityCard = requireElement<HTMLElement>("quality-card");
+const compileProgress = document.getElementById("compile-progress");
+const compileElapsed = document.getElementById("compile-elapsed");
+const compileResult = document.getElementById("compile-result");
+const compileResultReasons = document.getElementById("compile-result-reasons");
+const tryAnotherButton = document.getElementById("try-another-button");
+const compileSuccess = document.getElementById("compile-success");
+const openViewerButton = document.getElementById("open-viewer-button") as HTMLButtonElement | null;
+const reviewHereButton = document.getElementById("review-here-button");
+const successDownloadLimg = document.getElementById("success-download-limg") as HTMLAnchorElement | null;
 const compilerNote = requireElement<HTMLElement>("compiler-note");
 const deploymentLabel = requireElement<HTMLElement>("deployment-label");
 const fileButtonLabel = requireElement<HTMLElement>("file-button-label");
@@ -40,10 +51,12 @@ const reactionButtons = new Map<RuntimeReaction, HTMLButtonElement>([
 
 let currentManifest: LivingImageManifest | null = null;
 let downloadUrl: string | null = null;
+let currentDownload: { blob: Blob; filename: string } | null = null;
 let showcaseAnimation: number | null = null;
 let finishShowcase: (() => void) | null = null;
 let restoreAutoIdleAfterShowcase: boolean | null = null;
 let busy = false;
+let compileProgressTimer: number | null = null;
 let compilerMode: "local" | "hosted" | "unavailable" = "unavailable";
 let compilerEnabled = false;
 let compilerConfigReady: Promise<void>;
@@ -51,11 +64,22 @@ let compilerConfigReady: Promise<void>;
 interface CompilerConfig {
   compiler: "local" | "hosted";
   enabled: boolean;
+  authentication?: "cloudflare-access" | "none" | "platform";
+  reviewExpiresAt?: string;
   samplesAvailable: boolean;
   provider?: "cloudflare" | "hugging-face";
 }
 
 async function loadCompilerConfig(): Promise<void> {
+  if (pageMode === "viewer") {
+    compilerMode = "unavailable";
+    compilerEnabled = false;
+    deploymentLabel.textContent = "Portable Viewer";
+    fileInput.accept = ".limg,application/json";
+    fileButtonLabel.textContent = "Open .limg";
+    compilerNote.textContent = "This Viewer accepts .limg files only. Character files stay in this browser and are never sent to the Compiler.";
+    return;
+  }
   try {
     const response = await fetch("/api/config", { cache: "no-store" });
     if (!response.ok) throw new Error("HTTP " + response.status);
@@ -64,19 +88,27 @@ async function loadCompilerConfig(): Promise<void> {
     compilerEnabled = config.enabled;
     for (const button of sampleButtons) button.hidden = !config.samplesAvailable;
     if (!config.enabled) {
-      deploymentLabel.textContent = "Hosted Viewer";
-      compilerNote.textContent = "Hosted compilation is disabled for this deployment. Existing .limg files still play entirely in the browser.";
+      deploymentLabel.textContent = "Compiler unavailable";
+      compilerNote.textContent = config.authentication === "none"
+        ? "The public review window is missing or expired. Redeploy review mode to create a new two-hour window."
+        : "Compilation is not configured for this deployment.";
       return;
     }
-    fileInput.accept = ".png,.jpg,.jpeg,.limg,image/png,image/jpeg,application/json";
-    fileButtonLabel.textContent = "Open PNG or .limg";
+    fileInput.accept = ".png,.jpg,.jpeg,image/png,image/jpeg";
+    fileButtonLabel.textContent = "Open PNG or JPEG";
     if (config.compiler === "hosted") {
-      deploymentLabel.textContent = "Hosted Compiler / Runtime";
+      deploymentLabel.textContent = config.provider === "hugging-face"
+        ? "Hosted Compiler"
+        : config.authentication === "none"
+        ? "Public review Compiler"
+        : "Access-protected Compiler";
       compilerNote.textContent = config.provider === "hugging-face"
         ? "PNG and JPEG files are sent to the compiler hosted by Hugging Face. Living Image does not write source images or .limg files to application storage, but the provider may process network and operational logs. Do not upload sensitive images."
-        : "PNG and JPEG files are sent to the private alpha compiler. The app does not save source images or .limg files to application storage; use only approved test images during alpha.";
+        : config.authentication === "none"
+          ? `Public review mode expires at ${config.reviewExpiresAt ?? "an unreported time"}. Images are processed without application storage; do not upload sensitive images.`
+          : "PNG and JPEG files are sent through Cloudflare Access to the private Compiler. The app does not save source images or .limg files to application storage.";
     } else {
-      deploymentLabel.textContent = "Local Studio / Runtime";
+      deploymentLabel.textContent = "Local Compiler";
       compilerNote.innerHTML = "PNG compilation runs on this machine. The first online run may download reviewed detector weights; <code>studio:offline</code> requires them to be cached.";
     }
   } catch {
@@ -89,12 +121,18 @@ async function loadCompilerConfig(): Promise<void> {
 
 function setDownload(payload: Blob | null, filename = "character.limg"): void {
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+  currentDownload = payload ? { blob: payload, filename } : null;
   downloadUrl = payload ? URL.createObjectURL(payload) : null;
   downloadLimg.hidden = !downloadUrl;
   downloadLimg.removeAttribute("href");
+  successDownloadLimg?.removeAttribute("href");
   if (downloadUrl) {
     downloadLimg.href = downloadUrl;
     downloadLimg.download = filename;
+    if (successDownloadLimg) {
+      successDownloadLimg.href = downloadUrl;
+      successDownloadLimg.download = filename;
+    }
   }
 }
 
@@ -123,6 +161,49 @@ function setBusy(nextBusy: boolean): void {
   resetButton.disabled = busy;
   for (const button of sampleButtons) button.disabled = busy;
   refreshCapabilityControls();
+}
+
+function startCompileProgress(): void {
+  if (!compileProgress || !compileElapsed) return;
+  if (compileProgressTimer !== null) window.clearInterval(compileProgressTimer);
+  const startedAt = performance.now();
+  compileProgress.hidden = false;
+  compileElapsed.textContent = "Starting…";
+  compileProgressTimer = window.setInterval(() => {
+    const elapsedSeconds = Math.max(1, Math.floor((performance.now() - startedAt) / 1000));
+    compileElapsed.textContent = `Working · ${elapsedSeconds}s elapsed`;
+  }, 500);
+}
+
+function stopCompileProgress(): void {
+  if (compileProgressTimer !== null) window.clearInterval(compileProgressTimer);
+  compileProgressTimer = null;
+  if (compileProgress) compileProgress.hidden = true;
+}
+
+function hideCompileResult(): void {
+  if (compileResult) compileResult.hidden = true;
+  if (compileResultReasons) compileResultReasons.replaceChildren();
+}
+
+function hideCompileSuccess(): void {
+  if (compileSuccess) compileSuccess.hidden = true;
+}
+
+function showCompileSuccess(): void {
+  if (compileSuccess) compileSuccess.hidden = false;
+}
+
+function showUnsupportedResult(diagnostic: { rejectionReasons?: string[]; warnings?: string[] }): void {
+  if (!compileResult || !compileResultReasons) return;
+  const messages = [...(diagnostic.rejectionReasons ?? []), ...(diagnostic.warnings ?? [])];
+  compileResultReasons.replaceChildren(...messages.map((message) => {
+    const item = document.createElement("li");
+    item.textContent = message;
+    return item;
+  }));
+  compileResult.hidden = false;
+  compileResult.focus();
 }
 
 function refreshCapabilityControls(): void {
@@ -203,6 +284,8 @@ async function useManifest(manifest: LivingImageManifest, downloadable?: { blob:
   stopShowcase();
   status.textContent = "Decoding embedded texture…";
   await player.load(manifest);
+  hideCompileResult();
+  hideCompileSuccess();
   currentManifest = manifest;
   resetControlInputs();
   showcaseProgress.value = 0;
@@ -245,7 +328,7 @@ async function compileImage(file: File): Promise<void> {
   if (!compilerEnabled) {
     status.textContent = "PNG compilation unavailable";
     meta.textContent = compilerMode === "hosted"
-      ? "Hosted compilation is disabled for this deployment. The currently loaded .limg remains playable."
+      ? "Hosted compilation is unavailable for this deployment."
       : "Run nodenv exec npm run studio for local PNG compilation. The currently loaded .limg remains playable.";
     return;
   }
@@ -253,14 +336,17 @@ async function compileImage(file: File): Promise<void> {
   currentManifest = null;
   setDownload(null);
   setBusy(true);
-  await showSourcePreview(file);
-  name.textContent = file.name.replace(/\.[^.]+$/u, "");
-  meta.textContent = compilerMode === "hosted"
-    ? "Uploading for automatic face, eye, iris, mouth, mesh, and quality analysis…"
-    : "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
-  status.textContent = "Compiling · first model load can take a while";
-  qualityCard.hidden = true;
+  hideCompileResult();
+  hideCompileSuccess();
+  startCompileProgress();
   try {
+    await showSourcePreview(file);
+    name.textContent = file.name.replace(/\.[^.]+$/u, "");
+    meta.textContent = compilerMode === "hosted"
+      ? "Uploading for automatic face, eye, iris, mouth, mesh, and quality analysis…"
+      : "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
+    status.textContent = "Compiling character…";
+    qualityCard.hidden = true;
     const response = await fetch("/api/compile", {
       method: "POST",
       headers: {
@@ -277,9 +363,11 @@ async function compileImage(file: File): Promise<void> {
       // Access gateways and upstream failures may return HTML or plain text.
     }
     if (response.status === 422 && parsed !== null) {
-      renderRejectDiagnostic(qualityCard, parsed as { rejectionReasons?: string[]; warnings?: string[] });
-      status.textContent = "Not supported · no character file created";
-      meta.textContent = "Try a near-frontal anime portrait with a larger unobstructed face and both eyes visible.";
+      const diagnostic = parsed as { rejectionReasons?: string[]; warnings?: string[] };
+      renderRejectDiagnostic(qualityCard, diagnostic);
+      showUnsupportedResult(diagnostic);
+      status.textContent = "This image isn’t supported yet";
+      meta.textContent = "No character file was created. Try a near-frontal anime portrait with a larger, unobstructed face and both eyes visible.";
       return;
     }
     if (!response.ok) {
@@ -294,14 +382,16 @@ async function compileImage(file: File): Promise<void> {
     const filename = `${manifest.id}.limg`;
     await useManifest(manifest, { blob: new Blob([payload], { type: "application/json" }), filename });
     status.textContent = manifest.quality.status === "limited"
-      ? "Compiled with limited controls · ready to review"
-      : "Compiled · ready to review";
+      ? "Compiled with limited controls · ready to open"
+      : "Compiled · ready to open";
+    showCompileSuccess();
   } catch (error) {
     status.textContent = "Compilation unavailable";
     meta.textContent = compilerMode === "hosted"
       ? (error as Error).message
       : (error as Error).message + ". Start this page with nodenv exec npm run studio.";
   } finally {
+    stopCompileProgress();
     setBusy(false);
     refreshCapabilityControls();
   }
@@ -311,11 +401,18 @@ fileInput.addEventListener("change", async () => {
   const file = fileInput.files?.[0];
   if (!file) return;
   try {
-    if (file.name.toLowerCase().endsWith(".limg") || file.type === "application/json") {
+    const isLivingImage = file.name.toLowerCase().endsWith(".limg") || file.type === "application/json";
+    if (pageMode === "viewer" && isLivingImage) {
       setBusy(true);
       await useManifest(await loadLivingImageFile(file));
-    } else {
+    } else if (pageMode === "compiler" && !isLivingImage) {
       await compileImage(file);
+    } else if (pageMode === "viewer") {
+      status.textContent = "Viewer accepts .limg files only";
+      meta.textContent = "Use the Compiler path to convert PNG or JPEG images first.";
+    } else {
+      status.textContent = "Compiler accepts PNG or JPEG files only";
+      meta.textContent = "Use the Viewer path to open an existing .limg character.";
     }
   } catch (error) {
     status.textContent = "Load failed";
@@ -324,6 +421,26 @@ fileInput.addEventListener("change", async () => {
     setBusy(false);
     refreshCapabilityControls();
     fileInput.value = "";
+  }
+});
+
+tryAnotherButton?.addEventListener("click", () => fileInput.click());
+reviewHereButton?.addEventListener("click", () => {
+  hideCompileSuccess();
+  demoButton.focus();
+});
+openViewerButton?.addEventListener("click", async () => {
+  if (!currentDownload) return;
+  openViewerButton.disabled = true;
+  openViewerButton.textContent = "Opening…";
+  try {
+    const key = await stageCharacterHandoff(currentDownload.blob, currentDownload.filename);
+    window.location.assign(`/viewer.html#handoff=${encodeURIComponent(key)}`);
+  } catch (error) {
+    status.textContent = "Couldn’t open Viewer automatically";
+    meta.textContent = `${(error as Error).message}. Download the .limg file, then open it in Viewer.`;
+    openViewerButton.disabled = false;
+    openViewerButton.textContent = "Try opening Viewer again";
   }
 });
 
@@ -382,9 +499,47 @@ recordButton.addEventListener("click", async () => {
 
 window.addEventListener("beforeunload", () => {
   stopShowcase();
+  stopCompileProgress();
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
   player.destroy();
 });
 
+async function loadViewerHandoff(): Promise<void> {
+  if (pageMode !== "viewer") return;
+  const key = new URLSearchParams(window.location.hash.slice(1)).get("handoff");
+  if (!key) return;
+  const clearFragment = (): void => history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(key)) {
+    clearFragment();
+    status.textContent = "Couldn’t open transferred character";
+    meta.textContent = "The temporary Viewer link is invalid. Open a downloaded .limg file instead.";
+    return;
+  }
+  setBusy(true);
+  status.textContent = "Opening compiled character…";
+  try {
+    const handoff = await takeCharacterHandoff(key);
+    if (!handoff) throw new Error("The temporary browser copy is missing or expired");
+    const payload = await handoff.blob.text();
+    await useManifest(parseLivingImage(payload), { blob: handoff.blob, filename: handoff.filename });
+    compilerNote.textContent = "Opened directly from the Compiler. The temporary browser copy was removed; this Viewer remains local and offline.";
+  } catch (error) {
+    status.textContent = "Couldn’t open transferred character";
+    meta.textContent = `${(error as Error).message}. Open a downloaded .limg file instead.`;
+  } finally {
+    clearFragment();
+    setBusy(false);
+    refreshCapabilityControls();
+  }
+}
+
+window.addEventListener("pageshow", () => {
+  if (!openViewerButton) return;
+  openViewerButton.disabled = false;
+  openViewerButton.textContent = "Open in Viewer";
+});
+
 refreshCapabilityControls();
 compilerConfigReady = loadCompilerConfig();
+void purgeExpiredCharacterHandoffs().catch(() => undefined);
+void loadViewerHandoff();

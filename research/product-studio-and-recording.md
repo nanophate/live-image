@@ -123,3 +123,66 @@ PNG selected locally
 - **Open:** this local Studio is not a hosted multi-user compiler service. A
   remote service would require separate authentication, isolation, abuse,
   storage, cost, privacy, and model-redistribution decisions.
+
+## Compiler feedback update — 2026-07-21
+
+- **Decision:** the dedicated Compiler page shows a centered loading card as
+  soon as image processing begins. It uses an indeterminate animated bar and
+  elapsed seconds rather than a fabricated completion percentage because the
+  current synchronous Compiler API exposes no stage progress.
+- **Decision:** loading copy names the actual broad work—face, eye, mouth
+  analysis and character-file construction—and notes that the first model load
+  can take longer.
+- **Decision:** HTTP 422 is presented as `This image isn’t supported yet`,
+  `not supported`, and `no file created`. Detector reasons remain visible,
+  but internal status language such as `reject` is no longer the primary
+  product message.
+- **Decision:** reduced-motion users receive a static full progress track
+  instead of the sliding animation.
+- **Confirmed:** the loading layer is always removed through the compile
+  `finally` path on success, unsupported input, network/API failure, or source
+  preview failure.
+- **Confirmed:** the focused Chromium product suite proves that the loading
+  layer and progressbar are visible during a delayed compile, elapsed time
+  appears, unsupported copy and detector reasons replace it, and the loading
+  layer becomes hidden.
+- **Confirmed:** the complete Chromium suite remains green with 15 passes and
+  2 documented local-artifact skips after the feedback change.
+- **Confirmed:** this UI adds no dependency, asset, or license/provenance
+  surface. Existing license records and third-party notices remain unchanged.
+- **Confirmed:** private mode was deployed as Worker version
+  `d6008795-32ef-4cb0-a7fd-7d61756c6979`. The authenticated production
+  `/compiler.html` served the new loading copy, hidden initial state, and
+  non-live elapsed timer while keeping hosted compilation and origin JWT
+  verification enabled. No source image was uploaded for this static delivery
+  check.
+
+### Unsupported-result prominence — 2026-07-21
+
+- **Decision:** an unsupported compile is no longer communicated primarily by
+  the small stage badge or a diagnostic card low in the control column. The
+  Compiler places a high-contrast result card over the source preview so the
+  outcome is visible at the user's current point of attention.
+- **Decision:** the prominent card groups the outcome, `No character file
+  created`, supported-image guidance, detector reasons, and a `Try another
+  image` action. The detailed diagnostic remains in the control column for
+  review and debugging.
+- **Decision:** the result uses an alert region and receives programmatic focus
+  when it appears. Starting another compile hides it and clears prior detector
+  messages. Loading a valid character by any path also clears stale rejection
+  state.
+- **Decision:** the centered result card has a bounded height and internal
+  scrolling so long detector output cannot push the retry action outside a
+  small viewport.
+- **Confirmed:** detector messages are inserted with `textContent`, not HTML,
+  so a compiler-supplied message cannot inject markup into the result card.
+- **Confirmed:** the focused product browser suite exercises a delayed 422 and
+  verifies the centered result, headline, file outcome, detector reason, and
+  retry action. A 390×667 viewport with 13 detector messages also verifies that
+  the card remains bounded, becomes internally scrollable, and keeps the retry
+  action reachable. All 5 focused Chromium checks pass.
+- **Confirmed:** this presentation change adds no dependency, asset, model, or
+  license/provenance surface.
+- **Confirmed:** the prominent unsupported-result UI was deployed in private
+  mode as Worker version `e9a97aea-8385-4206-b7a2-55b10eaae8b2`, with hosted
+  compilation enabled and origin Access JWT verification retained.
