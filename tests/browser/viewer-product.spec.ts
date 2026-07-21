@@ -239,7 +239,7 @@ test("Compiler hands a successful character directly to the separate Viewer with
   });
 
   await expect(page.locator("#compile-success")).toBeVisible();
-  await expect(page.locator("#compile-success strong")).toHaveText("Your character is ready");
+  await expect(page.locator("#compile-success .compile-success-card > strong")).toHaveText("Your character is ready");
   await expect(page.locator("#success-download-limg")).toHaveAttribute("download", "teal-librarian.limg");
   await expect(page.getByRole("button", { name: "Open in Viewer" })).toBeVisible();
   await page.getByRole("button", { name: "Open in Viewer" }).evaluate((element) => {
@@ -355,8 +355,13 @@ test("Compiler keeps the downloadable character when temporary browser storage i
   await page.getByRole("button", { name: "Open in Viewer" }).click();
 
   await expect(page.locator("#render-status")).toHaveText("Couldn’t open Viewer automatically");
-  await expect(page.locator("#character-meta")).toContainText("Download the .limg file");
+  await expect(page.locator("#character-meta")).toContainText("private or in-app browsers");
+  await expect(page.locator("#handoff-guidance")).toBeVisible();
+  await expect(page.locator("#handoff-guidance")).toContainText("Download the .limg");
+  await expect(page.locator("#handoff-guidance").getByRole("link", { name: "Open Viewer" })).toHaveAttribute("href", "/viewer.html");
   await expect(page.locator("#success-download-limg")).toHaveAttribute("download", "teal-librarian.limg");
+  await expect(page.locator("#success-download-limg")).toHaveText("Download .limg (recommended)");
+  await expect(page.locator("#success-download-limg")).not.toHaveClass(/secondary/u);
   await expect(page.getByRole("button", { name: "Try opening Viewer again" })).toBeEnabled();
 });
 

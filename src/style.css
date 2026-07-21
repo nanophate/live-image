@@ -77,6 +77,11 @@ code, pre, output, .eyebrow, .topbar-label, .route-index { font-family: "SFMono-
 .compile-success-card p { margin: 0; color: #bdd0c9; font-size: .82rem; line-height: 1.55; }
 .compile-success-card small { color: #829b92; font-size: .68rem; line-height: 1.5; }
 .compile-success-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.handoff-guidance { display: grid; gap: 7px; padding: 13px 14px; border: 1px solid rgba(255, 203, 107, .5); border-radius: 10px; background: rgba(62, 45, 17, .72); }
+.handoff-guidance[hidden] { display: none; }
+.handoff-guidance strong { color: #ffe0a3; font-size: .82rem; letter-spacing: 0; }
+.handoff-guidance p { color: #e2cfaa; }
+.handoff-guidance .text-link { justify-self: start; color: #ffe0a3; }
 .control-panel { display: flex; flex-direction: column; gap: 24px; padding: 44px 34px 70px; background: var(--panel); }
 .control-panel h1 { margin: 8px 0 6px; font-size: 2rem; letter-spacing: -.045em; }
 .muted { color: var(--muted); line-height: 1.55; font-size: .88rem; }
