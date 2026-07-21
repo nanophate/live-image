@@ -183,3 +183,6 @@ PNG selected locally
   action reachable. All 5 focused Chromium checks pass.
 - **Confirmed:** this presentation change adds no dependency, asset, model, or
   license/provenance surface.
+- **Confirmed:** the prominent unsupported-result UI was deployed in private
+  mode as Worker version `e9a97aea-8385-4206-b7a2-55b10eaae8b2`, with hosted
+  compilation enabled and origin Access JWT verification retained.
