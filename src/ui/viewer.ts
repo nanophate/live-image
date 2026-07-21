@@ -27,6 +27,7 @@ const compileResultReasons = document.getElementById("compile-result-reasons");
 const tryAnotherButton = document.getElementById("try-another-button");
 const compileSuccess = document.getElementById("compile-success");
 const openViewerButton = document.getElementById("open-viewer-button") as HTMLButtonElement | null;
+const handoffGuidance = document.getElementById("handoff-guidance");
 const reviewHereButton = document.getElementById("review-here-button");
 const successDownloadLimg = document.getElementById("success-download-limg") as HTMLAnchorElement | null;
 const compilerNote = requireElement<HTMLElement>("compiler-note");
@@ -195,6 +196,11 @@ function hideCompileSuccess(): void {
 }
 
 function showCompileSuccess(): void {
+  if (handoffGuidance) handoffGuidance.hidden = true;
+  if (successDownloadLimg) {
+    successDownloadLimg.classList.add("secondary");
+    successDownloadLimg.textContent = "Download .limg";
+  }
   if (compileSuccess) compileSuccess.hidden = false;
 }
 
@@ -442,7 +448,15 @@ openViewerButton?.addEventListener("click", async () => {
     window.location.assign(`/viewer.html#handoff=${encodeURIComponent(key)}`);
   } catch (error) {
     status.textContent = "Couldn’t open Viewer automatically";
-    meta.textContent = `${(error as Error).message}. Download the .limg file, then open it in Viewer.`;
+    meta.textContent = `${(error as Error).message}. This can happen in private or in-app browsers.`;
+    if (handoffGuidance) {
+      handoffGuidance.hidden = false;
+      handoffGuidance.focus();
+    }
+    if (successDownloadLimg) {
+      successDownloadLimg.classList.remove("secondary");
+      successDownloadLimg.textContent = "Download .limg (recommended)";
+    }
     openViewerButton.disabled = false;
     openViewerButton.textContent = "Try opening Viewer again";
   }
