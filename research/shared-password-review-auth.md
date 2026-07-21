@@ -45,6 +45,11 @@ the compiler/model provenance.
   `SameSite=Strict`.
 - **Decision:** login, logout, and compilation require an exact same-origin POST;
   login bodies and image uploads remain bounded before expensive work.
+- **Confirmed:** the deployed Cloudflare Access browser flow can report Fetch
+  Metadata more broadly than `same-origin` after its cross-site identity
+  redirect. The exact `Origin` comparison remains the authorization boundary;
+  missing or different origins are rejected without requiring a second,
+  redundant `Sec-Fetch-Site` value.
 - **Decision:** login attempts are limited to five per minute and compilation to
   six per minute per edge key before Container startup.
 - **Decision:** deploy password mode while Access still protects the hostname.

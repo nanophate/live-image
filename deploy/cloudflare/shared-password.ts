@@ -158,7 +158,5 @@ export function safeReturnPath(value: FormDataEntryValue | string | null): strin
 export function sameOriginPost(request: Request): boolean {
   if (request.method !== "POST") return false;
   const origin = request.headers.get("Origin");
-  if (!origin || origin !== new URL(request.url).origin) return false;
-  const fetchSite = request.headers.get("Sec-Fetch-Site");
-  return !fetchSite || fetchSite === "same-origin";
+  return Boolean(origin && origin === new URL(request.url).origin);
 }
