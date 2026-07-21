@@ -119,8 +119,9 @@ product experience.
 - **Confirmed:** Wrangler 4.112.0 dry-run recognizes 17 static assets, the
   COMPILER Durable Object, the CompilerContainer, and the disabled-by-default
   hosted compiler flag.
-- **Confirmed:** 44 Python tests pass, including hosted health, route-surface,
-  media rejection, short-body rejection, request ID, and .limg response tests.
+- **Confirmed:** 45 Python tests pass, including hosted health, route-surface,
+  media rejection, short-body rejection, SIGTERM unwind, request ID, and .limg
+  response tests.
 - **Confirmed:** 55 TypeScript tests pass and the production Vite build succeeds,
   including Worker upload policy and authentication-header isolation checks.
 - **Confirmed:** the complete Chromium suite passes 13 tests with 2 documented
@@ -136,10 +137,22 @@ product experience.
   with the tracked teal-librarian PNG. It returned a full 2,498,807-byte .limg
   in 4.339968 seconds. The bound protocol and artifact hash are recorded in
   experiments/2026-07-21-hosted-compiler-api-validation.md.
-- **Open:** Docker Desktop was installed and a launch was requested, but its
-  daemon did not become reachable during this review. The linux/amd64 image
-  build, image byte size, process RSS, cold/warm compile time, and actual
-  Cloudflare Container run therefore remain unconfirmed.
+- **Confirmed:** the linux/amd64 image builds successfully at 1,774,865,798
+  bytes (approximately 1.65 GiB), runs non-root and offline, becomes Docker
+  healthy, and exits cleanly on idle SIGTERM. The exact image and base digests
+  are recorded in
+  experiments/2026-07-21-container-benchmark.md.
+- **Confirmed:** under a local standard-1-shaped 0.5 CPU / 4 GiB limit, the
+  first request took 130.52 seconds and the second warm request took 81.24
+  seconds. Loaded memory was about 594 MiB. Under a standard-2-shaped 1 CPU /
+  6 GiB limit, warm compile took 38.89 seconds and a no-face reject took 25.52
+  seconds; memory reached about 638 MiB.
+- **Decision:** neither standard-1 nor standard-2 is ready for the intended
+  review experience at these measured local CPU quotas. Do not pay-deploy the
+  current image until profiling/optimization and a 2-vCPU or Hugging Face
+  comparison are complete.
+- **Open:** actual Cloudflare Container CPU behavior remains unconfirmed; the
+  local quota experiment is a screening result, not a provider benchmark.
 
 ## Security, privacy, and operations gates
 

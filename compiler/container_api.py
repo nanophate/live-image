@@ -9,7 +9,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 import re
+import signal
 import traceback
+from types import FrameType
 from urllib.parse import urlparse
 
 from compiler import __version__
@@ -17,6 +19,12 @@ from compiler.compiler_service import CompilerService, UploadError, read_upload_
 
 
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,96}$")
+
+
+def interrupt_on_termination(_signum: int, _frame: FrameType | None) -> None:
+    """Let active request contexts unwind before PID 1 exits."""
+
+    raise KeyboardInterrupt
 
 
 class ContainerServer(HTTPServer):
@@ -132,6 +140,7 @@ def main() -> int:
     if args.eager_load:
         compiler.load()
     server = ContainerServer((args.host, args.port), ContainerHandler, compiler=compiler)
+    signal.signal(signal.SIGTERM, interrupt_on_termination)
     print(f"Living Image compiler API listening on {args.host}:{args.port}", flush=True)
     try:
         server.serve_forever()

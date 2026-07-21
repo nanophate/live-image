@@ -48,6 +48,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md) — opaque-cache correction, zero-error hold-out replay, translucent-source CI regression, and unchanged promotion boundary
 - [`experiments/2026-07-20-product-studio-validation.md`](experiments/2026-07-20-product-studio-validation.md) — real PNG-to-`.limg` Studio, reason-only reject, capability-gated reactions, deterministic showcase, and actual Chromium WebM evidence
 - [`experiments/2026-07-21-hosted-compiler-api-validation.md`](experiments/2026-07-21-hosted-compiler-api-validation.md) — provider-neutral hosted API health and real detector PNG-to-`.limg` response timing, hashes, and remaining Docker boundary
+- [`experiments/2026-07-21-container-benchmark.md`](experiments/2026-07-21-container-benchmark.md) — real linux/amd64 image build, frozen model hashes, 0.5/1 CPU cold/warm/reject latency, memory, healthcheck, SIGTERM failure reproduction and fix, and deployment decision
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels

@@ -1,5 +1,4 @@
-# syntax=docker/dockerfile:1.7
-FROM --platform=linux/amd64 python:3.12.10-slim-bookworm
+FROM python:3.12.10-slim-bookworm@sha256:fd95fa221297a88e1cf49c55ec1828edd7c5a428187e67b5d1805692d11588db
 
 ENV DEBIAN_FRONTEND=noninteractive \
     HF_HOME=/opt/living-image/model-cache \
@@ -22,9 +21,14 @@ RUN python -m pip install --no-cache-dir \
 COPY compiler /app/compiler
 RUN python -m compiler.preload_models
 
+ENV HF_HUB_OFFLINE=1 \
+    HF_HUB_DISABLE_TELEMETRY=1
+
 RUN useradd --create-home --uid 10001 living-image \
     && chmod -R a=rX /app /opt/living-image
 USER 10001:10001
 
 EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ping', timeout=2).read()"]
 CMD ["python", "-m", "compiler.container_api", "--offline"]

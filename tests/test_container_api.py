@@ -11,7 +11,7 @@ import unittest
 
 from compiler.compile_character import DetectorRuntime
 from compiler.compiler_service import CompilerService
-from compiler.container_api import ContainerHandler
+from compiler.container_api import ContainerHandler, interrupt_on_termination
 
 
 def png_header(width: int = 100, height: int = 100) -> bytes:
@@ -118,6 +118,10 @@ class ContainerApiTests(unittest.TestCase):
         )
         self.assertEqual(status, HTTPStatus.BAD_REQUEST)
         self.assertIn("declared length", json.loads(body)["message"])
+
+    def test_sigterm_interrupt_unwinds_request_contexts(self) -> None:
+        with self.assertRaises(KeyboardInterrupt):
+            interrupt_on_termination(15, None)
 
 
 if __name__ == "__main__":
