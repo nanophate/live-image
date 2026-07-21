@@ -2,8 +2,8 @@
 
 Date: 2026-07-21
 
-Status: disabled corrected deployment complete; no route, Access application,
-addressable Container instance, or hosted Compiler has been enabled
+Status: Access application and origin-verification secrets configured; no
+Worker URL, addressable Container instance, or hosted Compiler has been enabled
 
 ## Purpose
 
@@ -104,21 +104,46 @@ before attaching any external route.
   product suite also passes 14 tests with 2 documented local-only skips.
   `npm audit --omit=dev` reports zero known vulnerabilities in the production
   dependency graph after adding jose 6.2.3.
-- **Decision:** `ACCESS_TEAM_DOMAIN` and `ACCESS_POLICY_AUD` will be stored with
-  interactive Wrangler secrets only after the Access application exists. They
-  are not committed as variables or passed on a command line.
+- **Confirmed:** `ACCESS_TEAM_DOMAIN` and `ACCESS_POLICY_AUD` were stored with
+  interactive Wrangler secrets after the Access application existed. Their
+  values are not committed as variables or passed on a command line.
+
+## Access application and secret evidence
+
+- **Confirmed:** Zero Trust Free already existed with team domain
+  `logosact.cloudflareaccess.com`, one-time PIN as its only identity provider,
+  and no prior Living Image application. The unrelated existing GitHub SaaS
+  application was left unchanged.
+- **Confirmed:** the self-hosted application `Living Image Private Staging`
+  protects the single full-host destination
+  `living-image.logosact-account.workers.dev`.
+- **Confirmed:** its only attached policy is `Allow nanophate staging tester`,
+  action Allow, with one exact approved email rule and a 30-minute policy
+  session. There is no Everyone, email-domain, Bypass, Service Auth, browser
+  rendering, or Cloudflare One Client rule.
+- **Confirmed:** the dashboard generated a unique application AUD and documents
+  that value as the origin-side JWT audience. The exact AUD was copied directly
+  into the interactive `ACCESS_POLICY_AUD` secret prompt and is intentionally
+  omitted from Git. The confirmed team domain was stored the same way in
+  `ACCESS_TEAM_DOMAIN`.
+- **Confirmed:** `wrangler secret list` returns both names as `secret_text` and
+  does not reveal either value. Secret changes registered Worker versions
+  `d3821395-5537-4852-b2d9-a82ef48a16a6` and
+  `bd54f46c-7fb6-4030-bccf-7fdfadaec477`.
+- **Confirmed:** after both changes, the Worker dashboard still reported `No
+  URLs enabled`, Domains 0, Workers 0, Routes none, Invocations 0, Errors 0,
+  CPU Time 0 ms, and workers.dev Disabled. `HOSTED_COMPILER_ENABLED` remains
+  false in version-controlled configuration.
 
 ## Remaining rollout gates
 
-- Create an Access self-hosted application that protects the entire
-  `living-image` Worker before adding any public endpoint.
-- Add a narrow Allow policy for explicitly approved tester identity; do not use
-  Everyone, all valid emails, or a Bypass policy.
-- Test anonymous and unauthorized denial, the approved browser session, and
-  Access audit logs while the Compiler remains disabled.
-- Select one dedicated staging hostname or explicitly protected Workers route.
-- Store the Access team domain and application AUD, deploy the corrected Worker,
-  and verify forged/missing/expired assertions remain rejected.
+- Enable only the Access-protected workers.dev destination while keeping the
+  Compiler disabled; do not add a custom domain or unprotected route.
+- Test anonymous and unauthorized denial, the approved one-time-PIN browser
+  session, `/api/config`, and Access audit logs while the Compiler remains
+  disabled.
+- Verify the live origin rejects forged, missing, expired, wrong-issuer, and
+  wrong-AUD assertions wherever edge Access does not intercept first.
 - Only then change `HOSTED_COMPILER_ENABLED` to true and run one ignored local
   test image through cold/warm, reject, concurrency, memory, cost, artifact hash,
   privacy, and shutdown checks.
