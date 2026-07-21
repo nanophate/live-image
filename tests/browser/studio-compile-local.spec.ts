@@ -51,6 +51,8 @@ test("local Studio clearly rejects an unsupported image without exposing a chara
   });
 
   await expect(page.locator("#render-status")).toHaveText("This image isn’t supported yet", { timeout: 120_000 });
+  await expect(page.locator("#compile-result")).toBeVisible();
+  await expect(page.locator("#compile-result strong")).toHaveText("This image isn’t supported yet");
   await expect(page.locator("#quality-card .quality-head strong")).toHaveText("not supported");
   await expect(page.locator("#quality-card")).toContainText("no near-frontal anime face detected");
   await expect(page.locator("#download-limg")).toBeHidden();

@@ -21,6 +21,9 @@ const meta = requireElement<HTMLElement>("character-meta");
 const qualityCard = requireElement<HTMLElement>("quality-card");
 const compileProgress = document.getElementById("compile-progress");
 const compileElapsed = document.getElementById("compile-elapsed");
+const compileResult = document.getElementById("compile-result");
+const compileResultReasons = document.getElementById("compile-result-reasons");
+const tryAnotherButton = document.getElementById("try-another-button");
 const compilerNote = requireElement<HTMLElement>("compiler-note");
 const deploymentLabel = requireElement<HTMLElement>("deployment-label");
 const fileButtonLabel = requireElement<HTMLElement>("file-button-label");
@@ -166,6 +169,23 @@ function stopCompileProgress(): void {
   if (compileProgress) compileProgress.hidden = true;
 }
 
+function hideCompileResult(): void {
+  if (compileResult) compileResult.hidden = true;
+  if (compileResultReasons) compileResultReasons.replaceChildren();
+}
+
+function showUnsupportedResult(diagnostic: { rejectionReasons?: string[]; warnings?: string[] }): void {
+  if (!compileResult || !compileResultReasons) return;
+  const messages = [...(diagnostic.rejectionReasons ?? []), ...(diagnostic.warnings ?? [])];
+  compileResultReasons.replaceChildren(...messages.map((message) => {
+    const item = document.createElement("li");
+    item.textContent = message;
+    return item;
+  }));
+  compileResult.hidden = false;
+  compileResult.focus();
+}
+
 function refreshCapabilityControls(): void {
   const capabilities = player.getCapabilities();
   const hasCurrentManifest = currentManifest !== null;
@@ -244,6 +264,7 @@ async function useManifest(manifest: LivingImageManifest, downloadable?: { blob:
   stopShowcase();
   status.textContent = "Decoding embedded texture…";
   await player.load(manifest);
+  hideCompileResult();
   currentManifest = manifest;
   resetControlInputs();
   showcaseProgress.value = 0;
@@ -294,6 +315,7 @@ async function compileImage(file: File): Promise<void> {
   currentManifest = null;
   setDownload(null);
   setBusy(true);
+  hideCompileResult();
   startCompileProgress();
   try {
     await showSourcePreview(file);
@@ -319,7 +341,9 @@ async function compileImage(file: File): Promise<void> {
       // Access gateways and upstream failures may return HTML or plain text.
     }
     if (response.status === 422 && parsed !== null) {
-      renderRejectDiagnostic(qualityCard, parsed as { rejectionReasons?: string[]; warnings?: string[] });
+      const diagnostic = parsed as { rejectionReasons?: string[]; warnings?: string[] };
+      renderRejectDiagnostic(qualityCard, diagnostic);
+      showUnsupportedResult(diagnostic);
       status.textContent = "This image isn’t supported yet";
       meta.textContent = "No character file was created. Try a near-frontal anime portrait with a larger, unobstructed face and both eyes visible.";
       return;
@@ -376,6 +400,8 @@ fileInput.addEventListener("change", async () => {
     fileInput.value = "";
   }
 });
+
+tryAnotherButton?.addEventListener("click", () => fileInput.click());
 
 for (const input of inputs) {
   input.addEventListener("input", () => {

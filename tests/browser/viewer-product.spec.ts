@@ -164,7 +164,10 @@ test("Compiler shows honest progress and a plain-language unsupported result", a
       contentType: "application/json",
       body: JSON.stringify({
         status: "reject",
-        rejectionReasons: ["no near-frontal anime face detected"],
+        rejectionReasons: [
+          "no near-frontal anime face detected",
+          ...Array.from({ length: 12 }, (_, index) => `additional detector detail ${index + 1}`),
+        ],
       }),
     });
   });
@@ -183,9 +186,25 @@ test("Compiler shows honest progress and a plain-language unsupported result", a
   await expect(page.locator("#compile-elapsed")).toContainText("elapsed", { timeout: 2_000 });
   await expect(page.locator("#render-status")).toHaveText("This image isn’t supported yet");
   await expect(page.locator("#compile-progress")).toBeHidden();
+  await expect(page.locator("#compile-result")).toBeVisible();
+  await expect(page.locator("#compile-result strong")).toHaveText("This image isn’t supported yet");
+  await expect(page.locator("#compile-result")).toContainText("No character file created");
+  await expect(page.locator("#compile-result")).toContainText("no near-frontal anime face detected");
+  await expect(page.getByRole("button", { name: "Try another image" })).toBeVisible();
   await expect(page.locator("#quality-card .quality-head strong")).toHaveText("not supported");
   await expect(page.locator("#quality-card")).toContainText("Nothing is broken");
   await expect(page.locator("#quality-card")).toContainText("no near-frontal anime face detected");
+
+  await page.setViewportSize({ width: 390, height: 667 });
+  const resultLayout = await page.locator(".compile-result-card").evaluate((element) => ({
+    cardHeight: element.clientHeight,
+    overlayHeight: element.parentElement?.clientHeight ?? 0,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(resultLayout.cardHeight).toBeLessThanOrEqual(resultLayout.overlayHeight);
+  expect(resultLayout.scrollHeight).toBeGreaterThan(resultLayout.cardHeight);
+  await page.getByRole("button", { name: "Try another image" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Try another image" })).toBeInViewport();
 });
 
 test("Hugging Face hosted mode discloses provider processing and sensitive-image boundary", async ({ page }) => {

@@ -156,3 +156,30 @@ PNG selected locally
   non-live elapsed timer while keeping hosted compilation and origin JWT
   verification enabled. No source image was uploaded for this static delivery
   check.
+
+### Unsupported-result prominence — 2026-07-21
+
+- **Decision:** an unsupported compile is no longer communicated primarily by
+  the small stage badge or a diagnostic card low in the control column. The
+  Compiler places a high-contrast result card over the source preview so the
+  outcome is visible at the user's current point of attention.
+- **Decision:** the prominent card groups the outcome, `No character file
+  created`, supported-image guidance, detector reasons, and a `Try another
+  image` action. The detailed diagnostic remains in the control column for
+  review and debugging.
+- **Decision:** the result uses an alert region and receives programmatic focus
+  when it appears. Starting another compile hides it and clears prior detector
+  messages. Loading a valid character by any path also clears stale rejection
+  state.
+- **Decision:** the centered result card has a bounded height and internal
+  scrolling so long detector output cannot push the retry action outside a
+  small viewport.
+- **Confirmed:** detector messages are inserted with `textContent`, not HTML,
+  so a compiler-supplied message cannot inject markup into the result card.
+- **Confirmed:** the focused product browser suite exercises a delayed 422 and
+  verifies the centered result, headline, file outcome, detector reason, and
+  retry action. A 390×667 viewport with 13 detector messages also verifies that
+  the card remains bounded, becomes internally scrollable, and keeps the retry
+  action reachable. All 5 focused Chromium checks pass.
+- **Confirmed:** this presentation change adds no dependency, asset, model, or
+  license/provenance surface.
