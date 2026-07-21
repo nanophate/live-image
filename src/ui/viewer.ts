@@ -64,7 +64,7 @@ let compilerConfigReady: Promise<void>;
 interface CompilerConfig {
   compiler: "local" | "hosted";
   enabled: boolean;
-  authentication?: "cloudflare-access" | "none" | "platform";
+  authentication?: "cloudflare-access" | "shared-password" | "none" | "platform";
   reviewExpiresAt?: string;
   samplesAvailable: boolean;
   provider?: "cloudflare" | "hugging-face";
@@ -101,12 +101,16 @@ async function loadCompilerConfig(): Promise<void> {
         ? "Hosted Compiler"
         : config.authentication === "none"
         ? "Public review Compiler"
-        : "Access-protected Compiler";
+        : config.authentication === "shared-password"
+          ? "Private review Compiler"
+          : "Access-protected Compiler";
       compilerNote.textContent = config.provider === "hugging-face"
         ? "PNG and JPEG files are sent to the compiler hosted by Hugging Face. Living Image does not write source images or .limg files to application storage, but the provider may process network and operational logs. Do not upload sensitive images."
         : config.authentication === "none"
           ? `Public review mode expires at ${config.reviewExpiresAt ?? "an unreported time"}. Images are processed without application storage; do not upload sensitive images.`
-          : "PNG and JPEG files are sent through Cloudflare Access to the private Compiler. The app does not save source images or .limg files to application storage.";
+          : config.authentication === "shared-password"
+            ? "PNG and JPEG files are sent to the private Compiler after review authentication. The app does not save source images or .limg files to application storage."
+            : "PNG and JPEG files are sent through Cloudflare Access to the private Compiler. The app does not save source images or .limg files to application storage.";
     } else {
       deploymentLabel.textContent = "Local Compiler";
       compilerNote.innerHTML = "PNG compilation runs on this machine. The first online run may download reviewed detector weights; <code>studio:offline</code> requires them to be cached.";

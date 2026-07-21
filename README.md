@@ -158,6 +158,27 @@ Public review applies an exact-Origin browser/CSRF check and automatically fails
 closed after the two-hour window. Origin is not caller authentication and can be
 forged by non-browser clients. This is not a general public production mode;
 add rate limiting or Turnstile before broader access.
+
+For an asynchronous judging window, the Worker can instead protect the entire
+site and Compiler API with one shared review password. Store the password and
+an independent random session-signing secret interactively; never place either
+value in Git, `wrangler.jsonc`, shell history, or public submission fields:
+
+```bash
+nodenv exec npx wrangler secret put REVIEW_PASSWORD
+nodenv exec npx wrangler secret put REVIEW_SESSION_SECRET
+nodenv exec npm run deploy:cloudflare:password
+```
+
+This mode routes every asset through the Worker, rate-limits login and
+compilation, and issues a signed 12-hour `HttpOnly`, `Secure`,
+`SameSite=Strict` session cookie. Keep Cloudflare Access enabled while deploying
+and testing the second gate. Disable Access only after a signed-out browser is
+redirected to `/auth/login`, a wrong password is rejected, the correct password
+opens both Compiler and Viewer, and `/api/compile` is inaccessible without the
+session cookie. Roll back without a public interval by deploying
+`deploy:cloudflare:private` before re-enabling or changing Access.
+
 The implementation and Cloudflare/Hugging Face comparison are recorded in
 [`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
 

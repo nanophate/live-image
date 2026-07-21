@@ -15,6 +15,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`hosting-and-public-deployment.md`](hosting-and-public-deployment.md) — GitHub Pages, Cloudflare Pages/Workers/Containers, and Codex Sites feasibility, current deployment blockers, and staged public-release gates
 - [`hosted-compiler-platforms.md`](hosted-compiler-platforms.md) — Cloudflare Container and Hugging Face Docker Space comparison, private-alpha gateway implementation, local validation, and deployment gates
 - [`cloudflare-routes-and-review-mode.md`](cloudflare-routes-and-review-mode.md) — separate Compiler/Viewer paths, always-available private Compiler, fail-closed Access toggle, and time-boxed unauthenticated judging mode
+- [`shared-password-review-auth.md`](shared-password-review-auth.md) — Worker-first judging password, signed session, rate limits, secret handling, and Access cutover/rollback order
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`browser-visual-ci.md`](browser-visual-ci.md) — headless-browser options, minimal Canvas 2D CI decision, cost, compatibility, and license boundaries
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
