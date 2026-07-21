@@ -14,7 +14,7 @@ test("local Studio compiles PNG, exposes .limg, and immediately runs the showcas
     if (message.type() === "error") errors.push(message.text());
   });
 
-  await page.goto(`${studioUrl}/viewer.html`);
+  await page.goto(`${studioUrl}/compiler.html`);
   await page.locator("#file-input").setInputFiles({
     name: "teal-studio-review.png",
     mimeType: "image/png",
@@ -43,7 +43,7 @@ test("local Studio clearly rejects an unsupported image without exposing a chara
   test.skip(!studioUrl, "set LIVING_IMAGE_STUDIO_URL to an already-running local Studio");
   test.setTimeout(120_000);
 
-  await page.goto(`${studioUrl}/viewer.html`);
+  await page.goto(`${studioUrl}/compiler.html`);
   await page.locator("#file-input").setInputFiles({
     name: "unsupported-no-face.png",
     mimeType: "image/png",

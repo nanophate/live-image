@@ -12,5 +12,5 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["deploy/cloudflare/**/*.ts"]
+  "include": ["deploy/cloudflare/**/*.ts", "worker-configuration.d.ts"]
 }

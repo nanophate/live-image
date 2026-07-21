@@ -9,7 +9,11 @@ import {
 
 import {
   MAX_UPLOAD_BYTES,
+  MAX_PUBLIC_REVIEW_DURATION_MS,
+  accessAuthenticationRequired,
   forwardedHeaders,
+  hostedCompilerPolicy,
+  publicReviewWindowActive,
   requireAccessAssertion,
   uploadLength,
   validateCompileRequest,
@@ -34,6 +38,79 @@ test("Cloudflare request policy accepts a bounded same-origin image upload", () 
   assert.equal(validateCompileRequest(uploadRequest(), requestId), null);
 });
 
+test("Access bypass and public review windows fail closed", () => {
+  assert.equal(accessAuthenticationRequired("false"), false);
+  for (const value of ["true", "False", "review", undefined]) {
+    assert.equal(accessAuthenticationRequired(value), true);
+  }
+
+  const now = Date.parse("2026-07-21T14:00:00.000Z");
+  assert.equal(
+    publicReviewWindowActive("2026-07-21T13:59:00.000Z", "2026-07-21T16:00:00.000Z", now),
+    true,
+  );
+  assert.equal(publicReviewWindowActive(undefined, "2026-07-21T16:00:00.000Z", now), false);
+  assert.equal(publicReviewWindowActive("invalid", "2026-07-21T16:00:00.000Z", now), false);
+  assert.equal(
+    publicReviewWindowActive("2026-07-21T13:00:00.000Z", "2026-07-21T14:00:00.000Z", now),
+    false,
+  );
+  assert.equal(
+    publicReviewWindowActive(
+      "2026-07-21T14:00:00.000Z",
+      new Date(now + MAX_PUBLIC_REVIEW_DURATION_MS + 1).toISOString(),
+      now,
+    ),
+    false,
+  );
+});
+
+test("hosted Compiler policy binds deployment vars to auth and origin enforcement", () => {
+  const now = Date.parse("2026-07-21T14:00:00.000Z");
+  const privateBase = {
+    compilerEnabled: "true",
+    requireAccessJwt: "true",
+  };
+  assert.deepEqual(hostedCompilerPolicy(privateBase, now), {
+    authenticationRequired: true,
+    enabled: false,
+    requireExactOrigin: false,
+  });
+  assert.equal(hostedCompilerPolicy({
+    ...privateBase,
+    accessAudience: "audience",
+    accessTeamDomain: "https://living-image.cloudflareaccess.com",
+  }, now).enabled, true);
+  assert.equal(hostedCompilerPolicy({
+    ...privateBase,
+    compilerEnabled: "false",
+    accessAudience: "audience",
+    accessTeamDomain: "https://living-image.cloudflareaccess.com",
+  }, now).enabled, false);
+  assert.deepEqual(hostedCompilerPolicy({
+    compilerEnabled: "true",
+    requireAccessJwt: "false",
+    publicReviewNotBefore: "2026-07-21T13:59:00.000Z",
+    publicReviewExpiresAt: "2026-07-21T16:00:00.000Z",
+  }, now), {
+    authenticationRequired: false,
+    enabled: true,
+    requireExactOrigin: true,
+  });
+  for (const publicReviewExpiresAt of ["", "invalid", "2026-07-21T14:00:00.000Z"]) {
+    assert.equal(hostedCompilerPolicy({
+      compilerEnabled: "true",
+      requireAccessJwt: "false",
+      publicReviewNotBefore: "2026-07-21T13:59:00.000Z",
+      publicReviewExpiresAt,
+    }, now).enabled, false);
+  }
+  assert.equal(hostedCompilerPolicy({
+    compilerEnabled: "true",
+    requireAccessJwt: "False",
+  }, now).authenticationRequired, true);
+});
+
 test("Cloudflare request policy rejects method, media, length, size, and origin failures", () => {
   assert.equal(validateCompileRequest(new Request("https://living-image.example/api/compile"), requestId)?.status, 405);
   assert.equal(validateCompileRequest(uploadRequest({ "Content-Type": "image/gif" }), requestId)?.status, 415);
@@ -44,6 +121,10 @@ test("Cloudflare request policy rejects method, media, length, size, and origin 
   );
   assert.equal(
     validateCompileRequest(uploadRequest({ Origin: "https://untrusted.example" }), requestId)?.status,
+    403,
+  );
+  assert.equal(
+    validateCompileRequest(uploadRequest({ Origin: "" }), requestId, true)?.status,
     403,
   );
 });

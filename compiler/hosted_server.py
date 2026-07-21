@@ -231,6 +231,7 @@ class HostedHandler(BaseHTTPRequestHandler):
                 {
                     "compiler": "hosted",
                     "enabled": self.server.compiler_enabled,
+                    "authentication": "platform",
                     "samplesAvailable": False,
                     "provider": "hugging-face",
                 },
@@ -357,8 +358,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     root = args.root.resolve()
-    if not (root / "viewer.html").is_file():
-        raise SystemExit(f"built Viewer not found under {root}")
+    if not (root / "compiler.html").is_file() or not (root / "viewer.html").is_file():
+        raise SystemExit(f"built Compiler/Viewer not found under {root}")
     try:
         public_origin = public_origin_from_environment()
     except ValueError as error:
@@ -378,7 +379,7 @@ def main() -> int:
         compiler_enabled=requested_enabled,
     )
     signal.signal(signal.SIGTERM, interrupt_on_termination)
-    print(f"Living Image hosted Viewer listening on {args.host}:{args.port}", flush=True)
+    print(f"Living Image hosted Compiler/Viewer listening on {args.host}:{args.port}", flush=True)
     print(f"Hosted compiler enabled: {server.compiler_enabled}", flush=True)
     try:
         server.serve_forever()

@@ -269,9 +269,12 @@ before attaching any external route.
   Viewer/config state, and the corresponding Access audit events are confirmed.
 - Verify the live origin rejects forged, missing, expired, wrong-issuer, and
   wrong-AUD assertions wherever edge Access does not intercept first.
-- Keep `HOSTED_COMPILER_ENABLED` false by default. The approved single-image
-  cold/warm path is now confirmed; content rejection, concurrency, exact remote
-  artifact hash, and longer-running resource/cost observations remain separate
-  gates before any broader alpha.
+- **Decision update:** after the owner reviewed the successful private test,
+  keep `HOSTED_COMPILER_ENABLED=true` in normal operation behind Access.
+  Separate Compiler and Viewer pages and the time-boxed review-mode design are
+  recorded in `research/cloudflare-routes-and-review-mode.md`.
+- Content rejection, concurrency, exact remote artifact hash, and
+  longer-running resource/cost observations remain separate gates before any
+  broader alpha.
 - Rollback order is Compiler false, route removal, then Container stop; retain
   the default-deny Access application until the endpoint is gone.

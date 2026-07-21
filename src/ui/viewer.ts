@@ -10,6 +10,7 @@ import {
 } from "../schema.js";
 import { renderQuality, renderRejectDiagnostic, requireElement, SAMPLE_URLS } from "./shared.js";
 
+const pageMode = document.body.dataset.productMode === "compiler" ? "compiler" : "viewer";
 const canvas = requireElement<HTMLCanvasElement>("character-canvas");
 const player = new LivingImagePlayer(canvas, { eyeDeformation: "best-available" });
 const fileInput = requireElement<HTMLInputElement>("file-input");
@@ -51,11 +52,22 @@ let compilerConfigReady: Promise<void>;
 interface CompilerConfig {
   compiler: "local" | "hosted";
   enabled: boolean;
+  authentication?: "cloudflare-access" | "none" | "platform";
+  reviewExpiresAt?: string;
   samplesAvailable: boolean;
   provider?: "cloudflare" | "hugging-face";
 }
 
 async function loadCompilerConfig(): Promise<void> {
+  if (pageMode === "viewer") {
+    compilerMode = "unavailable";
+    compilerEnabled = false;
+    deploymentLabel.textContent = "Portable Viewer";
+    fileInput.accept = ".limg,application/json";
+    fileButtonLabel.textContent = "Open .limg";
+    compilerNote.textContent = "This Viewer accepts .limg files only. Character files stay in this browser and are never sent to the Compiler.";
+    return;
+  }
   try {
     const response = await fetch("/api/config", { cache: "no-store" });
     if (!response.ok) throw new Error("HTTP " + response.status);
@@ -64,19 +76,27 @@ async function loadCompilerConfig(): Promise<void> {
     compilerEnabled = config.enabled;
     for (const button of sampleButtons) button.hidden = !config.samplesAvailable;
     if (!config.enabled) {
-      deploymentLabel.textContent = "Hosted Viewer";
-      compilerNote.textContent = "Hosted compilation is disabled for this deployment. Existing .limg files still play entirely in the browser.";
+      deploymentLabel.textContent = "Compiler unavailable";
+      compilerNote.textContent = config.authentication === "none"
+        ? "The public review window is missing or expired. Redeploy review mode to create a new two-hour window."
+        : "Compilation is not configured for this deployment.";
       return;
     }
-    fileInput.accept = ".png,.jpg,.jpeg,.limg,image/png,image/jpeg,application/json";
-    fileButtonLabel.textContent = "Open PNG or .limg";
+    fileInput.accept = ".png,.jpg,.jpeg,image/png,image/jpeg";
+    fileButtonLabel.textContent = "Open PNG or JPEG";
     if (config.compiler === "hosted") {
-      deploymentLabel.textContent = "Hosted Compiler / Runtime";
+      deploymentLabel.textContent = config.provider === "hugging-face"
+        ? "Hosted Compiler"
+        : config.authentication === "none"
+        ? "Public review Compiler"
+        : "Access-protected Compiler";
       compilerNote.textContent = config.provider === "hugging-face"
         ? "PNG and JPEG files are sent to the compiler hosted by Hugging Face. Living Image does not write source images or .limg files to application storage, but the provider may process network and operational logs. Do not upload sensitive images."
-        : "PNG and JPEG files are sent to the private alpha compiler. The app does not save source images or .limg files to application storage; use only approved test images during alpha.";
+        : config.authentication === "none"
+          ? `Public review mode expires at ${config.reviewExpiresAt ?? "an unreported time"}. Images are processed without application storage; do not upload sensitive images.`
+          : "PNG and JPEG files are sent through Cloudflare Access to the private Compiler. The app does not save source images or .limg files to application storage.";
     } else {
-      deploymentLabel.textContent = "Local Studio / Runtime";
+      deploymentLabel.textContent = "Local Compiler";
       compilerNote.innerHTML = "PNG compilation runs on this machine. The first online run may download reviewed detector weights; <code>studio:offline</code> requires them to be cached.";
     }
   } catch {
@@ -245,7 +265,7 @@ async function compileImage(file: File): Promise<void> {
   if (!compilerEnabled) {
     status.textContent = "PNG compilation unavailable";
     meta.textContent = compilerMode === "hosted"
-      ? "Hosted compilation is disabled for this deployment. The currently loaded .limg remains playable."
+      ? "Hosted compilation is unavailable for this deployment."
       : "Run nodenv exec npm run studio for local PNG compilation. The currently loaded .limg remains playable.";
     return;
   }
@@ -311,11 +331,18 @@ fileInput.addEventListener("change", async () => {
   const file = fileInput.files?.[0];
   if (!file) return;
   try {
-    if (file.name.toLowerCase().endsWith(".limg") || file.type === "application/json") {
+    const isLivingImage = file.name.toLowerCase().endsWith(".limg") || file.type === "application/json";
+    if (pageMode === "viewer" && isLivingImage) {
       setBusy(true);
       await useManifest(await loadLivingImageFile(file));
-    } else {
+    } else if (pageMode === "compiler" && !isLivingImage) {
       await compileImage(file);
+    } else if (pageMode === "viewer") {
+      status.textContent = "Viewer accepts .limg files only";
+      meta.textContent = "Use the Compiler path to convert PNG or JPEG images first.";
+    } else {
+      status.textContent = "Compiler accepts PNG or JPEG files only";
+      meta.textContent = "Use the Viewer path to open an existing .limg character.";
     }
   } catch (error) {
     status.textContent = "Load failed";

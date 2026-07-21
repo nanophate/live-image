@@ -92,7 +92,8 @@ product experience.
   without returning machine paths or exception details.
 - **Confirmed:** deploy/cloudflare/worker.ts validates method, media type,
   declared size, and same-origin browser requests before streaming the request
-  to one private Container. HOSTED_COMPILER_ENABLED defaults to false.
+  to one private Container. The owner-approved normal mode now keeps
+  HOSTED_COMPILER_ENABLED true behind Access.
 - **Confirmed:** workers.dev and preview URL exposure are disabled. Review of
   the first deployed gateway found that checking only for an Access assertion
   header was insufficient and could accept a forged value if the Worker were
@@ -115,24 +116,26 @@ product experience.
     23bbc708146bcbc1c910f00fe152adbc70d7658d875a0121eaf4ee61d978b2c4
   - HRNetV2:
     e71271376406a743c01528a0460637fcc06e72aeeea583f85007cc72dc8b7a4a
-- **Confirmed:** the Viewer now queries /api/config and accurately labels
-  local, hosted, or Viewer-only processing. Hosted copy says that source images
-  leave the device; it does not reuse the local privacy claim.
+- **Confirmed:** the Compiler page queries /api/config and accurately labels
+  local, Access-protected, time-boxed public-review, or provider-hosted
+  processing. The separate Viewer makes no Compiler request. Hosted copy says
+  that source images leave the device; it does not reuse the local privacy
+  claim.
 
 ## Local validation
 
 - **Confirmed:** nodenv exec npm run build succeeds with Node 24.18.0.
 - **Confirmed:** nodenv exec npm run build:worker succeeds against
   @cloudflare/containers 0.3.0 and Workers types 5.20260719.1.
-- **Confirmed:** Wrangler 4.112.0 dry-run recognizes 17 static assets, the
-  COMPILER Durable Object, the CompilerContainer, and the disabled-by-default
-  hosted compiler flag.
+- **Confirmed:** Wrangler 4.112.0 dry-run recognizes 18 static assets, the
+  COMPILER Durable Object, the CompilerContainer, the Access-required normal
+  mode, and the bounded review-window variables.
 - **Confirmed:** 53 Python tests pass, including hosted health, route-surface,
   media rejection, short-body rejection, SIGTERM unwind, request ID, and .limg
   response tests.
-- **Confirmed:** 55 TypeScript tests pass and the production Vite build succeeds,
+- **Confirmed:** 57 TypeScript tests pass and the production Vite build succeeds,
   including Worker upload policy and authentication-header isolation checks.
-- **Confirmed:** the complete Chromium suite passes 13 tests with 2 documented
+- **Confirmed:** the complete Chromium suite passes 14 tests with 2 documented
   local-artifact skips, including Viewer-only input gating and a hosted
   non-JSON Access rejection with a visible request ID.
 - **Confirmed:** the Worker rebuilds the Container request from an explicit

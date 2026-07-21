@@ -5,6 +5,7 @@ import {
 } from "jose";
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+export const MAX_PUBLIC_REVIEW_DURATION_MS = 24 * 60 * 60 * 1000;
 
 const ALLOWED_MEDIA_TYPES = new Set(["image/png", "image/jpeg"]);
 const MAX_FILENAME_HEADER_LENGTH = 512;
@@ -27,6 +28,60 @@ interface AccessConfiguration {
 type JwksFactory = (url: URL) => JWTVerifyGetKey;
 
 let cachedRemoteJwks: { issuer: string; keys: JWTVerifyGetKey } | undefined;
+
+export function accessAuthenticationRequired(value: string | undefined): boolean {
+  return value !== "false";
+}
+
+export function publicReviewWindowActive(
+  notBefore: string | undefined,
+  expiresAt: string | undefined,
+  now = Date.now(),
+): boolean {
+  if (!notBefore || !expiresAt) return false;
+  const start = Date.parse(notBefore);
+  const end = Date.parse(expiresAt);
+  return Number.isFinite(start)
+    && Number.isFinite(end)
+    && start <= now
+    && now < end
+    && end > start
+    && end - start <= MAX_PUBLIC_REVIEW_DURATION_MS;
+}
+
+interface HostedCompilerConfiguration {
+  accessAudience?: string;
+  accessTeamDomain?: string;
+  compilerEnabled?: string;
+  publicReviewExpiresAt?: string;
+  publicReviewNotBefore?: string;
+  requireAccessJwt?: string;
+}
+
+export interface HostedCompilerPolicy {
+  authenticationRequired: boolean;
+  enabled: boolean;
+  requireExactOrigin: boolean;
+}
+
+export function hostedCompilerPolicy(
+  configuration: HostedCompilerConfiguration,
+  now = Date.now(),
+): HostedCompilerPolicy {
+  const authenticationRequired = accessAuthenticationRequired(configuration.requireAccessJwt);
+  const privateReady = Boolean(configuration.accessAudience) && Boolean(configuration.accessTeamDomain);
+  const reviewReady = publicReviewWindowActive(
+    configuration.publicReviewNotBefore,
+    configuration.publicReviewExpiresAt,
+    now,
+  );
+  return {
+    authenticationRequired,
+    enabled: configuration.compilerEnabled === "true"
+      && (authenticationRequired ? privateReady : reviewReady),
+    requireExactOrigin: !authenticationRequired,
+  };
+}
 
 function accessIssuer(teamDomain: string | undefined): string | null {
   if (!teamDomain) return null;
@@ -87,7 +142,11 @@ export async function requireAccessAssertion(
   }
 }
 
-export function validateCompileRequest(request: Request, requestId: string): Response | null {
+export function validateCompileRequest(
+  request: Request,
+  requestId: string,
+  requireExactOrigin = false,
+): Response | null {
   if (request.method !== "POST") {
     return json(405, { status: "error", message: "Method not allowed" }, requestId);
   }
@@ -104,7 +163,7 @@ export function validateCompileRequest(request: Request, requestId: string): Res
     return json(413, { status: "error", message: "The selected image exceeds 20 MiB" }, requestId);
   }
   const origin = request.headers.get("Origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  if ((requireExactOrigin && !origin) || (origin && origin !== new URL(request.url).origin)) {
     return json(403, { status: "error", message: "Cross-origin compilation is disabled" }, requestId);
   }
   const filename = request.headers.get("X-Living-Image-Filename");
