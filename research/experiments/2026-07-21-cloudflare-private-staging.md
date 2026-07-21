@@ -2,8 +2,9 @@
 
 Date: 2026-07-21
 
-Status: Access application and origin-verification secrets configured; no
-Worker URL, addressable Container instance, or hosted Compiler has been enabled
+Status: Access-protected workers.dev staging URL enabled and anonymously
+verified; hosted Compiler remains disabled and the approved OTP session is
+awaiting owner completion
 
 ## Purpose
 
@@ -25,6 +26,13 @@ before attaching any external route.
 - Custom Domains require an active Cloudflare zone and can be added by
   `routes[].custom_domain` only after the hostname is selected:
   <https://developers.cloudflare.com/workers/configuration/routing/custom-domains/>.
+- A workers.dev URL is public when enabled unless Cloudflare Access requires
+  authentication; Cloudflare documents the authorized-email flow and origin
+  JWT validation as the corresponding controls:
+  <https://developers.cloudflare.com/workers/configuration/routing/workers-dev/>.
+- Cloudflare recommends keeping the compatibility date current, storing secrets
+  outside source, and configuring routes deliberately:
+  <https://developers.cloudflare.com/workers/best-practices/workers-best-practices/>.
 - Container deployment pre-schedules capacity and pre-fetches images, while
   unused pre-warmed images are not billed:
   <https://developers.cloudflare.com/containers/platform-details/architecture/>.
@@ -135,13 +143,51 @@ before attaching any external route.
   CPU Time 0 ms, and workers.dev Disabled. `HOSTED_COMPILER_ENABLED` remains
   false in version-controlled configuration.
 
+## Access-protected endpoint activation evidence
+
+- **Decision:** after explicit owner approval, enable only the exact workers.dev
+  staging hostname. Keep Preview URLs disabled, do not add a custom domain, do
+  not enable the Compiler, and do not roll out a new Container image.
+- **Confirmed:** the only version-controlled routing change was
+  `workers_dev: false` to `workers_dev: true`; `preview_urls: false` and
+  `HOSTED_COMPILER_ENABLED: "false"` were unchanged.
+- **Confirmed:** `nodenv exec npm run check:cloudflare` passed the TypeScript
+  checks, production Viewer build, Worker build, and Wrangler dry-run. The
+  dry-run reported the Compiler binding but retained
+  `HOSTED_COMPILER_ENABLED ("false")`.
+- **Confirmed:** Wrangler 4.112.0 deployed with `--containers-rollout=none` and
+  `--keep-vars`, registering Worker version
+  `af3a7c73-3ca8-4a78-80d2-9522cc0bb410` at the single intended hostname
+  `living-image.logosact-account.workers.dev`. The deployment did not build or
+  update a Container.
+- **Confirmed:** an independent unauthenticated probe at 2026-07-21 12:52 JST
+  received HTTP 302 for both `/viewer.html` and `/api/config`. Both responses
+  were served by Cloudflare with private/no-store cache controls,
+  `WWW-Authenticate: Cloudflare-Access`, and a redirect to the configured
+  `logosact.cloudflareaccess.com` login path. The signed redirect state was not
+  copied into this repository. Static and API routes were therefore intercepted
+  before either response body was exposed anonymously.
+- **Confirmed:** the normal anonymous responses disclosed no Preview URL. The
+  version-controlled `preview_urls: false` setting remains in force.
+- **Confirmed:** the real Access browser flow displayed `Log in to Living Image
+  Private Staging`, accepted only the policy email used for this test, sent a
+  one-time code, and reached the six-digit verification form. The code expires
+  after 10 minutes and is not accessible to the project or recorded here.
+- **Open:** the owner still needs to complete the OTP form so the authenticated
+  Viewer, `/api/config`, exact allow policy, and live origin JWT validation can
+  be observed end to end.
+- **Confirmed:** after endpoint activation, Container application
+  `living-image-compilercontainer` remained `ready` with health `active: 0`,
+  `assigned: 0`, and `healthy: 1`; its private-network image digest remained
+  `sha256:ffdc13f8245b482481b554db7e2791a762dff02f6d97004335bf7a34016fc222`.
+  No Compiler or inference request was made.
+
 ## Remaining rollout gates
 
-- Enable only the Access-protected workers.dev destination while keeping the
-  Compiler disabled; do not add a custom domain or unprotected route.
-- Test anonymous and unauthorized denial, the approved one-time-PIN browser
-  session, `/api/config`, and Access audit logs while the Compiler remains
-  disabled.
+- Complete the approved one-time-PIN browser session, then verify the Viewer,
+  `/api/config`, exact allow policy, and Access audit logs while the Compiler
+  remains disabled. Anonymous denial is confirmed; a separate unauthorized
+  identity check remains open.
 - Verify the live origin rejects forged, missing, expired, wrong-issuer, and
   wrong-AUD assertions wherever edge Access does not intercept first.
 - Only then change `HOSTED_COMPILER_ENABLED` to true and run one ignored local
