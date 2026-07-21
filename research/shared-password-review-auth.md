@@ -1,0 +1,74 @@
+# Shared-password review authentication
+
+Reviewed: 2026-07-22
+
+## Scope
+
+This note records the judging-only authentication path that replaces an
+email-address-specific Cloudflare Access OTP with one password supplied in
+Devpost's private credentials field. It does not change the project license or
+the compiler/model provenance.
+
+## Evidence
+
+- **Confirmed:** Cloudflare Access service tokens are credentials for automated
+  requests and normally require request headers. They are not a simple password
+  form for ordinary browser users. Source: [Cloudflare Access service
+  tokens](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
+- **Confirmed:** secrets set through Wrangler are available to the Worker but
+  are not stored in source configuration. Source: [Workers
+  secrets](https://developers.cloudflare.com/workers/configuration/secrets/).
+- **Confirmed:** static assets must use Worker-first routing when authentication
+  must run before asset delivery. Source: [Workers Static Assets
+  binding](https://developers.cloudflare.com/workers/static-assets/binding/).
+- **Confirmed:** Workers exposes Web Crypto HMAC signing and verification for a
+  stateless signed session. Source: [Workers Web
+  Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/).
+- **Confirmed:** Workers Rate Limiting bindings provide per-key approximate
+  counters. They reduce ordinary login guessing and compiler abuse but are not
+  a globally exact quota. Source: [Rate Limiting
+  bindings](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+
+## Decisions
+
+- **Decision:** retain three explicit modes: `access`, `shared-password`, and
+  time-bounded `public-review`. An unknown mode returns a fail-closed 503.
+- **Decision:** `shared-password` routes all HTML, JavaScript, CSS, fixtures, and
+  API requests through the Worker. Only the Worker-authored login endpoint is
+  available before authentication.
+- **Decision:** `REVIEW_PASSWORD` and `REVIEW_SESSION_SECRET` are independent
+  Cloudflare secrets. `REVIEW_AUTH_VERSION` invalidates existing sessions when
+  incremented.
+- **Decision:** the signed session contains only its hostname audience, issue and
+  expiry times, auth version, and a random nonce. It expires after 12 hours and
+  uses a `__Host-` cookie with `Secure`, `HttpOnly`, `Path=/`, and
+  `SameSite=Strict`.
+- **Decision:** login, logout, and compilation require an exact same-origin POST;
+  login bodies and image uploads remain bounded before expensive work.
+- **Decision:** login attempts are limited to five per minute and compilation to
+  six per minute per edge key before Container startup.
+- **Decision:** deploy password mode while Access still protects the hostname.
+  Remove Access only after signed-out, wrong-password, correct-password, asset,
+  Viewer, and compile checks pass.
+
+## Verification
+
+- **Confirmed:** 60 TypeScript tests pass, including the actual review gate's
+  page redirect, API denial, correct/wrong password, login rate limit, signed
+  cookie, logout, missing configuration, session modification, wrong audience,
+  auth-version invalidation, expiry, duplicate cookies, missing Origin,
+  cross-origin POST, and unsafe return paths.
+- **Confirmed:** browser and Worker TypeScript builds pass.
+- **Confirmed:** `npm run check:cloudflare` recognizes both rate-limit bindings,
+  Worker-first assets, generated environment types, and the Container in a dry
+  run.
+
+## Open operational actions
+
+- **Open:** set both secrets interactively without printing them to logs or
+  placing them in shell arguments.
+- **Open:** deploy password mode while Access remains enabled and run the live
+  authentication matrix.
+- **Open:** disable Access only after the Worker gate is independently confirmed.
+- **Open:** put the review URL and password only in Devpost's private judges
+  field, then rotate or delete the password after judging.

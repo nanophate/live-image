@@ -10,11 +10,28 @@
     "binding": "ASSETS",
     "html_handling": "none",
     "not_found_handling": "none",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": true
   },
   "secrets": {
-    "required": ["ACCESS_POLICY_AUD", "ACCESS_TEAM_DOMAIN"]
+    "required": [
+      "ACCESS_POLICY_AUD",
+      "ACCESS_TEAM_DOMAIN",
+      "REVIEW_PASSWORD",
+      "REVIEW_SESSION_SECRET"
+    ]
   },
+  "ratelimits": [
+    {
+      "name": "REVIEW_LOGIN_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "COMPILER_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 6, "period": 60 }
+    }
+  ],
   "containers": [
     {
       "class_name": "CompilerContainer",
@@ -41,9 +58,11 @@
     }
   ],
   "vars": {
+    "AUTH_MODE": "access",
     "HOSTED_COMPILER_ENABLED": "true",
     "PUBLIC_REVIEW_EXPIRES_AT": "",
     "PUBLIC_REVIEW_NOT_BEFORE": "",
-    "REQUIRE_ACCESS_JWT": "true"
+    "REQUIRE_ACCESS_JWT": "true",
+    "REVIEW_AUTH_VERSION": "1"
   }
 }

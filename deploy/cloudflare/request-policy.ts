@@ -52,34 +52,57 @@ export function publicReviewWindowActive(
 interface HostedCompilerConfiguration {
   accessAudience?: string;
   accessTeamDomain?: string;
+  authenticationMode?: string;
   compilerEnabled?: string;
   publicReviewExpiresAt?: string;
   publicReviewNotBefore?: string;
+  reviewPassword?: string;
+  reviewSessionSecret?: string;
   requireAccessJwt?: string;
 }
 
+export type HostedAuthentication = "cloudflare-access" | "shared-password" | "none" | "invalid";
+
 export interface HostedCompilerPolicy {
+  authentication: HostedAuthentication;
   authenticationRequired: boolean;
   enabled: boolean;
   requireExactOrigin: boolean;
+}
+
+export function hostedAuthenticationMode(value: string | undefined): HostedAuthentication {
+  if (value === "access") return "cloudflare-access";
+  if (value === "shared-password") return "shared-password";
+  if (value === "public-review") return "none";
+  return "invalid";
 }
 
 export function hostedCompilerPolicy(
   configuration: HostedCompilerConfiguration,
   now = Date.now(),
 ): HostedCompilerPolicy {
-  const authenticationRequired = accessAuthenticationRequired(configuration.requireAccessJwt);
+  const authentication = hostedAuthenticationMode(configuration.authenticationMode);
+  const authenticationRequired = authentication === "cloudflare-access" || authentication === "shared-password";
   const privateReady = Boolean(configuration.accessAudience) && Boolean(configuration.accessTeamDomain);
+  const sharedPasswordReady = (configuration.reviewPassword?.length ?? 0) >= 12
+    && (configuration.reviewSessionSecret?.length ?? 0) >= 32;
   const reviewReady = publicReviewWindowActive(
     configuration.publicReviewNotBefore,
     configuration.publicReviewExpiresAt,
     now,
   );
   return {
+    authentication,
     authenticationRequired,
     enabled: configuration.compilerEnabled === "true"
-      && (authenticationRequired ? privateReady : reviewReady),
-    requireExactOrigin: !authenticationRequired,
+      && (authentication === "cloudflare-access"
+        ? privateReady
+        : authentication === "shared-password"
+          ? sharedPasswordReady
+          : authentication === "none"
+            ? reviewReady
+            : false),
+    requireExactOrigin: authentication !== "cloudflare-access",
   };
 }
 
