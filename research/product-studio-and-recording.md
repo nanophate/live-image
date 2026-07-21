@@ -150,3 +150,9 @@ PNG selected locally
   2 documented local-artifact skips after the feedback change.
 - **Confirmed:** this UI adds no dependency, asset, or license/provenance
   surface. Existing license records and third-party notices remain unchanged.
+- **Confirmed:** private mode was deployed as Worker version
+  `d6008795-32ef-4cb0-a7fd-7d61756c6979`. The authenticated production
+  `/compiler.html` served the new loading copy, hidden initial state, and
+  non-live elapsed timer while keeping hosted compilation and origin JWT
+  verification enabled. No source image was uploaded for this static delivery
+  check.
