@@ -15,6 +15,9 @@ controllable 2.5D character asset. The detector runs once; the browser runtime
 is local, deterministic, model-free, and uses the same normalised state API for
 every character.
 
+Judging copy, reviewer instructions, the recording runbook, and Japanese video
+narration are collected in [`submission/`](submission/README.md).
+
 This repository now proves the first vertical slice:
 
 ```text
