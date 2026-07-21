@@ -184,8 +184,20 @@ test("shared review login accepts only same-origin posts and safe return paths",
     method: "POST",
     headers: { Origin: "https://living-image.example", "Sec-Fetch-Site": "same-site" },
   })), true);
+  assert.equal(sameOriginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { "Sec-Fetch-Site": "same-origin" },
+  })), true);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, { method: "POST" })), false);
+  assert.equal(sameOriginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { "Sec-Fetch-Site": "cross-site" },
+  })), false);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, { method: "POST", headers: { Origin: "https://attacker.example" } })), false);
+  assert.equal(sameOriginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "https://attacker.example", "Sec-Fetch-Site": "same-origin" },
+  })), false);
   assert.equal(safeReturnPath("/viewer.html?character=one"), "/viewer.html?character=one");
   assert.equal(safeReturnPath("//attacker.example"), "/compiler.html");
   assert.equal(safeReturnPath("https://attacker.example"), "/compiler.html");
@@ -231,6 +243,19 @@ test("shared review gate protects pages and APIs through login and logout", asyn
   const setCookie = accepted?.headers.get("Set-Cookie") ?? "";
   const session = setCookie.split(";", 1)[0] ?? "";
   assert.ok(session.startsWith(`${REVIEW_COOKIE}=`));
+
+  const accessBody = new URLSearchParams({ next: "/compiler.html", password: "review-password-long" }).toString();
+  const accessRouted = await sharedPasswordGate(new Request("https://living-image.example/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Length": String(new TextEncoder().encode(accessBody).byteLength),
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Sec-Fetch-Site": "same-origin",
+    },
+    body: accessBody,
+  }), env);
+  assert.equal(accessRouted?.status, 303);
+  assert.equal(accessRouted?.headers.get("Location"), "/compiler.html");
 
   const authenticated = await sharedPasswordGate(new Request("https://living-image.example/api/config", {
     headers: { Cookie: session },
