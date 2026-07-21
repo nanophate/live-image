@@ -1,5 +1,10 @@
 # Submission copy
 
+## Elevator pitch
+
+Turn one anime portrait into a portable character that blinks, looks, talks,
+and breathes—without manual rigging.
+
 ## One line
 
 Living Image compiles one anime portrait into a portable `.limg` character that
