@@ -180,6 +180,10 @@ test("shared review login accepts only same-origin posts and safe return paths",
     headers: { Origin: "https://living-image.example", "Sec-Fetch-Site": "same-origin" },
   });
   assert.equal(sameOriginPost(sameOrigin), true);
+  assert.equal(sameOriginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "https://living-image.example", "Sec-Fetch-Site": "same-site" },
+  })), true);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, { method: "POST" })), false);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, { method: "POST", headers: { Origin: "https://attacker.example" } })), false);
   assert.equal(safeReturnPath("/viewer.html?character=one"), "/viewer.html?character=one");
