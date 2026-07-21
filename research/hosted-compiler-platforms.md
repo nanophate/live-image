@@ -2,8 +2,9 @@
 
 Reviewed: 2026-07-21
 
-Status: Cloudflare Container private-alpha scaffold implemented locally; no
-Cloudflare account, paid plan, public route, or hosted compiler has been enabled
+Status: Workers Paid and a route-free, compiler-disabled first Cloudflare
+deployment are confirmed; no public route, Access application, or hosted
+compiler has been enabled
 
 ## Product question
 
@@ -92,10 +93,17 @@ product experience.
 - **Confirmed:** deploy/cloudflare/worker.ts validates method, media type,
   declared size, and same-origin browser requests before streaming the request
   to one private Container. HOSTED_COMPILER_ENABLED defaults to false.
-- **Confirmed:** workers.dev exposure is disabled and the gateway requires a
-  Cloudflare Access assertion by default. Header presence is defense in depth;
-  the future custom route must still be protected by an Access application that
-  performs the actual token validation.
+- **Confirmed:** workers.dev and preview URL exposure are disabled. Review of
+  the first deployed gateway found that checking only for an Access assertion
+  header was insufficient and could accept a forged value if the Worker were
+  reachable outside the intended Access path.
+- **Confirmed:** the corrected gateway uses jose 6.2.3 and the account JWKS to
+  verify RS256 signature, exact team-domain issuer, application AUD, and expiry.
+  Missing configuration returns 503, a missing assertion returns 401, and an
+  invalid assertion returns 403 without exposing verification details.
+- **Decision:** Worker-wide Cloudflare Access remains the first gate. JWT
+  verification is required in addition and compilation cannot be enabled until
+  both `ACCESS_TEAM_DOMAIN` and `ACCESS_POLICY_AUD` are stored outside Git.
 - **Confirmed:** wrangler.jsonc fixes one standard-2 instance and max_instances
   at one. Container outbound access is disabled and idle sleep is five minutes.
 - **Confirmed:** Dockerfile uses Python 3.12, CPU PyTorch 2.2.2, torchvision
@@ -203,8 +211,15 @@ product experience.
 - **Open:** a Worker timeout does not necessarily terminate native Python
   inference. Before public use, choose and test a supervised child-process
   deadline or a Container restart policy.
-- **Open:** establish the actual Cloudflare account, domain, Access policy,
-  regional/privacy disclosure, operator/contact, incident path, and cost ceiling.
+- **Confirmed:** the project owner enabled Workers Paid on the `LogosAct`
+  account. A first deployment registered the Worker, Durable Object namespace,
+  and standard-2 Container application with zero instances and no deployed
+  targets; no route or compiler was enabled.
+- **Open:** create and test a Worker-wide Access application, select the staging
+  endpoint, store the team domain/AUD, and establish regional/privacy
+  disclosure, operator/contact, incident path, and cost ceiling.
+- Full deployment evidence:
+  [`experiments/2026-07-21-cloudflare-private-staging.md`](experiments/2026-07-21-cloudflare-private-staging.md).
 - **Open:** confirm in private staging that Cloudflare exposes Content-Length
   for browser HTTP/2 uploads. Both gateway and Container intentionally reject a
   missing length today; the accepted stream is bounded and length-enforced

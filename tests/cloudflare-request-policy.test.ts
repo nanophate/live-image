@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+  SignJWT,
+  createLocalJWKSet,
+  exportJWK,
+  generateKeyPair,
+} from "jose";
 
 import {
   MAX_UPLOAD_BYTES,
@@ -42,13 +48,55 @@ test("Cloudflare request policy rejects method, media, length, size, and origin 
   );
 });
 
-test("private alpha requires a Cloudflare Access assertion by default", () => {
-  assert.equal(requireAccessAssertion(uploadRequest(), true, requestId)?.status, 401);
-  assert.equal(
-    requireAccessAssertion(uploadRequest({ "Cf-Access-Jwt-Assertion": "edge-validated-token" }), true, requestId),
-    null,
+test("private alpha verifies Cloudflare Access signature, issuer, audience, and expiry", async () => {
+  const issuer = "https://living-image.cloudflareaccess.com";
+  const audience = "living-image-policy";
+  const { privateKey, publicKey } = await generateKeyPair("RS256");
+  const { privateKey: wrongPrivateKey } = await generateKeyPair("RS256");
+  const publicJwk = await exportJWK(publicKey);
+  publicJwk.alg = "RS256";
+  publicJwk.kid = "test-key";
+  publicJwk.use = "sig";
+  const localJwks = createLocalJWKSet({ keys: [publicJwk] });
+  const sign = async (tokenIssuer = issuer, tokenAudience = audience, expiration: string | number = "5m") => new SignJWT({})
+    .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+    .setIssuedAt()
+    .setIssuer(tokenIssuer)
+    .setAudience(tokenAudience)
+    .setExpirationTime(expiration)
+    .sign(privateKey);
+  const verify = (request: Request, configuration = { audience, teamDomain: issuer }) => requireAccessAssertion(
+    request,
+    configuration,
+    requestId,
+    () => localJwks,
   );
-  assert.equal(requireAccessAssertion(uploadRequest(), false, requestId), null);
+
+  assert.equal((await verify(uploadRequest()))?.status, 401);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": await sign() }))), null);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": "forged-token" })))?.status, 403);
+  const wrongKeyToken = await new SignJWT({})
+    .setProtectedHeader({ alg: "RS256", kid: "test-key" })
+    .setIssuedAt()
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setExpirationTime("5m")
+    .sign(wrongPrivateKey);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": wrongKeyToken })))?.status, 403);
+  const unsupportedAlgorithmToken = await new SignJWT({})
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setExpirationTime("5m")
+    .sign(new TextEncoder().encode("not-an-access-signing-key-123456"));
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": unsupportedAlgorithmToken })))?.status, 403);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": await sign(issuer, "wrong-audience") })))?.status, 403);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": await sign("https://wrong.cloudflareaccess.com") })))?.status, 403);
+  assert.equal((await verify(uploadRequest({ "Cf-Access-Jwt-Assertion": await sign(issuer, audience, 0) })))?.status, 403);
+  assert.equal((await verify(uploadRequest(), { audience: "", teamDomain: issuer }))?.status, 503);
+  assert.equal((await verify(uploadRequest(), { audience, teamDomain: "https://attacker.example" }))?.status, 503);
+  assert.equal((await verify(uploadRequest(), { audience, teamDomain: "https://living-image.cloudflareaccess.com:8443" }))?.status, 503);
 });
 
 test("Cloudflare gateway bounds filenames and forwards only compiler headers", () => {

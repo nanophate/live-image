@@ -3,6 +3,7 @@
   "name": "living-image",
   "main": "./deploy/cloudflare/worker.ts",
   "compatibility_date": "2026-07-21",
+  "preview_urls": false,
   "workers_dev": false,
   "assets": {
     "directory": "./dist",
@@ -37,7 +38,6 @@
     }
   ],
   "vars": {
-    "HOSTED_COMPILER_ENABLED": "false",
-    "REQUIRE_ACCESS_JWT": "true"
+    "HOSTED_COMPILER_ENABLED": "false"
   }
 }

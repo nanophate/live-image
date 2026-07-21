@@ -1,6 +1,6 @@
 # Progress checkpoints
 
-Current branch: `codex/product-demo-recording`
+Current branch: `codex/cloudflare-private-staging`
 
 | Commit / PR | Checkpoint | Evidence |
 | --- | --- | --- |

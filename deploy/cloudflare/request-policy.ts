@@ -1,3 +1,9 @@
+import {
+  createRemoteJWKSet,
+  jwtVerify,
+  type JWTVerifyGetKey,
+} from "jose";
+
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 const ALLOWED_MEDIA_TYPES = new Set(["image/png", "image/jpeg"]);
@@ -13,14 +19,72 @@ export function json(status: number, body: Record<string, unknown>, requestId?: 
   return Response.json(body, { status, headers });
 }
 
-export function requireAccessAssertion(
+interface AccessConfiguration {
+  audience?: string;
+  teamDomain?: string;
+}
+
+type JwksFactory = (url: URL) => JWTVerifyGetKey;
+
+let cachedRemoteJwks: { issuer: string; keys: JWTVerifyGetKey } | undefined;
+
+function accessIssuer(teamDomain: string | undefined): string | null {
+  if (!teamDomain) return null;
+  try {
+    const url = new URL(teamDomain);
+    if (
+      url.protocol !== "https:"
+      || url.username
+      || url.password
+      || url.port
+      || url.pathname !== "/"
+      || url.search
+      || url.hash
+      || !url.hostname.endsWith(".cloudflareaccess.com")
+    ) {
+      return null;
+    }
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function accessJwks(issuer: string, factory?: JwksFactory): JWTVerifyGetKey {
+  const certs = new URL("/cdn-cgi/access/certs", issuer);
+  if (factory) return factory(certs);
+  if (!cachedRemoteJwks || cachedRemoteJwks.issuer !== issuer) {
+    cachedRemoteJwks = { issuer, keys: createRemoteJWKSet(certs) };
+  }
+  return cachedRemoteJwks.keys;
+}
+
+export async function requireAccessAssertion(
   request: Request,
-  required: boolean,
+  configuration: AccessConfiguration,
   requestId: string,
-): Response | null {
-  if (!required) return null;
-  if (request.headers.get("Cf-Access-Jwt-Assertion")) return null;
-  return json(401, { status: "error", message: "Cloudflare Access authentication is required" }, requestId);
+  jwksFactory?: JwksFactory,
+): Promise<Response | null> {
+  const issuer = accessIssuer(configuration.teamDomain);
+  const audience = configuration.audience?.trim();
+  if (!issuer || !audience) {
+    return json(503, { status: "error", message: "Cloudflare Access authentication is not configured" }, requestId);
+  }
+  const token = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (!token) {
+    return json(401, { status: "error", message: "Cloudflare Access authentication is required" }, requestId);
+  }
+  try {
+    const jwks = accessJwks(issuer, jwksFactory);
+    await jwtVerify(token, jwks, {
+      algorithms: ["RS256"],
+      audience,
+      issuer,
+    });
+    return null;
+  } catch {
+    return json(403, { status: "error", message: "Cloudflare Access authentication is invalid" }, requestId);
+  }
 }
 
 export function validateCompileRequest(request: Request, requestId: string): Response | null {

@@ -123,11 +123,22 @@ from the host. At a local 1 CPU / 6 GiB limit, the final HTTP path measured
 10.06 seconds on its first request and 4.95 seconds warm, with byte-identical
 artifacts. This makes standard-2 a private-staging candidate, not a confirmed
 Cloudflare SLO; actual provider timing and cost remain required.
-The checked-in deployment is deliberately inaccessible: `workers_dev` is off,
-there is no public route, the compile flag is false, and the gateway expects a
-Cloudflare Access assertion. Do not run `npm run deploy:cloudflare` until a
-custom route protected by Cloudflare Access, the Workers Paid account, quotas,
-privacy copy, cost alerts, and the enable flag are configured.
+The checked-in deployment is deliberately inaccessible: `workers_dev` and
+preview URLs are off, there is no public route, and the compile flag is false.
+The first disabled deployment may register the Worker and private Container
+image without exposing a target. Before adding a route or enabling compilation,
+protect the complete Worker with a Cloudflare Access application. Then store
+its values interactively (never on a command line or in Git):
+
+```bash
+nodenv exec npx wrangler secret put ACCESS_TEAM_DOMAIN
+nodenv exec npx wrangler secret put ACCESS_POLICY_AUD
+```
+
+The gateway verifies the Access JWT's RS256 signature, issuer, application AUD,
+and expiry using the account JWKS. A missing or invalid Access configuration
+fails closed. Keep compilation disabled until the Access login, anonymous deny,
+JWT rejection, quotas, privacy copy, cost alerts, and rollback have been tested.
 The implementation and Cloudflare/Hugging Face comparison are recorded in
 [`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
 

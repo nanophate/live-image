@@ -9,10 +9,17 @@ import {
 } from "./request-policy.js";
 
 interface Env {
+  ACCESS_POLICY_AUD?: string;
+  ACCESS_TEAM_DOMAIN?: string;
   ASSETS: Fetcher;
   COMPILER: DurableObjectNamespace<CompilerContainer>;
   HOSTED_COMPILER_ENABLED?: string;
-  REQUIRE_ACCESS_JWT?: string;
+}
+
+function compilerEnabled(env: Env): boolean {
+  return env.HOSTED_COMPILER_ENABLED === "true"
+    && Boolean(env.ACCESS_POLICY_AUD)
+    && Boolean(env.ACCESS_TEAM_DOMAIN);
 }
 
 export class CompilerContainer extends Container {
@@ -29,7 +36,7 @@ export default {
     if (url.pathname === "/api/config") {
       return json(200, {
         compiler: "hosted",
-        enabled: env.HOSTED_COMPILER_ENABLED === "true",
+        enabled: compilerEnabled(env),
         samplesAvailable: false,
         provider: "cloudflare",
       });
@@ -41,14 +48,21 @@ export default {
     }
 
     const requestId = crypto.randomUUID();
-    if (env.HOSTED_COMPILER_ENABLED !== "true") {
+    if (!compilerEnabled(env)) {
       return json(
         503,
         { status: "error", message: "Hosted compilation is not enabled for this deployment" },
         requestId,
       );
     }
-    const unauthorized = requireAccessAssertion(request, env.REQUIRE_ACCESS_JWT !== "false", requestId);
+    const unauthorized = await requireAccessAssertion(
+      request,
+      {
+        audience: env.ACCESS_POLICY_AUD,
+        teamDomain: env.ACCESS_TEAM_DOMAIN,
+      },
+      requestId,
+    );
     if (unauthorized) return unauthorized;
     const invalid = validateCompileRequest(request, requestId);
     if (invalid) return invalid;
