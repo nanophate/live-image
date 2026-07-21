@@ -96,7 +96,7 @@ product experience.
   Cloudflare Access assertion by default. Header presence is defense in depth;
   the future custom route must still be protected by an Access application that
   performs the actual token validation.
-- **Confirmed:** wrangler.jsonc fixes one standard-1 instance and max_instances
+- **Confirmed:** wrangler.jsonc fixes one standard-2 instance and max_instances
   at one. Container outbound access is disabled and idle sleep is five minutes.
 - **Confirmed:** Dockerfile uses Python 3.12, CPU PyTorch 2.2.2, torchvision
   0.17.2, a non-root UID, offline runtime, and baked model cache. It opens the
