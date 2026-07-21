@@ -123,3 +123,30 @@ PNG selected locally
 - **Open:** this local Studio is not a hosted multi-user compiler service. A
   remote service would require separate authentication, isolation, abuse,
   storage, cost, privacy, and model-redistribution decisions.
+
+## Compiler feedback update — 2026-07-21
+
+- **Decision:** the dedicated Compiler page shows a centered loading card as
+  soon as image processing begins. It uses an indeterminate animated bar and
+  elapsed seconds rather than a fabricated completion percentage because the
+  current synchronous Compiler API exposes no stage progress.
+- **Decision:** loading copy names the actual broad work—face, eye, mouth
+  analysis and character-file construction—and notes that the first model load
+  can take longer.
+- **Decision:** HTTP 422 is presented as `This image isn’t supported yet`,
+  `not supported`, and `no file created`. Detector reasons remain visible,
+  but internal status language such as `reject` is no longer the primary
+  product message.
+- **Decision:** reduced-motion users receive a static full progress track
+  instead of the sliding animation.
+- **Confirmed:** the loading layer is always removed through the compile
+  `finally` path on success, unsupported input, network/API failure, or source
+  preview failure.
+- **Confirmed:** the focused Chromium product suite proves that the loading
+  layer and progressbar are visible during a delayed compile, elapsed time
+  appears, unsupported copy and detector reasons replace it, and the loading
+  layer becomes hidden.
+- **Confirmed:** the complete Chromium suite remains green with 15 passes and
+  2 documented local-artifact skips after the feedback change.
+- **Confirmed:** this UI adds no dependency, asset, or license/provenance
+  surface. Existing license records and third-party notices remain unchanged.

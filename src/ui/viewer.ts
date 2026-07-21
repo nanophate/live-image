@@ -19,6 +19,8 @@ const status = requireElement<HTMLElement>("render-status");
 const name = requireElement<HTMLElement>("character-name");
 const meta = requireElement<HTMLElement>("character-meta");
 const qualityCard = requireElement<HTMLElement>("quality-card");
+const compileProgress = document.getElementById("compile-progress");
+const compileElapsed = document.getElementById("compile-elapsed");
 const compilerNote = requireElement<HTMLElement>("compiler-note");
 const deploymentLabel = requireElement<HTMLElement>("deployment-label");
 const fileButtonLabel = requireElement<HTMLElement>("file-button-label");
@@ -45,6 +47,7 @@ let showcaseAnimation: number | null = null;
 let finishShowcase: (() => void) | null = null;
 let restoreAutoIdleAfterShowcase: boolean | null = null;
 let busy = false;
+let compileProgressTimer: number | null = null;
 let compilerMode: "local" | "hosted" | "unavailable" = "unavailable";
 let compilerEnabled = false;
 let compilerConfigReady: Promise<void>;
@@ -143,6 +146,24 @@ function setBusy(nextBusy: boolean): void {
   resetButton.disabled = busy;
   for (const button of sampleButtons) button.disabled = busy;
   refreshCapabilityControls();
+}
+
+function startCompileProgress(): void {
+  if (!compileProgress || !compileElapsed) return;
+  if (compileProgressTimer !== null) window.clearInterval(compileProgressTimer);
+  const startedAt = performance.now();
+  compileProgress.hidden = false;
+  compileElapsed.textContent = "Starting…";
+  compileProgressTimer = window.setInterval(() => {
+    const elapsedSeconds = Math.max(1, Math.floor((performance.now() - startedAt) / 1000));
+    compileElapsed.textContent = `Working · ${elapsedSeconds}s elapsed`;
+  }, 500);
+}
+
+function stopCompileProgress(): void {
+  if (compileProgressTimer !== null) window.clearInterval(compileProgressTimer);
+  compileProgressTimer = null;
+  if (compileProgress) compileProgress.hidden = true;
 }
 
 function refreshCapabilityControls(): void {
@@ -273,14 +294,15 @@ async function compileImage(file: File): Promise<void> {
   currentManifest = null;
   setDownload(null);
   setBusy(true);
-  await showSourcePreview(file);
-  name.textContent = file.name.replace(/\.[^.]+$/u, "");
-  meta.textContent = compilerMode === "hosted"
-    ? "Uploading for automatic face, eye, iris, mouth, mesh, and quality analysis…"
-    : "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
-  status.textContent = "Compiling · first model load can take a while";
-  qualityCard.hidden = true;
+  startCompileProgress();
   try {
+    await showSourcePreview(file);
+    name.textContent = file.name.replace(/\.[^.]+$/u, "");
+    meta.textContent = compilerMode === "hosted"
+      ? "Uploading for automatic face, eye, iris, mouth, mesh, and quality analysis…"
+      : "Running automatic face, eye, iris, mouth, mesh, and quality analysis locally…";
+    status.textContent = "Compiling character…";
+    qualityCard.hidden = true;
     const response = await fetch("/api/compile", {
       method: "POST",
       headers: {
@@ -298,8 +320,8 @@ async function compileImage(file: File): Promise<void> {
     }
     if (response.status === 422 && parsed !== null) {
       renderRejectDiagnostic(qualityCard, parsed as { rejectionReasons?: string[]; warnings?: string[] });
-      status.textContent = "Not supported · no character file created";
-      meta.textContent = "Try a near-frontal anime portrait with a larger unobstructed face and both eyes visible.";
+      status.textContent = "This image isn’t supported yet";
+      meta.textContent = "No character file was created. Try a near-frontal anime portrait with a larger, unobstructed face and both eyes visible.";
       return;
     }
     if (!response.ok) {
@@ -322,6 +344,7 @@ async function compileImage(file: File): Promise<void> {
       ? (error as Error).message
       : (error as Error).message + ". Start this page with nodenv exec npm run studio.";
   } finally {
+    stopCompileProgress();
     setBusy(false);
     refreshCapabilityControls();
   }
@@ -409,6 +432,7 @@ recordButton.addEventListener("click", async () => {
 
 window.addEventListener("beforeunload", () => {
   stopShowcase();
+  stopCompileProgress();
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
   player.destroy();
 });

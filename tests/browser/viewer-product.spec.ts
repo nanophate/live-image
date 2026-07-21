@@ -144,6 +144,50 @@ test("hosted mode explains a non-JSON access-gateway rejection", async ({ page }
   await expect(page.locator("#character-meta")).toContainText("request access-test-1");
 });
 
+test("Compiler shows honest progress and a plain-language unsupported result", async ({ page }) => {
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        compiler: "hosted",
+        enabled: true,
+        authentication: "cloudflare-access",
+        samplesAvailable: false,
+        provider: "cloudflare",
+      }),
+    });
+  });
+  await page.route("**/api/compile", async (route) => {
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 1_800));
+    await route.fulfill({
+      status: 422,
+      contentType: "application/json",
+      body: JSON.stringify({
+        status: "reject",
+        rejectionReasons: ["no near-frontal anime face detected"],
+      }),
+    });
+  });
+
+  await page.goto("/compiler.html");
+  await page.locator("#file-input").setInputFiles({
+    name: "unsupported.png",
+    mimeType: "image/png",
+    buffer: readFileSync(resolve("fixtures/source/unsupported-no-face.png")),
+  });
+
+  await expect(page.locator("#compile-progress")).toBeVisible();
+  await expect(page.locator("#compile-progress strong")).toHaveText("Compiling character…");
+  await expect(page.getByRole("progressbar", { name: "Compilation in progress" })).toBeVisible();
+  await expect(page.locator("#render-status")).toHaveText("Compiling character…");
+  await expect(page.locator("#compile-elapsed")).toContainText("elapsed", { timeout: 2_000 });
+  await expect(page.locator("#render-status")).toHaveText("This image isn’t supported yet");
+  await expect(page.locator("#compile-progress")).toBeHidden();
+  await expect(page.locator("#quality-card .quality-head strong")).toHaveText("not supported");
+  await expect(page.locator("#quality-card")).toContainText("Nothing is broken");
+  await expect(page.locator("#quality-card")).toContainText("no near-frontal anime face detected");
+});
+
 test("Hugging Face hosted mode discloses provider processing and sensitive-image boundary", async ({ page }) => {
   await page.route("**/api/config", async (route) => {
     await route.fulfill({

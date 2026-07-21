@@ -17,6 +17,14 @@
       <section class="workspace">
         <div class="stage-panel">
           <canvas id="character-canvas" width="768" height="768" aria-label="Compiled character preview"></canvas>
+          <div class="compile-progress" id="compile-progress" role="status" aria-live="polite" hidden>
+            <div class="compile-progress-card">
+              <strong>Compiling character…</strong>
+              <p>Finding the face, eyes and mouth, then building the character file. The first run can take a little longer.</p>
+              <div class="compile-progress-track" role="progressbar" aria-label="Compilation in progress"><span></span></div>
+              <output id="compile-elapsed" aria-live="off">Starting…</output>
+            </div>
+          </div>
           <div class="stage-badge" id="render-status">Waiting for a source image</div>
         </div>
         <aside class="control-panel">
