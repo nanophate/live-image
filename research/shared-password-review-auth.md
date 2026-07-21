@@ -92,6 +92,10 @@ the compiler/model provenance.
   Worker's `401` JSON response. This confirms that bypassing Access did not make
   the application or APIs public; the Worker shared-password session remains
   the active gate.
+- **Confirmed (2026-07-22):** after deploying Worker version
+  `9327d84c-667e-45f3-93db-440268ba74e5` and loading the revised login page, the
+  project owner completed the shared-password browser login without the
+  cross-origin rejection or an Access OTP prompt.
 
 ## Open operational actions
 
@@ -101,7 +105,9 @@ the compiler/model provenance.
   authentication matrix (page redirect and API denial) passes.
 - **Confirmed:** Access OTP is disabled by an `Everyone` bypass policy; the
   Access application was retained for reversible rollback.
-- **Open:** confirm one fresh-browser correct-password session reaches Compiler,
-  Viewer, assets, and a compile request without an Access OTP prompt.
+- **Confirmed:** a fresh browser login accepts the correct shared password and
+  proceeds without an Access OTP prompt.
+- **Open:** complete one final judging-path smoke test covering Compiler upload,
+  generated `.limg`, Viewer load, and logout from the authenticated session.
 - **Open:** put the review URL and password only in Devpost's private judges
   field, then rotate or delete the password after judging.
