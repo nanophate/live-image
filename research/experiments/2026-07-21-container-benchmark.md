@@ -79,6 +79,19 @@ frontend directive was removed because no 1.7-only feature was used.
   investigate thread/runtime configuration and model alternatives, and compare
   a 2-vCPU target or Hugging Face CPU/GPU hardware with the same frozen input.
 
+## Follow-up
+
+- **Confirmed:** the stage/thread investigation was completed after this
+  baseline. PyTorch was sizing its pool from the 12-CPU Docker VM while the
+  process was constrained to 0.5 or 1 CPU.
+- **Confirmed:** the final one-thread image returned the same full `.limg` in
+  10.06 seconds on its first 1-CPU HTTP request and 4.95 seconds warm, with
+  byte-identical first/warm artifacts.
+- **Decision:** the standard-2 no-deploy decision immediately above is
+  superseded for private staging only. Standard-2 is now a plausible
+  authenticated measurement target; public deployment remains unauthorized.
+- Full evidence: [`2026-07-21-container-thread-profile.md`](2026-07-21-container-thread-profile.md).
+
 ## Limitations and next actions
 
 - **Confirmed:** these are local CPU-quota measurements, not Cloudflare

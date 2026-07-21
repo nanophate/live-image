@@ -1,7 +1,7 @@
 {
   "cases": [
     {
-      "artifactSha256": "acd2ae6a1c1c5cb034df7289869e6fecca8bd293b6fed3f38625de0f61858b21",
+      "artifactSha256": "b3462a65df3a7271aef35dcf72876db96ce58010c0cfd7bb4fc09369582bf884",
       "artifacts": {
         "limg": "artifacts/stevenburrow-sample1/stevenburrow-sample1.limg",
         "overlay": "overlays/stevenburrow-sample1/stevenburrow-sample1.png"
@@ -57,7 +57,7 @@
             "protectedLineCoverage": 0.07765606242496999,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000023,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999855,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -82,19 +82,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8313607603311539,
-          "eyeSymmetry": 0.7931141689009195,
-          "faceScale": 0.27098345947265623,
+          "eyeConfidence": 0.8313607931137086,
+          "eyeSymmetry": 0.793115782435905,
+          "faceScale": 0.2709835205078125,
           "faceScore": 0.999775230884552,
           "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9164047241210938,
           "minImageDimensionPixels": 1000,
-          "mouthConfidence": 0.8148298431516257,
+          "mouthConfidence": 0.814829568663065,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.8772929257988081,
+        "score": 0.87729306546264,
         "warnings": []
       },
       "result": "full",
@@ -102,7 +102,7 @@
       "sourceSha256": "d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831"
     },
     {
-      "artifactSha256": "73ab908c93a72286b14dbe24fc0e7e7bd5a5b89e7016397e4997cbe959fcd5c6",
+      "artifactSha256": "2603668c20f76f1a4c3943d8dc36c7473c8bf19e0fe27f3588694ef85bb35b07",
       "artifacts": {
         "limg": "artifacts/mcproject-manga-girl/mcproject-manga-girl.limg",
         "overlay": "overlays/mcproject-manga-girl/mcproject-manga-girl.png"
@@ -134,7 +134,7 @@
             "protectedLineCoverage": 0.11229885057471264,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000033,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999912,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -149,7 +149,7 @@
             "protectedLineCoverage": 0.09956546382013981,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.035000000000000454,
+            "semanticMeshMinimumAreaRatio": 0.035000000000000274,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -174,19 +174,19 @@
       "matched": false,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8341783945960755,
-          "eyeSymmetry": 0.8624707175538592,
-          "faceScale": 0.4696958368474787,
+          "eyeConfidence": 0.834185039647787,
+          "eyeSymmetry": 0.8624826346921243,
+          "faceScale": 0.4696957674893466,
           "faceScore": 0.9899850487709045,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.9052454233169556,
+          "meanLandmarkScore": 0.9052400588989258,
           "minImageDimensionPixels": 832,
-          "mouthConfidence": 0.9250444325677281,
+          "mouthConfidence": 0.9250657716901947,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.9138297128222923,
+        "score": 0.9138337994289085,
         "warnings": [
           "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
         ]
@@ -196,7 +196,7 @@
       "sourceSha256": "c724af25f948bc73080b4c94e1f21ebbd1540fdd8f9eb84a9b918c853a9c9b8b"
     },
     {
-      "artifactSha256": "033b9d323365ec5232e8f04f5d778bbca0d6ac93c06111848236feb34d2e7072",
+      "artifactSha256": "5c824c4cf54788615f5adce21fda4dd3c1f08a00d7acf3c9e579fcb85626f5b4",
       "artifacts": {
         "limg": "artifacts/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.limg",
         "overlay": "overlays/kitsuge-casual-avatar-00/kitsuge-casual-avatar-00.png"
@@ -242,7 +242,7 @@
             "protectedLineCoverage": 0.17796060832710048,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.035000000000000066,
+            "semanticMeshMinimumAreaRatio": 0.034999999999999934,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -268,12 +268,12 @@
       "matched": false,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.5156021010267238,
+          "eyeConfidence": 0.515602142004917,
           "eyeSymmetry": 0.4594968137849921,
           "faceScale": 0.4698583781719208,
           "faceScore": 0.998544454574585,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.268320232629776,
+          "meanLandmarkScore": 0.2683202028274536,
           "minImageDimensionPixels": 512,
           "mouthConfidence": 0.29153725504875183,
           "mouthLineConfidence": 0.0,
@@ -283,7 +283,7 @@
           "mean landmark confidence below 0.62",
           "eye geometry is too asymmetric for the near-frontal MVP"
         ],
-        "score": 0.5639981585618065,
+        "score": 0.5639981601264283,
         "warnings": [
           "blink and gaze disabled because eye confidence is below 0.70",
           "mouth control disabled because its landmarks or source line are unreliable",
@@ -295,7 +295,7 @@
       "sourceSha256": "652ccd346cc96adf42bed09080a92cffb1b50426393921b336729540f590293b"
     },
     {
-      "artifactSha256": "0363fc792b9ed609eddc3b6ced7191195c2b6bd506f0f054877b970662642f50",
+      "artifactSha256": "4b43dc8fb62a2db60600255fc39d0e3b8940a92e2af907f3a74f3ec65de1029a",
       "artifacts": {
         "limg": "artifacts/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.limg",
         "overlay": "overlays/jupitersdaughter-maid-neutral/jupitersdaughter-maid-neutral.png"
@@ -351,7 +351,7 @@
             "protectedLineCoverage": 0.24135681669928244,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000027,
+            "semanticMeshMinimumAreaRatio": 0.03500000000000031,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -376,21 +376,21 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.7678903759588933,
+          "eyeConfidence": 0.767890408741448,
           "eyeSymmetry": 0.9168838725065006,
           "faceScale": 0.18348115703226373,
           "faceScore": 0.9993385672569275,
           "irisSegmentationConfidence": 0.3893342008391735,
-          "meanLandmarkScore": 0.8949946165084839,
+          "meanLandmarkScore": 0.8949947357177734,
           "minImageDimensionPixels": 320,
-          "mouthConfidence": 0.7765403985223058,
+          "mouthConfidence": 0.7765403538188222,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.768975526625979
         },
         "rejectionReasons": [
           "face is too small for stable local deformation"
         ],
-        "score": 0.8555446129366663,
+        "score": 0.8555446441396979,
         "warnings": [
           "gaze disabled because an iris lacks one horizontal or one quarter vertical pixel of safe clearance"
         ]
@@ -400,7 +400,7 @@
       "sourceSha256": "dbcffaae6181bec6035f5729542e0e30c9287d02d4fe55359754b49261606242"
     },
     {
-      "artifactSha256": "d0d42a9f1f89fdbf83c6a104e26f882924ea41ee47029f251349f0b4498e9bf8",
+      "artifactSha256": "0a5bbff573133a2796f9b093d2956a3dc1a4ad57c0d38856113c4fd945960149",
       "artifacts": {
         "limg": "artifacts/zonked-painted-portrait/zonked-painted-portrait.limg",
         "overlay": "overlays/zonked-painted-portrait/zonked-painted-portrait.png"
@@ -432,27 +432,27 @@
             "protectedLineCoverage": 0.3008805031446541,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000144,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999909,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
           },
           {
             "baseEyeMethod": "telea-inpaint-v1",
-            "closedEyeCoverage": 0.25495495495495496,
+            "closedEyeCoverage": 0.25292792792792795,
             "closedEyeMedianFitResidual": 11.23046672270119,
             "closedEyeMethod": "affine-skin-fill-curve-v3",
             "closedEyeRetainedSamplePixels": 2775,
             "closedEyeUpperSamplesIncluded": false,
             "irisCoverage": 0.06518018018018018,
             "irisMethod": "ellipse-cage-telea-v1",
-            "irisSegmentationConfidence": 0.6633653219230563,
+            "irisSegmentationConfidence": 0.6616642309296871,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
-            "protectedLineCoverage": 0.4557657657657658,
+            "protectedLineCoverage": 0.4567117117117117,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999986,
+            "semanticMeshMinimumAreaRatio": 0.03500000000000057,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -477,19 +477,19 @@
       "matched": false,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.7049771702967736,
-          "eyeSymmetry": 0.7146083734273683,
+          "eyeConfidence": 0.7050008870162312,
+          "eyeSymmetry": 0.7144248679768678,
           "faceScale": 0.3789817979600694,
           "faceScore": 0.9977547526359558,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.8814598917961121,
+          "meanLandmarkScore": 0.8814843893051147,
           "minImageDimensionPixels": 1250,
-          "mouthConfidence": 0.8599012494087219,
+          "mouthConfidence": 0.8599161356687546,
           "mouthLineConfidence": 1.0,
-          "pupilConfidence": 0.5999656060616926
+          "pupilConfidence": 0.5999856169422916
         },
         "rejectionReasons": [],
-        "score": 0.8502557270014077,
+        "score": 0.8502506537256933,
         "warnings": [
           "gaze disabled because pupil confidence is below 0.60",
           "blink and gaze disabled because one or both iris/base-eye layers are unreliable"

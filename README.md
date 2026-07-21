@@ -107,10 +107,12 @@ The image downloads the reviewed detector weights during the build, verifies
 their frozen SHA-256 values, then starts offline as a non-root user. Check its
 readiness at [http://127.0.0.1:8788/healthz](http://127.0.0.1:8788/healthz).
 The verified local linux/amd64 image is approximately 1.65 GiB and uses roughly
-0.64 GiB after compilation. CPU latency, not memory, is the current blocker:
-local quota tests measured 81.24 seconds warm at 0.5 CPU and 38.89 seconds warm
-at 1 CPU. Do not treat the current image as a responsive hosted demo until the
-compiler is profiled/optimized or a higher-CPU/Hugging Face target is measured.
+0.55 GiB after compilation. The Compiler fixes PyTorch to one intra-op and one
+inter-op thread by default so cgroup-limited Containers do not size their pool
+from the host. At a local 1 CPU / 6 GiB limit, the final HTTP path measured
+10.06 seconds on its first request and 4.95 seconds warm, with byte-identical
+artifacts. This makes standard-2 a private-staging candidate, not a confirmed
+Cloudflare SLO; actual provider timing and cost remain required.
 The checked-in deployment is deliberately inaccessible: `workers_dev` is off,
 there is no public route, the compile flag is false, and the gateway expects a
 Cloudflare Access assertion. Do not run `npm run deploy:cloudflare` until a

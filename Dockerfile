@@ -22,7 +22,9 @@ COPY compiler /app/compiler
 RUN python -m compiler.preload_models
 
 ENV HF_HUB_OFFLINE=1 \
-    HF_HUB_DISABLE_TELEMETRY=1
+    HF_HUB_DISABLE_TELEMETRY=1 \
+    LIVING_IMAGE_TORCH_THREADS=1 \
+    LIVING_IMAGE_TORCH_INTEROP_THREADS=1
 
 RUN useradd --create-home --uid 10001 living-image \
     && chmod -R a=rX /app /opt/living-image

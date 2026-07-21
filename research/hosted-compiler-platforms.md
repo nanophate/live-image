@@ -119,7 +119,7 @@ product experience.
 - **Confirmed:** Wrangler 4.112.0 dry-run recognizes 17 static assets, the
   COMPILER Durable Object, the CompilerContainer, and the disabled-by-default
   hosted compiler flag.
-- **Confirmed:** 45 Python tests pass, including hosted health, route-surface,
+- **Confirmed:** 48 Python tests pass, including hosted health, route-surface,
   media rejection, short-body rejection, SIGTERM unwind, request ID, and .limg
   response tests.
 - **Confirmed:** 55 TypeScript tests pass and the production Vite build succeeds,
@@ -147,12 +147,27 @@ product experience.
   seconds. Loaded memory was about 594 MiB. Under a standard-2-shaped 1 CPU /
   6 GiB limit, warm compile took 38.89 seconds and a no-face reject took 25.52
   seconds; memory reached about 638 MiB.
-- **Decision:** neither standard-1 nor standard-2 is ready for the intended
-  review experience at these measured local CPU quotas. Do not pay-deploy the
-  current image until profiling/optimization and a 2-vCPU or Hugging Face
-  comparison are complete.
+- **Decision (superseded by the thread-control follow-up below):** neither
+  standard-1 nor standard-2 is ready for the intended review experience at
+  these measured local CPU quotas. Do not pay-deploy the current image until
+  profiling/optimization and a 2-vCPU or Hugging Face comparison are complete.
 - **Open:** actual Cloudflare Container CPU behavior remains unconfirmed; the
   local quota experiment is a screening result, not a provider benchmark.
+- **Confirmed:** follow-up profiling found the Docker VM exposed 12 CPUs to
+  PyTorch despite the 0.5/1 CPU quotas. Setting the Compiler default to one
+  intra-op and one inter-op thread reduced the 1-CPU profiled warm path from
+  63.72 to 9.54 seconds. The final real HTTP path measured 10.06 seconds first
+  and 4.95 seconds warm at 1 CPU, with byte-identical artifacts and about 550
+  MiB loaded memory.
+- **Confirmed:** the reproducible thread default preserves the public 12/12
+  status/capability matrix and the intentionally unchanged 2/5 external
+  hold-out boundary. Two runs of each report were byte-identical.
+- **Decision:** the earlier standard-2 no-deploy screening decision is
+  superseded for authenticated private staging. standard-2 is now the first
+  provider measurement candidate; this does not authorize billing or a route.
+- **Decision:** standard-1 remains a comparison because its one-thread profile
+  took 14.77 seconds at 0.5 CPU. A 2-CPU/2-thread profile took 7.04 seconds warm,
+  so higher CPU is not yet justified before real provider measurements.
 
 ## Security, privacy, and operations gates
 

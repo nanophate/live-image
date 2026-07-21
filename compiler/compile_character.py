@@ -60,6 +60,23 @@ class DetectorRuntime:
 def load_detector_runtime(offline: bool, flip_test: bool) -> DetectorRuntime:
     if offline:
         os.environ["HF_HUB_OFFLINE"] = "1"
+    thread_value = os.environ.get("LIVING_IMAGE_TORCH_THREADS", "1")
+    interop_value = os.environ.get("LIVING_IMAGE_TORCH_INTEROP_THREADS", "1")
+    try:
+        thread_count = int(thread_value)
+        interop_count = int(interop_value)
+    except ValueError as error:
+        raise RuntimeError("Living Image PyTorch thread limits must be positive integers") from error
+    if thread_count < 1 or interop_count < 1:
+        raise RuntimeError("Living Image PyTorch thread limits must be positive integers")
+    import torch
+
+    torch.set_num_threads(thread_count)
+    if torch.get_num_interop_threads() != interop_count:
+        try:
+            torch.set_num_interop_threads(interop_count)
+        except RuntimeError as error:
+            raise RuntimeError("PyTorch interop threads must be configured before inference") from error
     detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
     model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
     digests = {name: sha256_file(path) for name, path in model_paths.items()}

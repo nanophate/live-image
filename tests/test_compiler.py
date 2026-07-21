@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,6 +14,7 @@ import numpy as np
 from compiler import __version__
 from compiler.compile_character import (
     DetectorRuntime,
+    EXPECTED_MODEL_SHA256,
     assess_quality,
     closed_eye_corrective_layer,
     compile_eye,
@@ -28,6 +30,68 @@ from compiler.compile_character import (
 
 
 class CompilerGeometryTests(unittest.TestCase):
+    def test_detector_runtime_defaults_to_reproducible_single_thread(self) -> None:
+        with (
+            mock.patch.dict(os.environ, {}, clear=True),
+            mock.patch("torch.set_num_threads") as set_threads,
+            mock.patch("torch.get_num_interop_threads", return_value=12),
+            mock.patch("torch.set_num_interop_threads") as set_interop_threads,
+            mock.patch("compiler.compile_character.create_detector", return_value=object()),
+            mock.patch(
+                "compiler.compile_character.get_checkpoint_path",
+                side_effect=lambda name: Path(name),
+            ),
+            mock.patch(
+                "compiler.compile_character.sha256_file",
+                side_effect=lambda path: EXPECTED_MODEL_SHA256[path.name],
+            ),
+        ):
+            runtime = load_detector_runtime(False, False)
+        set_threads.assert_called_once_with(1)
+        set_interop_threads.assert_called_once_with(1)
+        self.assertEqual(runtime.digests, EXPECTED_MODEL_SHA256)
+
+    def test_detector_runtime_applies_explicit_container_thread_limit(self) -> None:
+        with (
+            mock.patch.dict(
+                os.environ,
+                {
+                    "LIVING_IMAGE_TORCH_THREADS": "1",
+                    "LIVING_IMAGE_TORCH_INTEROP_THREADS": "1",
+                },
+            ),
+            mock.patch("torch.set_num_threads") as set_threads,
+            mock.patch("torch.get_num_interop_threads", return_value=12),
+            mock.patch("torch.set_num_interop_threads") as set_interop_threads,
+            mock.patch("compiler.compile_character.create_detector", return_value=object()),
+            mock.patch(
+                "compiler.compile_character.get_checkpoint_path",
+                side_effect=lambda name: Path(name),
+            ),
+            mock.patch(
+                "compiler.compile_character.sha256_file",
+                side_effect=lambda path: EXPECTED_MODEL_SHA256[path.name],
+            ),
+        ):
+            runtime = load_detector_runtime(False, False)
+        set_threads.assert_called_once_with(1)
+        set_interop_threads.assert_called_once_with(1)
+        self.assertEqual(runtime.digests, EXPECTED_MODEL_SHA256)
+
+    def test_detector_runtime_rejects_invalid_thread_limit(self) -> None:
+        for variable in ("LIVING_IMAGE_TORCH_THREADS", "LIVING_IMAGE_TORCH_INTEROP_THREADS"):
+            for value in ("0", "not-an-integer"):
+                with self.subTest(variable=variable, value=value), mock.patch.dict(
+                    os.environ,
+                    {
+                        "LIVING_IMAGE_TORCH_THREADS": "1",
+                        "LIVING_IMAGE_TORCH_INTEROP_THREADS": "1",
+                        variable: value,
+                    },
+                ):
+                    with self.assertRaisesRegex(RuntimeError, "positive integers"):
+                        load_detector_runtime(False, False)
+
     def test_detector_runtime_rejects_unreviewed_weight_drift(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             checkpoint = Path(temporary) / "model.safetensors"
