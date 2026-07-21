@@ -20,7 +20,7 @@ networkx==3.6.1
 numpy==1.26.4
 opencv-python-headless==4.10.0.84
 packaging==26.2
-pillow==12.2.0
+pillow==12.3.0
 PyYAML==6.0.3
 safetensors==0.8.0
 sympy==1.14.0
