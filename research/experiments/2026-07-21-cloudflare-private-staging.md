@@ -102,6 +102,8 @@ before attaching any external route.
   Worker upload with the Compiler still disabled, and the alpha
   `wrangler check startup` analysis completes successfully. The full Chromium
   product suite also passes 14 tests with 2 documented local-only skips.
+  `npm audit --omit=dev` reports zero known vulnerabilities in the production
+  dependency graph after adding jose 6.2.3.
 - **Decision:** `ACCESS_TEAM_DOMAIN` and `ACCESS_POLICY_AUD` will be stored with
   interactive Wrangler secrets only after the Access application exists. They
   are not committed as variables or passed on a command line.
