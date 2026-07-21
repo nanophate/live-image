@@ -2,9 +2,8 @@
 
 Date: 2026-07-21
 
-Status: Access-protected workers.dev staging URL enabled and anonymously
-verified; hosted Compiler remains disabled and the approved OTP session is
-awaiting owner completion
+Status: Access-protected workers.dev staging URL enabled and verified both
+anonymously and with the approved OTP identity; hosted Compiler remains disabled
 
 ## Purpose
 
@@ -173,9 +172,24 @@ before attaching any external route.
   Private Staging`, accepted only the policy email used for this test, sent a
   one-time code, and reached the six-digit verification form. The code expires
   after 10 minutes and is not accessible to the project or recorded here.
-- **Open:** the owner still needs to complete the OTP form so the authenticated
-  Viewer, `/api/config`, exact allow policy, and live origin JWT validation can
-  be observed end to end.
+- **Confirmed:** after the owner completed the OTP form, the same URL rendered
+  the authenticated `Living Image Player` instead of the Access login page. It
+  offered local `Open .limg` playback and displayed `Hosted compilation is
+  disabled for this deployment. Existing .limg files still play entirely in
+  the browser.`
+- **Confirmed:** `src/ui/viewer.ts` only displays that hosted-disabled message
+  after `/api/config` returns a valid hosted configuration with `enabled:
+  false`; its fetch-failure path displays a different viewer-only message.
+  Together with the authenticated live UI, this confirms the protected config
+  request succeeded and the deployed flag remained false without starting a
+  compile.
+- **Confirmed:** Cloudflare Access authentication logs displayed two Allowed
+  Self-Hosted events for `Living Image Private Staging` and the single exact
+  policy email. The dashboard rendered timestamps `Jul 21, 2026 09:55:07 PM`
+  and `Jul 21, 2026 09:55:36 PM` without an explicit timezone label, and zero
+  Blocked events in the selected 12-hour window. This confirms the approved
+  identity reached the intended application through Access; it does not replace
+  a separate unauthorized-identity test.
 - **Confirmed:** after endpoint activation, Container application
   `living-image-compilercontainer` remained `ready` with health `active: 0`,
   `assigned: 0`, and `healthy: 1`; its private-network image digest remained
@@ -184,10 +198,9 @@ before attaching any external route.
 
 ## Remaining rollout gates
 
-- Complete the approved one-time-PIN browser session, then verify the Viewer,
-  `/api/config`, exact allow policy, and Access audit logs while the Compiler
-  remains disabled. Anonymous denial is confirmed; a separate unauthorized
-  identity check remains open.
+- Test a separate unauthorized identity and confirm it cannot receive an
+  application session. Anonymous denial, approved OTP access, the hosted-disabled
+  Viewer/config state, and the corresponding Access audit events are confirmed.
 - Verify the live origin rejects forged, missing, expired, wrong-issuer, and
   wrong-AUD assertions wherever edge Access does not intercept first.
 - Only then change `HOSTED_COMPILER_ENABLED` to true and run one ignored local
