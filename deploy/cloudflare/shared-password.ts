@@ -161,3 +161,8 @@ export function sameOriginPost(request: Request): boolean {
   if (origin) return origin === new URL(request.url).origin;
   return request.headers.get("Sec-Fetch-Site") === "same-origin";
 }
+
+export function sameOriginLoginPost(request: Request): boolean {
+  if (request.headers.get("Origin") !== "null") return sameOriginPost(request);
+  return request.method === "POST" && request.headers.get("Sec-Fetch-Site") === "same-origin";
+}

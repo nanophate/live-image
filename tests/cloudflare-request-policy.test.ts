@@ -26,6 +26,7 @@ import {
   expiredSessionCookie,
   passwordMatches,
   safeReturnPath,
+  sameOriginLoginPost,
   sameOriginPost,
   sessionCookie,
   verifyReviewSession,
@@ -188,6 +189,22 @@ test("shared review login accepts only same-origin posts and safe return paths",
     method: "POST",
     headers: { "Sec-Fetch-Site": "same-origin" },
   })), true);
+  assert.equal(sameOriginLoginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "null", "Sec-Fetch-Site": "same-origin" },
+  })), true);
+  assert.equal(sameOriginLoginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "null", "Sec-Fetch-Site": "cross-site" },
+  })), false);
+  assert.equal(sameOriginLoginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "null" },
+  })), false);
+  assert.equal(sameOriginPost(new Request(sameOrigin.url, {
+    method: "POST",
+    headers: { Origin: "null", "Sec-Fetch-Site": "same-origin" },
+  })), false);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, { method: "POST" })), false);
   assert.equal(sameOriginPost(new Request(sameOrigin.url, {
     method: "POST",
