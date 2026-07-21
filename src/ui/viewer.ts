@@ -52,6 +52,7 @@ interface CompilerConfig {
   compiler: "local" | "hosted";
   enabled: boolean;
   samplesAvailable: boolean;
+  provider?: "cloudflare" | "hugging-face";
 }
 
 async function loadCompilerConfig(): Promise<void> {
@@ -71,7 +72,9 @@ async function loadCompilerConfig(): Promise<void> {
     fileButtonLabel.textContent = "Open PNG or .limg";
     if (config.compiler === "hosted") {
       deploymentLabel.textContent = "Hosted Compiler / Runtime";
-      compilerNote.textContent = "PNG and JPEG files are sent to the private alpha compiler. The app does not save source images or .limg files to application storage; use only approved test images during alpha.";
+      compilerNote.textContent = config.provider === "hugging-face"
+        ? "PNG and JPEG files are sent to the compiler hosted by Hugging Face. Living Image does not write source images or .limg files to application storage, but the provider may process network and operational logs. Do not upload sensitive images."
+        : "PNG and JPEG files are sent to the private alpha compiler. The app does not save source images or .limg files to application storage; use only approved test images during alpha.";
     } else {
       deploymentLabel.textContent = "Local Studio / Runtime";
       compilerNote.innerHTML = "PNG compilation runs on this machine. The first online run may download reviewed detector weights; <code>studio:offline</code> requires them to be cached.";

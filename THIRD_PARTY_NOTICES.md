@@ -20,6 +20,11 @@ No third-party package is required by the generated browser runtime at frame
 time. Playwright, Chromium, and FFmpeg are development/CI-only and are not
 copied into the Viewer build or release artifacts.
 
+The Hugging Face target builds that Viewer in a pinned Node.js 24.18.0
+bookworm-slim stage using npm 11.16.0. Node.js and npm are MIT-licensed. The
+Node/Debian build stage is not present in either final Python runtime image;
+only the generated `dist` files are copied into the Hugging Face target.
+
 ## Hosted deployment tooling
 
 - @cloudflare/containers 0.3.0 — ISC License —

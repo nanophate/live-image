@@ -1,3 +1,13 @@
+---
+title: Living Image
+emoji: 🌱
+colorFrom: indigo
+colorTo: cyan
+sdk: docker
+app_port: 8080
+startup_duration_timeout: 30m
+---
+
 # Living Image
 
 Living Image compiles one near-frontal anime-style portrait into a portable,
@@ -88,7 +98,7 @@ The Viewer still accepts an existing `.limg` without the Python compile
 endpoint. Details and the verified security/recording boundary are in
 [`research/product-studio-and-recording.md`](research/product-studio-and-recording.md).
 
-## Validate the hosted compiler scaffold
+## Validate the hosted compiler targets
 
 The hosted design keeps the Viewer and upload flow on one origin: Worker Assets
 serve the browser build, while only `/api/compile` reaches a private Python
@@ -99,8 +109,8 @@ deployment or billing is triggered by these checks.
 nodenv exec npm run build:worker
 nodenv exec npm run check:cloudflare
 
-docker build --platform linux/amd64 -t living-image-compiler:local .
-docker run --rm -p 8788:8080 living-image-compiler:local
+nodenv exec npm run docker:build:cloudflare
+docker run --rm -p 8788:8080 living-image:cloudflare
 ```
 
 The image downloads the reviewed detector weights during the build, verifies
@@ -120,6 +130,32 @@ custom route protected by Cloudflare Access, the Workers Paid account, quotas,
 privacy copy, cost alerts, and the enable flag are configured.
 The implementation and Cloudflare/Hugging Face comparison are recorded in
 [`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
+
+The same Dockerfile also has a Hugging Face target. It adds only the generated
+Viewer files to the shared Compiler runtime and serves the Viewer plus
+`/api/compile` on one origin:
+
+```bash
+nodenv exec npm run docker:build:huggingface
+docker run --rm -p 8789:8080 \
+  -e HOSTED_COMPILER_ENABLED=true \
+  -e PUBLIC_ORIGIN=http://127.0.0.1:8789 \
+  living-image:huggingface
+```
+
+Open [http://127.0.0.1:8789/viewer.html](http://127.0.0.1:8789/viewer.html).
+For a private Hugging Face Docker Space, the README metadata above selects port
+8080 and the platform-provided `SPACE_HOST` supplies the trusted public origin;
+set `HOSTED_COMPILER_ENABLED=true` only after reviewing the Space visibility.
+The app rejects cross-origin compilation, serves files only from generated
+`dist`, serializes inference with a busy `429`, and does not include fixture
+source images in either target.
+
+Do not make the Space public yet. OS/Python package notices, wheel hashes, an
+image SBOM, provider privacy/abuse limits, and the detector training-data
+provenance decision remain release gates. The dual-target implementation and
+local evidence are in
+[`research/experiments/2026-07-21-dual-target-container-validation.md`](research/experiments/2026-07-21-dual-target-container-validation.md).
 
 ## Run the engineering proof
 

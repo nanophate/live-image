@@ -18,6 +18,8 @@
     "check:cloudflare-config": "WRANGLER_WRITE_LOGS=0 wrangler deploy --dry-run --containers-rollout=none",
     "check:cloudflare": "npm run build && npm run build:worker && npm run check:cloudflare-config",
     "deploy:cloudflare": "npm run build && npm run build:worker && wrangler deploy",
+    "docker:build:cloudflare": "docker build --platform linux/amd64 --target living-image-cloudflare -t living-image:cloudflare .",
+    "docker:build:huggingface": "docker build --platform linux/amd64 --target living-image-huggingface -t living-image:huggingface .",
     "test:ts": "tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js",
     "test:browser": "playwright test",
     "test:py": "PYTHONPATH=. .venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v",

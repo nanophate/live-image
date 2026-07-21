@@ -119,7 +119,7 @@ product experience.
 - **Confirmed:** Wrangler 4.112.0 dry-run recognizes 17 static assets, the
   COMPILER Durable Object, the CompilerContainer, and the disabled-by-default
   hosted compiler flag.
-- **Confirmed:** 48 Python tests pass, including hosted health, route-surface,
+- **Confirmed:** 53 Python tests pass, including hosted health, route-surface,
   media rejection, short-body rejection, SIGTERM unwind, request ID, and .limg
   response tests.
 - **Confirmed:** 55 TypeScript tests pass and the production Vite build succeeds,
@@ -168,6 +168,25 @@ product experience.
 - **Decision:** standard-1 remains a comparison because its one-thread profile
   took 14.77 seconds at 0.5 CPU. A 2-CPU/2-thread profile took 7.04 seconds warm,
   so higher CPU is not yet justified before real provider measurements.
+
+## Dual-target follow-up
+
+- **Confirmed:** one pinned multi-stage Dockerfile now builds an API-only
+  `living-image-cloudflare` target and a same-origin Viewer + Compiler
+  `living-image-huggingface` target over the same exact Python/model layers.
+- **Confirmed:** the Hugging Face target serves only generated `dist`, requires
+  exact `SPACE_HOST`/`PUBLIC_ORIGIN` Host and Origin matching, defaults compile
+  off, returns 429 while inference is busy, and does not application-log client
+  request metadata.
+- **Confirmed:** both real linux/amd64 target containers returned the same
+  2,498,815-byte full `.limg`, SHA-256
+  `d42c7f9f0ba7424537793e422fdd332b13eec16a4b69c52b2166c727c376fe58`.
+- **Decision:** benchmark a private Hugging Face Space before deciding whether
+  the free CPU path should become the review demo. Do not publish the image
+  until wheel hashes, notices, SBOM, privacy/abuse controls, and the existing
+  detector-provenance product decision are complete.
+- Full evidence:
+  [`experiments/2026-07-21-dual-target-container-validation.md`](experiments/2026-07-21-dual-target-container-validation.md).
 
 ## Security, privacy, and operations gates
 

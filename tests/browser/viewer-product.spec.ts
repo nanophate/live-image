@@ -138,3 +138,23 @@ test("hosted mode explains a non-JSON access-gateway rejection", async ({ page }
   await expect(page.locator("#character-meta")).toContainText("Hosted compiler returned HTTP 401");
   await expect(page.locator("#character-meta")).toContainText("request access-test-1");
 });
+
+test("Hugging Face hosted mode discloses provider processing and sensitive-image boundary", async ({ page }) => {
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        compiler: "hosted",
+        enabled: true,
+        samplesAvailable: false,
+        provider: "hugging-face",
+      }),
+    });
+  });
+
+  await page.goto("/viewer.html");
+  await expect(page.locator("#deployment-label")).toHaveText("Hosted Compiler / Runtime");
+  await expect(page.locator("#compiler-note")).toContainText("hosted by Hugging Face");
+  await expect(page.locator("#compiler-note")).toContainText("provider may process network and operational logs");
+  await expect(page.locator("#compiler-note")).toContainText("Do not upload sensitive images");
+});

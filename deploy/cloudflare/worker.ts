@@ -31,6 +31,7 @@ export default {
         compiler: "hosted",
         enabled: env.HOSTED_COMPILER_ENABLED === "true",
         samplesAvailable: false,
+        provider: "cloudflare",
       });
     }
     if (url.pathname !== "/api/compile") {
