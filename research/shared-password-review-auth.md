@@ -54,9 +54,10 @@ the compiler/model provenance.
   Fetch Metadata also fails.
 - **Decision:** login attempts are limited to five per minute and compilation to
   six per minute per edge key before Container startup.
-- **Decision:** deploy password mode while Access still protects the hostname.
-  Remove Access only after signed-out, wrong-password, correct-password, asset,
-  Viewer, and compile checks pass.
+- **Decision:** deploy password mode while Access still protects the hostname,
+  then bypass (rather than delete) the Access application once the Worker gate
+  is independently observable. Keeping the application and its previous allow
+  policy makes rollback straightforward.
 
 ## Verification
 
@@ -69,13 +70,25 @@ the compiler/model provenance.
 - **Confirmed:** `npm run check:cloudflare` recognizes both rate-limit bindings,
   Worker-first assets, generated environment types, and the Container in a dry
   run.
+- **Confirmed (2026-07-22):** Cloudflare Access policy
+  `Bypass Access for shared-password judging` applies to `Everyone`; the Access
+  application was saved successfully. An anonymous request to
+  `/compiler.html` now receives the Worker's `303` redirect to
+  `/auth/login?next=%2Fcompiler.html`, rather than an Access OTP redirect.
+- **Confirmed (2026-07-22):** an anonymous request to `/api/config` receives the
+  Worker's `401` JSON response. This confirms that bypassing Access did not make
+  the application or APIs public; the Worker shared-password session remains
+  the active gate.
 
 ## Open operational actions
 
-- **Open:** set both secrets interactively without printing them to logs or
-  placing them in shell arguments.
-- **Open:** deploy password mode while Access remains enabled and run the live
-  authentication matrix.
-- **Open:** disable Access only after the Worker gate is independently confirmed.
+- **Confirmed:** both secrets were set interactively without committing or
+  logging their values.
+- **Confirmed:** password mode is deployed and the anonymous half of the live
+  authentication matrix (page redirect and API denial) passes.
+- **Confirmed:** Access OTP is disabled by an `Everyone` bypass policy; the
+  Access application was retained for reversible rollback.
+- **Open:** confirm one fresh-browser correct-password session reaches Compiler,
+  Viewer, assets, and a compile request without an Access OTP prompt.
 - **Open:** put the review URL and password only in Devpost's private judges
   field, then rotate or delete the password after judging.
