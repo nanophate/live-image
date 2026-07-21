@@ -78,3 +78,9 @@ Status: implemented product-flow decision
   dependency.
 - **Decision:** `research/license-matrix.md` and `THIRD_PARTY_NOTICES.md` need no
   new entry for this change.
+
+## Deployment evidence
+
+- **Confirmed:** private mode was deployed as Worker version
+  `b4f9f1eb-5c46-4d68-9841-1552e25b0bf4` with hosted compilation enabled,
+  origin Access JWT verification retained, and Container image rollout disabled.
