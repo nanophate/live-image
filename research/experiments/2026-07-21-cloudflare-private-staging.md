@@ -2,8 +2,8 @@
 
 Date: 2026-07-21
 
-Status: Access-protected workers.dev staging URL enabled and verified both
-anonymously and with the approved OTP identity; hosted Compiler remains disabled
+Status: Access-protected workers.dev staging URL enabled; one approved private
+Compiler cold/warm check completed and the hosted Compiler returned to disabled
 
 ## Purpose
 
@@ -196,6 +196,72 @@ before attaching any external route.
   `sha256:ffdc13f8245b482481b554db7e2791a762dff02f6d97004335bf7a34016fc222`.
   No Compiler or inference request was made.
 
+## Controlled private Compiler check
+
+- **Decision:** after explicit owner approval, temporarily enable the hosted
+  Compiler for one already-reviewed, ignored CC0 hold-out image only. Do not
+  change the Access policy, route, Container image, instance limit, or
+  five-minute `sleepAfter` value. Deploy both enable and disable changes with
+  `--containers-rollout=none` and `--keep-vars`.
+- **Confirmed:** the source was ignored local file
+  `fixtures/holdout/source/stevenburrow-sample1.png`, a 1000×1000 RGBA PNG of
+  148,980 bytes with SHA-256
+  `d0897aaa12540b372c087c96f3012e129ddbbcbad29328a1cc996aef5c0f2831`.
+  The author, source archive, CC0 1.0 legal code, and unchanged-pixel note are
+  recorded in `fixtures/holdout/ATTRIBUTION.md`; the image itself remains
+  Gitignored and was not added to the repository.
+- **Confirmed:** immediately before the remote check, the offline local
+  Compiler produced a 287,093-byte `.limg` with SHA-256
+  `b3462a65df3a7271aef35dcf72876db96ce58010c0cfd7bb4fc09369582bf884`,
+  quality `full`, score `0.87729306546264`, no disabled capabilities, and
+  Compiler version 0.8.0.
+- **Confirmed:** the temporary enabling deployment registered Worker version
+  `9376b159-2bd0-4040-9d6b-e801dabb9b05`. It retained the existing private
+  Container image digest
+  `sha256:ffdc13f8245b482481b554db7e2791a762dff02f6d97004335bf7a34016fc222`
+  and did not roll out a new image.
+- **Confirmed:** through the Access-authenticated Viewer, the first end-to-end
+  PNG upload completed in approximately 29.146 seconds and a repeat of the
+  exact same source completed in approximately 4.641 seconds while the
+  Container was warm. Both loaded as `Compiled · ready to review`, reported
+  1000×1000, detector `hysts/anime-face-detector 0.1.0`, quality `full`, score
+  `0.877`, no disabled capabilities, and enabled blink, talk, gaze, breath,
+  showcase, recording, and `.limg` download controls.
+- **Inference:** the shorter second duration is consistent with a warm
+  Container and cached model process. These end-to-end browser timings include
+  upload, Worker/Container processing, response, and Viewer loading; they are
+  not isolated inference benchmarks.
+- **Open:** the authenticated browser loaded the returned blob and exposed its
+  `.limg` download control, but the in-app browser did not expose the downloaded
+  blob as a local file. The exact remote artifact SHA-256 was therefore not
+  captured, and byte equality with the local artifact is not claimed here.
+- **Decision:** no second content/reject image was uploaded because approval was
+  limited to one image. The existing local and container reject-path evidence
+  remains valid, but a real Cloudflare content reject test requires a separately
+  reviewed and approved image.
+- **Confirmed:** the disable dry-run again reported
+  `HOSTED_COMPILER_ENABLED ("false")`, and Worker version
+  `53575916-b4c3-4925-9e79-7095ceb6143c` restored the hosted-disabled state.
+  The authenticated Viewer then displayed `Hosted Viewer` and `Hosted
+  compilation is disabled for this deployment.` The checked-in configuration
+  also remained false.
+- **Confirmed:** after rollback and the configured idle period, `wrangler
+  containers instances` reported the named `primary` instance as `stopped`.
+  Application health reported `active: 0`, `assigned: 1`, and `healthy: 0`.
+  The retained assignment therefore names the stopped Durable Object instance;
+  it is not an active Compiler process. No manual Container deletion was used.
+- **Confirmed:** Cloudflare documents that Container charges begin when an
+  instance receives a request and stop when it sleeps, while unused prewarmed
+  images are not billed. Standard-2 provides 1 vCPU, 6 GiB memory, and 12 GB
+  disk. The project intentionally retains the five-minute idle timeout:
+  <https://developers.cloudflare.com/containers/pricing/> and
+  <https://developers.cloudflare.com/containers/platform-details/architecture/>.
+- **Confirmed:** post-rollback regression checks passed 55/55 TypeScript tests,
+  53/53 Python tests, the production Viewer build, Worker build, and Cloudflare
+  dry-run. The first sandboxed Python run could not bind localhost for five
+  hosted-server tests; rerunning the unchanged suite with loopback permission
+  passed all five and the full 53-test suite.
+
 ## Remaining rollout gates
 
 - Test a separate unauthorized identity and confirm it cannot receive an
@@ -203,8 +269,9 @@ before attaching any external route.
   Viewer/config state, and the corresponding Access audit events are confirmed.
 - Verify the live origin rejects forged, missing, expired, wrong-issuer, and
   wrong-AUD assertions wherever edge Access does not intercept first.
-- Only then change `HOSTED_COMPILER_ENABLED` to true and run one ignored local
-  test image through cold/warm, reject, concurrency, memory, cost, artifact hash,
-  privacy, and shutdown checks.
+- Keep `HOSTED_COMPILER_ENABLED` false by default. The approved single-image
+  cold/warm path is now confirmed; content rejection, concurrency, exact remote
+  artifact hash, and longer-running resource/cost observations remain separate
+  gates before any broader alpha.
 - Rollback order is Compiler false, route removal, then Container stop; retain
   the default-deny Access application until the endpoint is gone.
