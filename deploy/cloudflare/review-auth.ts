@@ -6,6 +6,7 @@ import {
   expiredSessionCookie,
   passwordMatches,
   safeReturnPath,
+  sameOriginLoginPost,
   sameOriginPost,
   sessionCookie,
   verifyReviewSession,
@@ -14,7 +15,7 @@ import {
 export const securityHeaders = {
   "Cache-Control": "no-store",
   "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
-  "Referrer-Policy": "no-referrer",
+  "Referrer-Policy": "same-origin",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
 };
@@ -77,7 +78,7 @@ export async function sharedPasswordGate(
     return loginPage(safeReturnPath(url.searchParams.get("next")), url.searchParams.get("signed_out") === "1" ? "signed-out" : "ready");
   }
   if (url.pathname === "/auth/login" && request.method === "POST") {
-    if (!sameOriginPost(request)) return json(403, { status: "error", message: "Cross-origin authentication is disabled" });
+    if (!sameOriginLoginPost(request)) return json(403, { status: "error", message: "Cross-origin authentication is disabled" });
     const contentType = (request.headers.get("Content-Type") ?? "").split(";", 1)[0]?.trim().toLowerCase();
     const length = Number(request.headers.get("Content-Length"));
     if (contentType !== "application/x-www-form-urlencoded" || !Number.isSafeInteger(length) || length <= 0 || length > MAX_LOGIN_BODY_BYTES) {

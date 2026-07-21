@@ -52,6 +52,19 @@ the compiler/model provenance.
   `Sec-Fetch-Site: same-origin` signal. A different Origin always fails even if
   Fetch Metadata claims same-origin; missing Origin plus missing/cross-site
   Fetch Metadata also fails.
+- **Confirmed (2026-07-22):** after Access was bypassed, the real browser form
+  still reached the Worker's cross-origin rejection. A reproduced request with
+  the exact public Origin reached the password check, while `Origin: null` with
+  same-origin Fetch Metadata reproduced that rejection.
+- **Inference:** the login response's `Referrer-Policy: no-referrer` caused the
+  browser to serialize an opaque Origin for the form POST; no request-header
+  values or secrets were logged in production.
+- **Decision:** login responses now use `Referrer-Policy: same-origin`, which
+  reveals no referrer to other origins but permits normal same-origin form
+  context. For browser compatibility, `Origin: null` is treated like a missing
+  Origin only when the browser-controlled `Sec-Fetch-Site` value is exactly
+  `same-origin`; null Origin with missing or cross-site Fetch Metadata remains
+  rejected.
 - **Decision:** login attempts are limited to five per minute and compilation to
   six per minute per edge key before Container startup.
 - **Decision:** deploy password mode while Access still protects the hostname,
