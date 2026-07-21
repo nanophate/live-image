@@ -11,6 +11,7 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
 - [`product-studio-and-recording.md`](product-studio-and-recording.md) — local PNG-to-Viewer product flow, capability/reaction API, Canvas WebM review recording, and security/license boundary
+- [`compiler-viewer-handoff.md`](compiler-viewer-handoff.md) — one-time browser-local `.limg` transfer from Compiler to Viewer, expiry, validation, fallback, and privacy boundary
 - [`hosting-and-public-deployment.md`](hosting-and-public-deployment.md) — GitHub Pages, Cloudflare Pages/Workers/Containers, and Codex Sites feasibility, current deployment blockers, and staged public-release gates
 - [`hosted-compiler-platforms.md`](hosted-compiler-platforms.md) — Cloudflare Container and Hugging Face Docker Space comparison, private-alpha gateway implementation, local validation, and deployment gates
 - [`cloudflare-routes-and-review-mode.md`](cloudflare-routes-and-review-mode.md) — separate Compiler/Viewer paths, always-available private Compiler, fail-closed Access toggle, and time-boxed unauthenticated judging mode

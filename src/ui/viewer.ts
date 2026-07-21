@@ -1,4 +1,5 @@
 import type { ControlState } from "../behavior.js";
+import { purgeExpiredCharacterHandoffs, stageCharacterHandoff, takeCharacterHandoff } from "../handoff.js";
 import { canvasRecordingSupported, recordCanvasAction } from "../recording.js";
 import { LivingImagePlayer, type RuntimeReaction } from "../runtime.js";
 import { SHOWCASE_DURATION_SECONDS, showcaseFrameAt } from "../showcase.js";
@@ -24,6 +25,10 @@ const compileElapsed = document.getElementById("compile-elapsed");
 const compileResult = document.getElementById("compile-result");
 const compileResultReasons = document.getElementById("compile-result-reasons");
 const tryAnotherButton = document.getElementById("try-another-button");
+const compileSuccess = document.getElementById("compile-success");
+const openViewerButton = document.getElementById("open-viewer-button") as HTMLButtonElement | null;
+const reviewHereButton = document.getElementById("review-here-button");
+const successDownloadLimg = document.getElementById("success-download-limg") as HTMLAnchorElement | null;
 const compilerNote = requireElement<HTMLElement>("compiler-note");
 const deploymentLabel = requireElement<HTMLElement>("deployment-label");
 const fileButtonLabel = requireElement<HTMLElement>("file-button-label");
@@ -46,6 +51,7 @@ const reactionButtons = new Map<RuntimeReaction, HTMLButtonElement>([
 
 let currentManifest: LivingImageManifest | null = null;
 let downloadUrl: string | null = null;
+let currentDownload: { blob: Blob; filename: string } | null = null;
 let showcaseAnimation: number | null = null;
 let finishShowcase: (() => void) | null = null;
 let restoreAutoIdleAfterShowcase: boolean | null = null;
@@ -115,12 +121,18 @@ async function loadCompilerConfig(): Promise<void> {
 
 function setDownload(payload: Blob | null, filename = "character.limg"): void {
   if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+  currentDownload = payload ? { blob: payload, filename } : null;
   downloadUrl = payload ? URL.createObjectURL(payload) : null;
   downloadLimg.hidden = !downloadUrl;
   downloadLimg.removeAttribute("href");
+  successDownloadLimg?.removeAttribute("href");
   if (downloadUrl) {
     downloadLimg.href = downloadUrl;
     downloadLimg.download = filename;
+    if (successDownloadLimg) {
+      successDownloadLimg.href = downloadUrl;
+      successDownloadLimg.download = filename;
+    }
   }
 }
 
@@ -172,6 +184,14 @@ function stopCompileProgress(): void {
 function hideCompileResult(): void {
   if (compileResult) compileResult.hidden = true;
   if (compileResultReasons) compileResultReasons.replaceChildren();
+}
+
+function hideCompileSuccess(): void {
+  if (compileSuccess) compileSuccess.hidden = true;
+}
+
+function showCompileSuccess(): void {
+  if (compileSuccess) compileSuccess.hidden = false;
 }
 
 function showUnsupportedResult(diagnostic: { rejectionReasons?: string[]; warnings?: string[] }): void {
@@ -265,6 +285,7 @@ async function useManifest(manifest: LivingImageManifest, downloadable?: { blob:
   status.textContent = "Decoding embedded texture…";
   await player.load(manifest);
   hideCompileResult();
+  hideCompileSuccess();
   currentManifest = manifest;
   resetControlInputs();
   showcaseProgress.value = 0;
@@ -316,6 +337,7 @@ async function compileImage(file: File): Promise<void> {
   setDownload(null);
   setBusy(true);
   hideCompileResult();
+  hideCompileSuccess();
   startCompileProgress();
   try {
     await showSourcePreview(file);
@@ -360,8 +382,9 @@ async function compileImage(file: File): Promise<void> {
     const filename = `${manifest.id}.limg`;
     await useManifest(manifest, { blob: new Blob([payload], { type: "application/json" }), filename });
     status.textContent = manifest.quality.status === "limited"
-      ? "Compiled with limited controls · ready to review"
-      : "Compiled · ready to review";
+      ? "Compiled with limited controls · ready to open"
+      : "Compiled · ready to open";
+    showCompileSuccess();
   } catch (error) {
     status.textContent = "Compilation unavailable";
     meta.textContent = compilerMode === "hosted"
@@ -402,6 +425,24 @@ fileInput.addEventListener("change", async () => {
 });
 
 tryAnotherButton?.addEventListener("click", () => fileInput.click());
+reviewHereButton?.addEventListener("click", () => {
+  hideCompileSuccess();
+  demoButton.focus();
+});
+openViewerButton?.addEventListener("click", async () => {
+  if (!currentDownload) return;
+  openViewerButton.disabled = true;
+  openViewerButton.textContent = "Opening…";
+  try {
+    const key = await stageCharacterHandoff(currentDownload.blob, currentDownload.filename);
+    window.location.assign(`/viewer.html#handoff=${encodeURIComponent(key)}`);
+  } catch (error) {
+    status.textContent = "Couldn’t open Viewer automatically";
+    meta.textContent = `${(error as Error).message}. Download the .limg file, then open it in Viewer.`;
+    openViewerButton.disabled = false;
+    openViewerButton.textContent = "Try opening Viewer again";
+  }
+});
 
 for (const input of inputs) {
   input.addEventListener("input", () => {
@@ -463,5 +504,42 @@ window.addEventListener("beforeunload", () => {
   player.destroy();
 });
 
+async function loadViewerHandoff(): Promise<void> {
+  if (pageMode !== "viewer") return;
+  const key = new URLSearchParams(window.location.hash.slice(1)).get("handoff");
+  if (!key) return;
+  const clearFragment = (): void => history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(key)) {
+    clearFragment();
+    status.textContent = "Couldn’t open transferred character";
+    meta.textContent = "The temporary Viewer link is invalid. Open a downloaded .limg file instead.";
+    return;
+  }
+  setBusy(true);
+  status.textContent = "Opening compiled character…";
+  try {
+    const handoff = await takeCharacterHandoff(key);
+    if (!handoff) throw new Error("The temporary browser copy is missing or expired");
+    const payload = await handoff.blob.text();
+    await useManifest(parseLivingImage(payload), { blob: handoff.blob, filename: handoff.filename });
+    compilerNote.textContent = "Opened directly from the Compiler. The temporary browser copy was removed; this Viewer remains local and offline.";
+  } catch (error) {
+    status.textContent = "Couldn’t open transferred character";
+    meta.textContent = `${(error as Error).message}. Open a downloaded .limg file instead.`;
+  } finally {
+    clearFragment();
+    setBusy(false);
+    refreshCapabilityControls();
+  }
+}
+
+window.addEventListener("pageshow", () => {
+  if (!openViewerButton) return;
+  openViewerButton.disabled = false;
+  openViewerButton.textContent = "Open in Viewer";
+});
+
 refreshCapabilityControls();
 compilerConfigReady = loadCompilerConfig();
+void purgeExpiredCharacterHandoffs().catch(() => undefined);
+void loadViewerHandoff();

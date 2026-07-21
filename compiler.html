@@ -34,6 +34,19 @@
               <button id="try-another-button" type="button">Try another image</button>
             </div>
           </div>
+          <div class="compile-success" id="compile-success" role="status" aria-live="polite" hidden>
+            <div class="compile-success-card">
+              <span class="compile-success-label">Character file ready</span>
+              <strong>Your character is ready</strong>
+              <p>Open the compiled <code>.limg</code> in the separate Viewer, or save a portable copy to this device.</p>
+              <div class="compile-success-actions">
+                <button id="open-viewer-button" type="button">Open in Viewer</button>
+                <a class="button-link secondary" id="success-download-limg">Download .limg</a>
+                <button class="secondary" id="review-here-button" type="button">Keep reviewing here</button>
+              </div>
+              <small>A temporary copy stays in this browser only. It is removed when Viewer opens; interrupted transfers expire after 15 minutes and are cleared next time the app opens.</small>
+            </div>
+          </div>
           <div class="stage-badge" id="render-status">Waiting for a source image</div>
         </div>
         <aside class="control-panel">
@@ -44,7 +57,7 @@
           </div>
           <div class="load-row">
             <label class="file-button"><span id="file-button-label">Checking Compiler…</span><input id="file-input" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" /></label>
-            <a class="button-link secondary" id="download-limg" hidden>Download .limg</a>
+            <a class="button-link secondary" id="download-limg" hidden>Download character (.limg)</a>
             <button class="secondary" id="sample-teal" type="button" hidden>Teal sample</button>
             <button class="secondary" id="sample-copper" type="button" hidden>Copper sample</button>
           </div>

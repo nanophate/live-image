@@ -207,6 +207,159 @@ test("Compiler shows honest progress and a plain-language unsupported result", a
   await expect(page.getByRole("button", { name: "Try another image" })).toBeInViewport();
 });
 
+test("Compiler hands a successful character directly to the separate Viewer without another upload", async ({ page }) => {
+  const compileRequests: string[] = [];
+  const viewerRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (request.method() === "POST" && url.pathname === "/api/compile") compileRequests.push(request.url());
+    if (url.pathname === "/viewer.html") viewerRequests.push(request.url());
+  });
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        compiler: "hosted",
+        enabled: true,
+        authentication: "cloudflare-access",
+        samplesAvailable: false,
+        provider: "cloudflare",
+      }),
+    });
+  });
+  await page.route("**/api/compile", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: compiledRig() });
+  });
+
+  await page.goto("/compiler.html");
+  await page.locator("#file-input").setInputFiles({
+    name: "portrait.png",
+    mimeType: "image/png",
+    buffer: readFileSync(resolve("fixtures/source/teal-librarian.png")),
+  });
+
+  await expect(page.locator("#compile-success")).toBeVisible();
+  await expect(page.locator("#compile-success strong")).toHaveText("Your character is ready");
+  await expect(page.locator("#success-download-limg")).toHaveAttribute("download", "teal-librarian.limg");
+  await expect(page.getByRole("button", { name: "Open in Viewer" })).toBeVisible();
+  await page.getByRole("button", { name: "Open in Viewer" }).evaluate((element) => {
+    const button = element as HTMLButtonElement;
+    button.disabled = true;
+    button.textContent = "Opening…";
+    window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+  });
+  await expect(page.getByRole("button", { name: "Open in Viewer" })).toBeEnabled();
+  await page.getByRole("button", { name: "Open in Viewer" }).click();
+
+  await page.waitForURL("**/viewer.html");
+  await expect(page.locator("#render-status")).toHaveText("Ready · local deterministic runtime");
+  await expect(page.locator("#character-name")).toHaveText("teal librarian");
+  await expect(page.locator("#blink-button")).toBeEnabled();
+  await expect(page.locator("#download-limg")).toHaveAttribute("download", "teal-librarian.limg");
+  await expect(page.locator("#compiler-note")).toContainText("Opened directly from the Compiler");
+  expect(page.url()).not.toContain("handoff=");
+  expect(compileRequests).toHaveLength(1);
+  expect(viewerRequests).toHaveLength(1);
+  expect(viewerRequests[0]).not.toContain("handoff=");
+
+  const temporaryRecordCount = await page.evaluate(() => new Promise<number>((resolveCount, rejectCount) => {
+    const request = indexedDB.open("living-image-handoff", 1);
+    request.onerror = () => rejectCount(request.error);
+    request.onsuccess = () => {
+      const database = request.result;
+      const transaction = database.transaction("characters", "readonly");
+      const countRequest = transaction.objectStore("characters").count();
+      countRequest.onerror = () => rejectCount(countRequest.error);
+      countRequest.onsuccess = () => {
+        database.close();
+        resolveCount(countRequest.result);
+      };
+    };
+  }));
+  expect(temporaryRecordCount).toBe(0);
+});
+
+test("a temporary Compiler handoff can be consumed by only one Viewer tab", async ({ page }) => {
+  const key = "a81de024-6b7c-4a26-9d63-54e608713869";
+  const payload = compiledRig().toString("utf8");
+  await page.goto("/viewer.html");
+  await page.evaluate(async ({ handoffKey, handoffPayload }) => {
+    await new Promise<void>((resolveWrite, rejectWrite) => {
+      const openRequest = indexedDB.open("living-image-handoff", 1);
+      openRequest.onerror = () => rejectWrite(openRequest.error);
+      openRequest.onupgradeneeded = () => {
+        if (!openRequest.result.objectStoreNames.contains("characters")) {
+          openRequest.result.createObjectStore("characters", { keyPath: "key" });
+        }
+      };
+      openRequest.onsuccess = () => {
+        const database = openRequest.result;
+        const transaction = database.transaction("characters", "readwrite");
+        transaction.objectStore("characters").put({
+          key: handoffKey,
+          blob: new Blob([handoffPayload], { type: "application/json" }),
+          filename: "teal-librarian.limg",
+          createdAt: Date.now(),
+        });
+        transaction.oncomplete = () => { database.close(); resolveWrite(); };
+        transaction.onerror = () => rejectWrite(transaction.error);
+      };
+    });
+  }, { handoffKey: key, handoffPayload: payload });
+
+  const secondViewer = await page.context().newPage();
+  await Promise.all([
+    page.goto(`/viewer.html?consumer=one#handoff=${key}`),
+    secondViewer.goto(`/viewer.html?consumer=two#handoff=${key}`),
+  ]);
+  await expect(page.locator("#render-status")).toContainText(/Ready|Couldn’t open/u);
+  await expect(secondViewer.locator("#render-status")).toContainText(/Ready|Couldn’t open/u);
+  const outcomes = await Promise.all([
+    page.locator("#render-status").textContent(),
+    secondViewer.locator("#render-status").textContent(),
+  ]);
+  expect(outcomes.filter((outcome) => outcome === "Ready · local deterministic runtime")).toHaveLength(1);
+  expect(outcomes.filter((outcome) => outcome === "Couldn’t open transferred character")).toHaveLength(1);
+  expect(page.url()).not.toContain("handoff=");
+  expect(secondViewer.url()).not.toContain("handoff=");
+  await secondViewer.close();
+});
+
+test("Compiler keeps the downloadable character when temporary browser storage is unavailable", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "indexedDB", { value: undefined, configurable: true });
+  });
+  await page.route("**/api/config", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        compiler: "hosted",
+        enabled: true,
+        authentication: "cloudflare-access",
+        samplesAvailable: false,
+        provider: "cloudflare",
+      }),
+    });
+  });
+  await page.route("**/api/compile", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: compiledRig() });
+  });
+
+  await page.goto("/compiler.html");
+  await page.locator("#file-input").setInputFiles({
+    name: "portrait.png",
+    mimeType: "image/png",
+    buffer: readFileSync(resolve("fixtures/source/teal-librarian.png")),
+  });
+  await expect(page.locator("#compile-success")).toBeVisible();
+  await page.getByRole("button", { name: "Open in Viewer" }).click();
+
+  await expect(page.locator("#render-status")).toHaveText("Couldn’t open Viewer automatically");
+  await expect(page.locator("#character-meta")).toContainText("Download the .limg file");
+  await expect(page.locator("#success-download-limg")).toHaveAttribute("download", "teal-librarian.limg");
+  await expect(page.getByRole("button", { name: "Try opening Viewer again" })).toBeEnabled();
+});
+
 test("Hugging Face hosted mode discloses provider processing and sensitive-image boundary", async ({ page }) => {
   await page.route("**/api/config", async (route) => {
     await route.fulfill({
