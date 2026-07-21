@@ -1,0 +1,16 @@
+**
+!Dockerfile
+!requirements/
+!requirements/**
+!compiler/
+!compiler/**
+!package.json
+!package-lock.json
+!tsconfig.json
+!vite.config.ts
+!*.html
+!src/
+!src/**
+!fixtures/
+!fixtures/validation/
+!fixtures/validation/report.json

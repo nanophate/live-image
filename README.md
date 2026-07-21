@@ -1,3 +1,13 @@
+---
+title: Living Image
+emoji: 🌱
+colorFrom: indigo
+colorTo: cyan
+sdk: docker
+app_port: 8080
+startup_duration_timeout: 30m
+---
+
 # Living Image
 
 Living Image compiles one near-frontal anime-style portrait into a portable,
@@ -25,6 +35,7 @@ or capability-limited rather than silently forced through.
 
 ```text
 compiler/              Python image compiler
+deploy/cloudflare/     Worker gateway for the private Container alpha
 src/                   TypeScript runtime, warp and UI
 fixtures/source/       two original success fixtures + one no-face reject fixture
 fixtures/holdout/      local-only hold-out manifest, provenance, and results
@@ -42,7 +53,7 @@ Node is deliberately pinned through nodenv:
 
 ```bash
 nodenv install -s 24.18.0
-npm ci
+nodenv exec npm ci
 
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements/compiler.txt
@@ -56,11 +67,101 @@ The first compiler run downloads the MIT-labelled YOLOv3 and HRNetV2 weights
 from their upstream Hugging Face model repositories. Later runs can require the
 cache with `--offline`.
 
-## Run the proof
+## Run the local Studio
+
+After setup, the shortest product path is:
 
 ```bash
-npm run compile:fixtures
-npm run dev
+nodenv exec npm run studio
+```
+
+Open [http://127.0.0.1:8787/viewer.html](http://127.0.0.1:8787/viewer.html),
+select a PNG or JPEG, and wait for one of three explicit outcomes:
+
+- `full`: download the `.limg`, use every available control, play the review
+  showcase, or record it as a silent local WebM.
+- `limited`: download and play the `.limg`; unsafe capabilities are disabled in
+  both the UI and Runtime API.
+- `reject`: see the reason and guidance. No `.limg`, animation, or recording is
+  exposed.
+
+The server listens only on `127.0.0.1`, keeps uploaded images in a temporary
+directory for the duration of compilation, and reuses the loaded detector for
+later requests. After the detector weights are cached, require a network-free
+compiler run with:
+
+```bash
+nodenv exec npm run studio:offline
+```
+
+The Viewer still accepts an existing `.limg` without the Python compile
+endpoint. Details and the verified security/recording boundary are in
+[`research/product-studio-and-recording.md`](research/product-studio-and-recording.md).
+
+## Validate the hosted compiler targets
+
+The hosted design keeps the Viewer and upload flow on one origin: Worker Assets
+serve the browser build, while only `/api/compile` reaches a private Python
+Container. Hosted compilation is disabled by default in `wrangler.jsonc`; no
+deployment or billing is triggered by these checks.
+
+```bash
+nodenv exec npm run build:worker
+nodenv exec npm run check:cloudflare
+
+nodenv exec npm run docker:build:cloudflare
+docker run --rm -p 8788:8080 living-image:cloudflare
+```
+
+The image downloads the reviewed detector weights during the build, verifies
+their frozen SHA-256 values, then starts offline as a non-root user. Check its
+readiness at [http://127.0.0.1:8788/healthz](http://127.0.0.1:8788/healthz).
+The verified local linux/amd64 image is approximately 1.65 GiB and uses roughly
+0.55 GiB after compilation. The Compiler fixes PyTorch to one intra-op and one
+inter-op thread by default so cgroup-limited Containers do not size their pool
+from the host. At a local 1 CPU / 6 GiB limit, the final HTTP path measured
+10.06 seconds on its first request and 4.95 seconds warm, with byte-identical
+artifacts. This makes standard-2 a private-staging candidate, not a confirmed
+Cloudflare SLO; actual provider timing and cost remain required.
+The checked-in deployment is deliberately inaccessible: `workers_dev` is off,
+there is no public route, the compile flag is false, and the gateway expects a
+Cloudflare Access assertion. Do not run `npm run deploy:cloudflare` until a
+custom route protected by Cloudflare Access, the Workers Paid account, quotas,
+privacy copy, cost alerts, and the enable flag are configured.
+The implementation and Cloudflare/Hugging Face comparison are recorded in
+[`research/hosted-compiler-platforms.md`](research/hosted-compiler-platforms.md).
+
+The same Dockerfile also has a Hugging Face target. It adds only the generated
+Viewer files to the shared Compiler runtime and serves the Viewer plus
+`/api/compile` on one origin:
+
+```bash
+nodenv exec npm run docker:build:huggingface
+docker run --rm -p 8789:8080 \
+  -e HOSTED_COMPILER_ENABLED=true \
+  -e PUBLIC_ORIGIN=http://127.0.0.1:8789 \
+  living-image:huggingface
+```
+
+Open [http://127.0.0.1:8789/viewer.html](http://127.0.0.1:8789/viewer.html).
+For a private Hugging Face Docker Space, the README metadata above selects port
+8080 and the platform-provided `SPACE_HOST` supplies the trusted public origin;
+set `HOSTED_COMPILER_ENABLED=true` only after reviewing the Space visibility.
+The app rejects cross-origin compilation, serves files only from generated
+`dist`, serializes inference with a busy `429`, and does not include fixture
+source images in either target.
+
+Do not make the Space public yet. OS/Python package notices, wheel hashes, an
+image SBOM, provider privacy/abuse limits, and the detector training-data
+provenance decision remain release gates. The dual-target implementation and
+local evidence are in
+[`research/experiments/2026-07-21-dual-target-container-validation.md`](research/experiments/2026-07-21-dual-target-container-validation.md).
+
+## Run the engineering proof
+
+```bash
+nodenv exec npm run compile:fixtures
+nodenv exec npm run dev
 ```
 
 Open:
@@ -76,13 +177,13 @@ The generated `.limg` files are under `fixtures/compiled/`; overlays are under
 After the first online compile, verify fully offline compilation with:
 
 ```bash
-npm run compile:fixtures:offline
+nodenv exec npm run compile:fixtures:offline
 ```
 
 Run the 12-image generalisation suite with the cached detector models:
 
 ```bash
-npm run validate:fixtures:offline
+nodenv exec npm run validate:fixtures:offline
 ```
 
 The checked-in `fixtures/validation/report.json` preserves expected-versus-actual
@@ -96,8 +197,8 @@ Run the independent external hold-out without network access after the detector
 models are cached:
 
 ```bash
-npm run check:holdout:local
-npm run validate:holdout:offline
+nodenv exec npm run check:holdout:local
+nodenv exec npm run validate:holdout:offline
 ```
 
 The externally licensed PNG inputs are deliberately ignored by Git. Place them
@@ -148,9 +249,14 @@ import { LivingImagePlayer } from "./src/runtime.js";
 import { parseLivingImage } from "./src/schema.js";
 
 const manifest = parseLivingImage(await file.text());
-const player = new LivingImagePlayer(canvas);
+const player = new LivingImagePlayer(canvas, { eyeDeformation: "best-available" });
 await player.load(manifest);
 player.start();
+
+const capabilities = player.getCapabilities();
+if (capabilities.blink) player.triggerReaction("blink");
+if (capabilities.mouth) player.triggerReaction("talk");
+if (capabilities.gaze) player.triggerReaction("look-right");
 
 player.setState({
   blinkLeft: 0,
@@ -164,15 +270,17 @@ player.setState({
 
 All values are normalised. Per-image motion ranges and feature coordinates live
 in the compiled asset, not in runtime branches. Rejected or disabled controls
-are gated by the player.
+are gated by the player; `triggerReaction()` returns `false` when the requested
+reaction is unavailable. `setState()` remains the continuous-control API, while
+named reactions provide deterministic one-shot behavior for product code.
 
 ## Verify
 
 ```bash
-npm test
-npm run build
-npx playwright install --only-shell chromium
-npm run test:browser
+nodenv exec npm test
+nodenv exec npm run build
+nodenv exec npx playwright install --only-shell chromium
+nodenv exec npm run test:browser
 ```
 
 The browser suite uses the Compiler 0.8.0 automatic rigs for both primary
@@ -188,7 +296,7 @@ render with transparent iris textures provides direct Canvas evidence: every
 visible selected iris must contribute pixels, while full blink/wink must
 contribute zero. The suite also requires exact open-state recovery and makes no
 external page requests. After
-regenerating `fixtures/browser` rigs, run `npm run build` before the
+regenerating `fixtures/browser` rigs, run `nodenv exec npm run build` before the
 preview-backed browser test. Playwright's browser and FFmpeg downloads are
 development/CI-only and are not bundled into the Viewer.
 

@@ -10,6 +10,9 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`hugging-face-and-motion-landscape.md`](hugging-face-and-motion-landscape.md) — Hugging Face demos, closest compile-once precedents, license boundaries, and the next architecture experiment
 - [`detector-selection.md`](detector-selection.md) — detector decision, fallbacks, and confidence policy
 - [`runtime-and-format.md`](runtime-and-format.md) — MVP renderer and `.limg` direction
+- [`product-studio-and-recording.md`](product-studio-and-recording.md) — local PNG-to-Viewer product flow, capability/reaction API, Canvas WebM review recording, and security/license boundary
+- [`hosting-and-public-deployment.md`](hosting-and-public-deployment.md) — GitHub Pages, Cloudflare Pages/Workers/Containers, and Codex Sites feasibility, current deployment blockers, and staged public-release gates
+- [`hosted-compiler-platforms.md`](hosted-compiler-platforms.md) — Cloudflare Container and Hugging Face Docker Space comparison, private-alpha gateway implementation, local validation, and deployment gates
 - [`local-deformation.md`](local-deformation.md) — deterministic feature meshes, protected line art, and iris/highlight-preserving blink/gaze
 - [`browser-visual-ci.md`](browser-visual-ci.md) — headless-browser options, minimal Canvas 2D CI decision, cost, compatibility, and license boundaries
 - [`holdout-assets.md`](holdout-assets.md) — external test-image selection, authorship evidence, license obligations, and open provenance limits
@@ -43,6 +46,11 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-protocol.md) — pre-registered report-only corrective audit over the already-opened independent licensed set
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-first-run.md) — preserved independent first-run protected-core failure, hashed visual evidence, and double-alpha root cause
 - [`experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md`](experiments/2026-07-20-holdout-a-closed-eye-audit-validation.md) — opaque-cache correction, zero-error hold-out replay, translucent-source CI regression, and unchanged promotion boundary
+- [`experiments/2026-07-20-product-studio-validation.md`](experiments/2026-07-20-product-studio-validation.md) — real PNG-to-`.limg` Studio, reason-only reject, capability-gated reactions, deterministic showcase, and actual Chromium WebM evidence
+- [`experiments/2026-07-21-hosted-compiler-api-validation.md`](experiments/2026-07-21-hosted-compiler-api-validation.md) — provider-neutral hosted API health and real detector PNG-to-`.limg` response timing, hashes, and remaining Docker boundary
+- [`experiments/2026-07-21-container-benchmark.md`](experiments/2026-07-21-container-benchmark.md) — real linux/amd64 image build, frozen model hashes, 0.5/1 CPU cold/warm/reject latency, memory, healthcheck, SIGTERM failure reproduction and fix, and deployment decision
+- [`experiments/2026-07-21-container-thread-profile.md`](experiments/2026-07-21-container-thread-profile.md) — YOLO/HRNet stage split, reproduced cgroup thread oversubscription, 6.7× profiled warm improvement, deterministic one-thread reports, final 1-CPU HTTP first/warm timing, and revised private-staging decision
+- [`experiments/2026-07-21-dual-target-container-validation.md`](experiments/2026-07-21-dual-target-container-validation.md) — one pinned multi-stage Dockerfile, isolated Cloudflare/Hugging Face targets, same-origin public-server controls, exact Python container lock, real cross-target `.limg` byte equality, and private-before-public release boundary
 - [`progress.md`](progress.md) — implementation checkpoints and commit trail
 
 ## Evidence labels
@@ -52,5 +60,5 @@ open questions, so a later product or legal review can reproduce the reasoning.
 - **Inference** — a conclusion drawn from confirmed facts; validate during implementation.
 - **Open** — unresolved and not safe to treat as confirmed.
 
-The research snapshot date is **2026-07-20**. Dependency releases, model terms,
+The research snapshot date is **2026-07-21**. Dependency releases, model terms,
 and remote files can change; re-check them before a public or commercial release.

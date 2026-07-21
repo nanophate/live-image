@@ -1,7 +1,7 @@
 {
   "cases": [
     {
-      "artifactSha256": "2aab372e5180b63e83ba6c5f84ce226db713021d7359e31ddd60b7eb3c227d07",
+      "artifactSha256": "e4cbcf567460d7b9fd8ee1eca7129f000bd477ece312fd9c81e80f82c343a48d",
       "artifacts": {
         "limg": "artifacts/clean-teal/clean-teal.limg",
         "overlay": "overlays/clean-teal/clean-teal.png"
@@ -37,7 +37,7 @@
             "protectedLineCoverage": 0.26824777994368637,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999887,
+            "semanticMeshMinimumAreaRatio": 0.03500000000000019,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -57,7 +57,7 @@
             "protectedLineCoverage": 0.1814900476590973,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999944,
+            "semanticMeshMinimumAreaRatio": 0.03500000000000073,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -82,8 +82,8 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.9127571873377045,
-          "eyeSymmetry": 0.9894489158806269,
+          "eyeConfidence": 0.9127571148245108,
+          "eyeSymmetry": 0.9894491857500314,
           "faceScale": 0.40165941642992425,
           "faceScore": 0.9994938373565674,
           "irisSegmentationConfidence": 1.0,
@@ -94,7 +94,7 @@
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.9468676410668629,
+        "score": 0.9468676521009008,
         "warnings": []
       },
       "result": "full",
@@ -102,7 +102,7 @@
       "sourceSha256": "4480e53d53959ac7aa8665a91166ec3c5e839bb10bd53aaa96d708607b5798e6"
     },
     {
-      "artifactSha256": "4551183aa6d2203b7b1abdeb12193a74a410262d1a6fe6eb6f5e2ca51e9b5247",
+      "artifactSha256": "68e11380d282c0783a6841ebbbcb8a9c6457fbcb5e51116c4a103efed6276002",
       "artifacts": {
         "limg": "artifacts/clean-copper/clean-copper.limg",
         "overlay": "overlays/clean-copper/clean-copper.png"
@@ -132,13 +132,13 @@
             "closedEyeUpperSamplesIncluded": false,
             "irisCoverage": 0.06388074291300097,
             "irisMethod": "ellipse-cage-telea-v1",
-            "irisSegmentationConfidence": 0.8737185286098614,
+            "irisSegmentationConfidence": 0.8737645292413843,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.2880254154447703,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000022,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999887,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -152,13 +152,13 @@
             "closedEyeUpperSamplesIncluded": false,
             "irisCoverage": 0.06103723404255319,
             "irisMethod": "ellipse-cage-telea-v1",
-            "irisSegmentationConfidence": 0.7759167344362913,
+            "irisSegmentationConfidence": 0.7759055210955128,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.2611702127659574,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000105,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999904,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -183,19 +183,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.9017044695712132,
-          "eyeSymmetry": 0.9729999977841146,
-          "faceScale": 0.3880760521409614,
+          "eyeConfidence": 0.9016885595217581,
+          "eyeSymmetry": 0.9730137054600245,
+          "faceScale": 0.3880759791324013,
           "faceScore": 0.9989290833473206,
-          "irisSegmentationConfidence": 0.7759167344362913,
-          "meanLandmarkScore": 0.9580478072166443,
+          "irisSegmentationConfidence": 0.7759055210955128,
+          "meanLandmarkScore": 0.9580405354499817,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.9774035960435867,
+          "mouthConfidence": 0.9774049371480942,
           "mouthLineConfidence": 1.0,
-          "pupilConfidence": 0.8535084078799204
+          "pupilConfidence": 0.8534960732050642
         },
         "rejectionReasons": [],
-        "score": 0.9551012345597317,
+        "score": 0.9550974534063006,
         "warnings": []
       },
       "result": "full",
@@ -203,7 +203,7 @@
       "sourceSha256": "440b6c5625ed15549243bd9b979f88dbb6c0cb10a64b9415acec4a7b80918dd4"
     },
     {
-      "artifactSha256": "1e360dfd7473cb9340569e369e75b96b739a30445963e8fd7c25ecbcb8cff60f",
+      "artifactSha256": "f590637017aeed59c63092d40fd1502be6f8288df86dcec45bad5e1d1b5f13b9",
       "artifacts": {
         "limg": "artifacts/clean-coral/clean-coral.limg",
         "overlay": "overlays/clean-coral/clean-coral.png"
@@ -226,7 +226,7 @@
         "eyes": [
           {
             "baseEyeMethod": "telea-inpaint-v1",
-            "closedEyeCoverage": 0.22197098172225363,
+            "closedEyeCoverage": 0.22121726022234783,
             "closedEyeMedianFitResidual": 1.1059010669715186,
             "closedEyeMethod": "affine-skin-fill-curve-v3",
             "closedEyeRetainedSamplePixels": 6323,
@@ -236,10 +236,10 @@
             "irisSegmentationConfidence": 0.9228395061728395,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
-            "protectedLineCoverage": 0.26100747440487404,
+            "protectedLineCoverage": 0.2611959047798505,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999886,
+            "semanticMeshMinimumAreaRatio": 0.034999999999998,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -259,7 +259,7 @@
             "protectedLineCoverage": 0.21487654899023004,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03500000000000255,
+            "semanticMeshMinimumAreaRatio": 0.035000000000001245,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -284,19 +284,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.915364212225787,
-          "eyeSymmetry": 0.9829077438201885,
-          "faceScale": 0.42911579430198366,
+          "eyeConfidence": 0.9153647159305478,
+          "eyeSymmetry": 0.982958173690932,
+          "faceScale": 0.42911569695723684,
           "faceScore": 0.985558032989502,
           "irisSegmentationConfidence": 0.9228395061728395,
-          "meanLandmarkScore": 0.964948832988739,
+          "meanLandmarkScore": 0.9649618268013,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.8626856397194316,
+          "mouthConfidence": 0.8626839554011065,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.9471262834299987,
+        "score": 0.9471344559077954,
         "warnings": []
       },
       "result": "full",
@@ -304,7 +304,7 @@
       "sourceSha256": "d180bd1a2afa8dff22a0a55f722c36cd981383f0f5acdc29809b581bf891dc59"
     },
     {
-      "artifactSha256": "f3dedc40c2467337d3d3a40791790f93e72bc76fff143852fe4997f0508d2417",
+      "artifactSha256": "e02def70f2ec2be97e6aa8cdb14b4976283790db83dc0793ec86ad216a9c2075",
       "artifacts": {
         "limg": "artifacts/clean-lavender/clean-lavender.limg",
         "overlay": "overlays/clean-lavender/clean-lavender.png"
@@ -385,19 +385,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.9294623597665679,
-          "eyeSymmetry": 0.9940694183322782,
+          "eyeConfidence": 0.929462514894128,
+          "eyeSymmetry": 0.9940684917461285,
           "faceScale": 0.4477387204694976,
           "faceScore": 0.9749826788902283,
           "irisSegmentationConfidence": 1.0,
           "meanLandmarkScore": 0.9386937022209167,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.8694293082521667,
+          "mouthConfidence": 0.8694296996232729,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.9450823130512739,
+        "score": 0.9450823053989659,
         "warnings": []
       },
       "result": "full",
@@ -405,7 +405,7 @@
       "sourceSha256": "1b38643b433f1c609a8595a25a92e52e953c8ce88142c9a964b11ca43bf12069"
     },
     {
-      "artifactSha256": "a1a4bd549ae762ae19c502f337325458b8d52ae36b76705ea716114eb624949d",
+      "artifactSha256": "6578aca137e2516a0148efcfd62730d364af04cd42caed61b5d300238ac3e73a",
       "artifacts": {
         "limg": "artifacts/dark-iris-navy/dark-iris-navy.limg",
         "overlay": "overlays/dark-iris-navy/dark-iris-navy.png"
@@ -455,7 +455,7 @@
             "closedEyeUpperSamplesIncluded": true,
             "irisCoverage": 0.06492374727668845,
             "irisMethod": "ellipse-cage-telea-v1",
-            "irisSegmentationConfidence": 0.9435793331061431,
+            "irisSegmentationConfidence": 0.943549665163726,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.27303502597620244,
@@ -488,17 +488,17 @@
         "metrics": {
           "eyeConfidence": 0.9251515122465003,
           "eyeSymmetry": 0.9396275618329888,
-          "faceScale": 0.4620896724232456,
+          "faceScale": 0.4620895750784988,
           "faceScore": 0.9986550211906433,
           "irisSegmentationConfidence": 0.8698913800008405,
           "meanLandmarkScore": 0.8780241012573242,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.8841284016436788,
+          "mouthConfidence": 0.8841284180521307,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.8698913800008405
         },
         "rejectionReasons": [],
-        "score": 0.9316025617031992,
+        "score": 0.9316025638362979,
         "warnings": []
       },
       "result": "full",
@@ -506,7 +506,7 @@
       "sourceSha256": "c0bec89d72c9a890bb21eba0c6fedd59770538d50abc85e947049512ece8e1ab"
     },
     {
-      "artifactSha256": "c9a35dc9bc6c51f0dd460c7c2cfb35f5ad903ad26ed4fa868e291f2c8752b95a",
+      "artifactSha256": "75155d43c98216cf3cf6c2190840236c904eb6a8f4875c18f82fed66eda4b29d",
       "artifacts": {
         "limg": "artifacts/dark-iris-auburn/dark-iris-auburn.limg",
         "overlay": "overlays/dark-iris-auburn/dark-iris-auburn.png"
@@ -536,13 +536,13 @@
             "closedEyeUpperSamplesIncluded": true,
             "irisCoverage": 0.059,
             "irisMethod": "ellipse-cage-telea-v1",
-            "irisSegmentationConfidence": 0.6252489546934753,
+            "irisSegmentationConfidence": 0.6252554223070516,
             "irisTextureMethod": "source-rgba-ellipse-v1",
             "method": "fixed-boundary-piecewise-affine-v1",
             "protectedLineCoverage": 0.23495238095238094,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999682,
+            "semanticMeshMinimumAreaRatio": 0.034999999999998546,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -562,7 +562,7 @@
             "protectedLineCoverage": 0.18838028169014084,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999881,
+            "semanticMeshMinimumAreaRatio": 0.03500000000000281,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -587,19 +587,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8887662055706622,
-          "eyeSymmetry": 0.9567365355247397,
+          "eyeConfidence": 0.888766326996192,
+          "eyeSymmetry": 0.9567368303584901,
           "faceScale": 0.45155599737091306,
           "faceScore": 0.9989126324653625,
           "irisSegmentationConfidence": 0.5776251565427158,
-          "meanLandmarkScore": 0.892257571220398,
+          "meanLandmarkScore": 0.8922563195228577,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.9267698039164387,
+          "mouthConfidence": 0.9267702665465503,
           "mouthLineConfidence": 1.0,
-          "pupilConfidence": 0.6921205006499968
+          "pupilConfidence": 0.6921276599869501
         },
         "rejectionReasons": [],
-        "score": 0.9344748442085968,
+        "score": 0.9344746476231179,
         "warnings": []
       },
       "result": "full",
@@ -607,7 +607,7 @@
       "sourceSha256": "509b20244aec20d421f531da05344c3773340957eef792270fda0be77cffd49d"
     },
     {
-      "artifactSha256": "e2c8401e197628598715e4b9cf7c1bc94d0d59df8a13ce74d68c93263e4cfb28",
+      "artifactSha256": "e8b29c05c03bf99923a12caa16f839261c7d95231ae5c9078e425a69b62ee2df",
       "artifacts": {
         "limg": "artifacts/light-iris-silver/light-iris-silver.limg",
         "overlay": "overlays/light-iris-silver/light-iris-silver.png"
@@ -654,7 +654,7 @@
             "protectedLineCoverage": 0.359636537541846,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.034999999999999136,
+            "semanticMeshMinimumAreaRatio": 0.03499999999999908,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -680,19 +680,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8418164484229812,
-          "eyeSymmetry": 0.9757384846103176,
-          "faceScale": 0.4983033784078449,
+          "eyeConfidence": 0.8418163981149083,
+          "eyeSymmetry": 0.9757393236513915,
+          "faceScale": 0.4983034757525917,
           "faceScore": 0.9999233484268188,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.9255689382553101,
+          "meanLandmarkScore": 0.9255689978599548,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.9381485270581058,
+          "mouthConfidence": 0.9381483774863015,
           "mouthLineConfidence": 1.0,
-          "pupilConfidence": 0.4874800653631455
+          "pupilConfidence": 0.48748037984641557
         },
         "rejectionReasons": [],
-        "score": 0.9361058473021737,
+        "score": 0.9361059155953315,
         "warnings": [
           "gaze disabled because pupil confidence is below 0.60",
           "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
@@ -703,7 +703,7 @@
       "sourceSha256": "45e890d2bc07352e1b363ed27f273c24d4144cf51263f53cfb703044377fb603"
     },
     {
-      "artifactSha256": "d7c8759259e0c27039316af12c54a6098d4128ddf226b3bee636c56c63cfd2a1",
+      "artifactSha256": "13ccac7295d38faa252993f3d9bee6e96da2a58517ae610b001a7efe481f2c60",
       "artifacts": {
         "limg": "artifacts/light-iris-peach/light-iris-peach.limg",
         "overlay": "overlays/light-iris-peach/light-iris-peach.png"
@@ -776,19 +776,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8423358865774493,
+          "eyeConfidence": 0.8423360177076678,
           "eyeSymmetry": 0.9908634158527816,
           "faceScale": 0.5074954481596392,
           "faceScore": 0.9998915195465088,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.9412669539451599,
+          "meanLandmarkScore": 0.9412670731544495,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.916861118138964,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 0.4452753381894251
         },
         "rejectionReasons": [],
-        "score": 0.9388818003632996,
+        "score": 0.93888185901427,
         "warnings": [
           "gaze disabled because pupil confidence is below 0.60",
           "blink and gaze disabled because one or both iris/base-eye layers are unreliable"
@@ -799,7 +799,7 @@
       "sourceSha256": "72a85ef3b23e0301c5ff99e2971a9531d2dcc83204275aa77d56aee1a03b1807"
     },
     {
-      "artifactSha256": "dbaff412c133c45c097882573ed398a8bf22f3ff244e73ed7d00df164fea7d09",
+      "artifactSha256": "c036475f37570393dd197e1f52b4035337589eb38887a6fe5ee057335b9d8627",
       "artifacts": {
         "limg": "artifacts/occluded-left-eye/occluded-left-eye.limg",
         "overlay": "overlays/occluded-left-eye/occluded-left-eye.png"
@@ -831,7 +831,7 @@
             "protectedLineCoverage": 0.3257303059670497,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.034999999999999545,
+            "semanticMeshMinimumAreaRatio": 0.034999999999999476,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -851,7 +851,7 @@
             "protectedLineCoverage": 0.28364541692965844,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999855,
+            "semanticMeshMinimumAreaRatio": 0.035000000000001696,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -877,19 +877,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.543672392048665,
-          "eyeSymmetry": 0.6397815551457952,
-          "faceScale": 0.3694394733727073,
+          "eyeConfidence": 0.5438994283675909,
+          "eyeSymmetry": 0.6398255533092825,
+          "faceScale": 0.3694393760279605,
           "faceScore": 0.9929389953613281,
           "irisSegmentationConfidence": 0.0,
-          "meanLandmarkScore": 0.7666249871253967,
+          "meanLandmarkScore": 0.767145574092865,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.8933862828470566,
+          "mouthConfidence": 0.8933924696797136,
           "mouthLineConfidence": 1.0,
-          "pupilConfidence": 0.5368398143759769
+          "pupilConfidence": 0.5363953685759301
         },
         "rejectionReasons": [],
-        "score": 0.7806661245318296,
+        "score": 0.7808514125523716,
         "warnings": [
           "blink disabled because eye symmetry is below 0.70",
           "blink and gaze disabled because eye confidence is below 0.70",
@@ -902,7 +902,7 @@
       "sourceSha256": "d225d7ae7eb524f7757ce070a5f413cbd3843f74bf9d723de9fed110d67de582"
     },
     {
-      "artifactSha256": "56277cce39eef915f9de8929305f119edadea41b1d4a70e65dad035309e48b21",
+      "artifactSha256": "c92a31f42d5423d86e581e6e47a169230b135dfcb289eed6e3c0c970ac1779ad",
       "artifacts": {
         "limg": "artifacts/glasses-round/glasses-round.limg",
         "overlay": "overlays/glasses-round/glasses-round.png"
@@ -958,7 +958,7 @@
             "protectedLineCoverage": 0.26010550835845436,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.03499999999999981,
+            "semanticMeshMinimumAreaRatio": 0.034999999999999816,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -983,19 +983,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8769220353778586,
-          "eyeSymmetry": 0.9301714447384494,
+          "eyeConfidence": 0.8769218590211003,
+          "eyeSymmetry": 0.9301724530412625,
           "faceScale": 0.43880831339712917,
-          "faceScore": 0.8307774066925049,
+          "faceScore": 0.8307775855064392,
           "irisSegmentationConfidence": 1.0,
-          "meanLandmarkScore": 0.9043170809745789,
+          "meanLandmarkScore": 0.9043172597885132,
           "minImageDimensionPixels": 1254,
-          "mouthConfidence": 0.9824976896713826,
+          "mouthConfidence": 0.9824976002644155,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.8961947930973722,
+        "score": 0.8961949329132282,
         "warnings": []
       },
       "result": "full",
@@ -1003,7 +1003,7 @@
       "sourceSha256": "1768a0f572d400100ec15e3a0ab9030e75b6c57ad7f2b979765760d954a01d74"
     },
     {
-      "artifactSha256": "c4f2be037ae0af2553ef7419176261ac6ff7d2b86b45236fab5563bdb5c480b3",
+      "artifactSha256": "934ed1f123cd97a35d08c1a1aadaaa6fb24ee7b7d91d6b290da6b0387dfcca5a",
       "artifacts": {
         "limg": "artifacts/three-quarter/three-quarter.limg",
         "overlay": "overlays/three-quarter/three-quarter.png"
@@ -1086,19 +1086,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.8043522483652492,
-          "eyeSymmetry": 0.5360573077666376,
+          "eyeConfidence": 0.8043521224231749,
+          "eyeSymmetry": 0.5360568454282596,
           "faceScale": 0.44282602313222685,
           "faceScore": 0.7481144666671753,
           "irisSegmentationConfidence": 1.0,
-          "meanLandmarkScore": 0.8525644540786743,
+          "meanLandmarkScore": 0.8525643944740295,
           "minImageDimensionPixels": 1254,
           "mouthConfidence": 0.8401473619255577,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.7891550041129398,
+        "score": 0.7891549152706845,
         "warnings": [
           "blink disabled because eye symmetry is below 0.70"
         ]
@@ -1108,7 +1108,7 @@
       "sourceSha256": "b7c68c42bfb0ff9aec9477d5802c037f084bdcfc1c5047bc4c7a4b48862e94d9"
     },
     {
-      "artifactSha256": "ac5dd17db7efe7c7a34b77268fd75c841a3ff73cdccd0e159b687566127b6309",
+      "artifactSha256": "df4c7de3677a9e88669a99087a3565b0426dccdfe0d8505ac1b8229efcda7268",
       "artifacts": {
         "limg": "artifacts/low-resolution-192/low-resolution-192.limg",
         "overlay": "overlays/low-resolution-192/low-resolution-192.png"
@@ -1145,7 +1145,7 @@
             "protectedLineCoverage": 0.47448275862068967,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.0872513288533427,
+            "semanticMeshMinimumAreaRatio": 0.08725132885334272,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "left"
@@ -1165,7 +1165,7 @@
             "protectedLineCoverage": 0.4126984126984127,
             "protectedLineMethod": "canny-active-aperture-v1",
             "semanticMeshMethod": "semantic-weighted-triangle-mesh-v1",
-            "semanticMeshMinimumAreaRatio": 0.08302527395958781,
+            "semanticMeshMinimumAreaRatio": 0.08302527395958784,
             "semanticMeshTriangles": 60,
             "semanticMeshVertices": 42,
             "side": "right"
@@ -1191,19 +1191,19 @@
       "matched": true,
       "quality": {
         "metrics": {
-          "eyeConfidence": 0.9243745260132799,
-          "eyeSymmetry": 0.9989762700180707,
-          "faceScale": 0.45030895868937176,
+          "eyeConfidence": 0.9243747543830059,
+          "eyeSymmetry": 0.998975481112804,
+          "faceScale": 0.4503089984258016,
           "faceScore": 0.9977495074272156,
           "irisSegmentationConfidence": 0.5625,
           "meanLandmarkScore": 0.9304707646369934,
           "minImageDimensionPixels": 192,
-          "mouthConfidence": 0.962312272346186,
+          "mouthConfidence": 0.962311996874305,
           "mouthLineConfidence": 1.0,
           "pupilConfidence": 1.0
         },
         "rejectionReasons": [],
-        "score": 0.9604156861457851,
+        "score": 0.9604156216852536,
         "warnings": [
           "gaze disabled because an iris lacks one horizontal or one quarter vertical pixel of safe clearance",
           "blink and gaze disabled because the image shortest side is below 256 pixels"

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { IdleBehavior } from "../src/behavior.js";
+import { lookReactionAmount, mouthPulseAmount } from "../src/runtime.js";
 import { eyeIrisPlan, eyeWarpGrids, mouthOpenPlan } from "../src/warp.js";
 import { fixtureManifest } from "./fixture.js";
 
@@ -10,6 +11,23 @@ test("idle behavior is deterministic for a compiled seed", () => {
   const first = new IdleBehavior(manifest);
   const second = new IdleBehavior(manifest);
   for (const time of [0, 1, 2.9, 3.2, 4.7, 8.1]) assert.deepEqual(first.sample(time), second.sample(time));
+});
+
+test("named reaction envelopes are bounded, deterministic, and return to neutral", () => {
+  const phases = Array.from({ length: 101 }, (_, index) => index / 100);
+  const mouth = phases.map((phase) => mouthPulseAmount(phase, 1, 4));
+  assert.equal(mouth[0], 0);
+  assert.ok((mouth.at(-1) ?? 1) < 1e-12);
+  assert.ok(mouth.some((value) => value > 0.6));
+  assert.ok(mouth.every((value) => value >= 0 && value <= 0.72));
+  assert.deepEqual(mouth, phases.map((phase) => mouthPulseAmount(phase, 1, 4)));
+
+  assert.equal(lookReactionAmount(-0.1, 1), 0);
+  assert.equal(lookReactionAmount(0, 1), 0);
+  assert.equal(lookReactionAmount(0.22, 1), 1);
+  assert.equal(lookReactionAmount(0.5, 1), 1);
+  assert.equal(lookReactionAmount(1, 1), 0);
+  assert.equal(lookReactionAmount(1.1, 1), 0);
 });
 
 test("blink collapses only the inner rows while patch boundaries stay fixed", () => {

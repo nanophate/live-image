@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,6 +13,8 @@ import numpy as np
 
 from compiler import __version__
 from compiler.compile_character import (
+    DetectorRuntime,
+    EXPECTED_MODEL_SHA256,
     assess_quality,
     closed_eye_corrective_layer,
     compile_eye,
@@ -19,6 +22,7 @@ from compiler.compile_character import (
     compile_paths,
     detect_pupil,
     ellipse_inside_polygon,
+    load_detector_runtime,
     normalise_box,
     safe_diagonal_ellipse_shifts,
     safe_symmetric_ellipse_shift,
@@ -26,6 +30,79 @@ from compiler.compile_character import (
 
 
 class CompilerGeometryTests(unittest.TestCase):
+    def test_detector_runtime_defaults_to_reproducible_single_thread(self) -> None:
+        with (
+            mock.patch.dict(os.environ, {}, clear=True),
+            mock.patch("torch.set_num_threads") as set_threads,
+            mock.patch("torch.get_num_interop_threads", return_value=12),
+            mock.patch("torch.set_num_interop_threads") as set_interop_threads,
+            mock.patch("compiler.compile_character.create_detector", return_value=object()),
+            mock.patch(
+                "compiler.compile_character.get_checkpoint_path",
+                side_effect=lambda name: Path(name),
+            ),
+            mock.patch(
+                "compiler.compile_character.sha256_file",
+                side_effect=lambda path: EXPECTED_MODEL_SHA256[path.name],
+            ),
+        ):
+            runtime = load_detector_runtime(False, False)
+        set_threads.assert_called_once_with(1)
+        set_interop_threads.assert_called_once_with(1)
+        self.assertEqual(runtime.digests, EXPECTED_MODEL_SHA256)
+
+    def test_detector_runtime_applies_explicit_container_thread_limit(self) -> None:
+        with (
+            mock.patch.dict(
+                os.environ,
+                {
+                    "LIVING_IMAGE_TORCH_THREADS": "1",
+                    "LIVING_IMAGE_TORCH_INTEROP_THREADS": "1",
+                },
+            ),
+            mock.patch("torch.set_num_threads") as set_threads,
+            mock.patch("torch.get_num_interop_threads", return_value=12),
+            mock.patch("torch.set_num_interop_threads") as set_interop_threads,
+            mock.patch("compiler.compile_character.create_detector", return_value=object()),
+            mock.patch(
+                "compiler.compile_character.get_checkpoint_path",
+                side_effect=lambda name: Path(name),
+            ),
+            mock.patch(
+                "compiler.compile_character.sha256_file",
+                side_effect=lambda path: EXPECTED_MODEL_SHA256[path.name],
+            ),
+        ):
+            runtime = load_detector_runtime(False, False)
+        set_threads.assert_called_once_with(1)
+        set_interop_threads.assert_called_once_with(1)
+        self.assertEqual(runtime.digests, EXPECTED_MODEL_SHA256)
+
+    def test_detector_runtime_rejects_invalid_thread_limit(self) -> None:
+        for variable in ("LIVING_IMAGE_TORCH_THREADS", "LIVING_IMAGE_TORCH_INTEROP_THREADS"):
+            for value in ("0", "not-an-integer"):
+                with self.subTest(variable=variable, value=value), mock.patch.dict(
+                    os.environ,
+                    {
+                        "LIVING_IMAGE_TORCH_THREADS": "1",
+                        "LIVING_IMAGE_TORCH_INTEROP_THREADS": "1",
+                        variable: value,
+                    },
+                ):
+                    with self.assertRaisesRegex(RuntimeError, "positive integers"):
+                        load_detector_runtime(False, False)
+
+    def test_detector_runtime_rejects_unreviewed_weight_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            checkpoint = Path(temporary) / "model.safetensors"
+            checkpoint.write_bytes(b"unreviewed-model")
+            with (
+                mock.patch("compiler.compile_character.create_detector", return_value=object()),
+                mock.patch("compiler.compile_character.get_checkpoint_path", return_value=checkpoint),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "detector weight digest mismatch"):
+                    load_detector_runtime(False, False)
+
     def quality_with(
         self,
         *,
@@ -383,20 +460,28 @@ class CompilerGeometryTests(unittest.TestCase):
             source_dir.mkdir()
             source = source_dir / "portrait.png"
             self.assertTrue(cv2.imwrite(str(source), np.zeros((32, 32, 3), dtype=np.uint8)))
-            checkpoint = root / "model.bin"
-            checkpoint.write_bytes(b"model")
             detector = mock.Mock(return_value=[])
-            with (
-                mock.patch("compiler.compile_character.create_detector", return_value=detector),
-                mock.patch("compiler.compile_character.get_checkpoint_path", return_value=checkpoint),
-            ):
-                results = compile_paths([source], root / "output", None, False, False)
+            runtime = DetectorRuntime(detector=detector, digests={"test": "hash"})
+            results = compile_paths([source], root / "output", None, False, False, runtime)
 
             diagnostic = json.loads(results[0][0].read_text(encoding="utf-8"))
             self.assertEqual(__version__, "0.8.0")
             self.assertEqual(diagnostic["input"], "portrait.png")
             self.assertEqual(diagnostic["compilerVersion"], __version__)
             self.assertNotIn(str(root), json.dumps(diagnostic))
+
+    def test_compile_paths_rechecks_runtime_image_dimension_limit_before_detection(self) -> None:
+        detector = mock.Mock()
+        runtime = DetectorRuntime(detector=detector, digests={})
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch(
+                "compiler.compile_character.cv2.imread",
+                return_value=np.zeros((1, 8193, 3), dtype=np.uint8),
+            ):
+                with self.assertRaisesRegex(ValueError, "portable runtime limit"):
+                    compile_paths([root / "oversized.png"], root / "output", None, True, False, runtime)
+        detector.assert_not_called()
 
 
 if __name__ == "__main__":

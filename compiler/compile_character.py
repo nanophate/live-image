@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from dataclasses import dataclass
 import hashlib
 import importlib.metadata
 import json
@@ -40,6 +41,53 @@ MIN_FULL_PUPIL_CONFIDENCE = 0.60
 MIN_FULL_EYE_CONFIDENCE = 0.70
 MIN_FULL_EYE_SYMMETRY = 0.70
 MIN_FULL_IMAGE_DIMENSION = 256
+MAX_IMAGE_DIMENSION = 8192
+MAX_IMAGE_PIXELS = 33_554_432
+EXPECTED_MODEL_SHA256 = {
+    "yolov3": "23bbc708146bcbc1c910f00fe152adbc70d7658d875a0121eaf4ee61d978b2c4",
+    "hrnetv2": "e71271376406a743c01528a0460637fcc06e72aeeea583f85007cc72dc8b7a4a",
+}
+
+
+@dataclass(frozen=True)
+class DetectorRuntime:
+    """Loaded detector and immutable model digests reusable across compiles."""
+
+    detector: Any
+    digests: dict[str, str]
+
+
+def load_detector_runtime(offline: bool, flip_test: bool) -> DetectorRuntime:
+    if offline:
+        os.environ["HF_HUB_OFFLINE"] = "1"
+    thread_value = os.environ.get("LIVING_IMAGE_TORCH_THREADS", "1")
+    interop_value = os.environ.get("LIVING_IMAGE_TORCH_INTEROP_THREADS", "1")
+    try:
+        thread_count = int(thread_value)
+        interop_count = int(interop_value)
+    except ValueError as error:
+        raise RuntimeError("Living Image PyTorch thread limits must be positive integers") from error
+    if thread_count < 1 or interop_count < 1:
+        raise RuntimeError("Living Image PyTorch thread limits must be positive integers")
+    import torch
+
+    torch.set_num_threads(thread_count)
+    if torch.get_num_interop_threads() != interop_count:
+        try:
+            torch.set_num_interop_threads(interop_count)
+        except RuntimeError as error:
+            raise RuntimeError("PyTorch interop threads must be configured before inference") from error
+    detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
+    model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
+    digests = {name: sha256_file(path) for name, path in model_paths.items()}
+    mismatches = {
+        name: {"expected": EXPECTED_MODEL_SHA256[name], "actual": digest}
+        for name, digest in digests.items()
+        if digest != EXPECTED_MODEL_SHA256[name]
+    }
+    if mismatches:
+        raise RuntimeError(f"detector weight digest mismatch: {mismatches}")
+    return DetectorRuntime(detector=detector, digests=digests)
 
 
 def clamp(value: float, minimum: float, maximum: float) -> float:
@@ -1307,23 +1355,29 @@ def compile_paths(
     overlay_dir: Path | None,
     offline: bool,
     flip_test: bool,
+    detector_runtime: DetectorRuntime | None = None,
 ) -> list[tuple[Path, dict[str, Any]]]:
-    if offline:
-        os.environ["HF_HUB_OFFLINE"] = "1"
     output_dir.mkdir(parents=True, exist_ok=True)
     if overlay_dir:
         overlay_dir.mkdir(parents=True, exist_ok=True)
 
-    detector = create_detector("yolov3", device="cpu", flip_test=flip_test)
-    model_paths = {name: get_checkpoint_path(name) for name in ("yolov3", "hrnetv2")}
-    digests = {name: sha256_file(path) for name, path in model_paths.items()}
+    runtime = detector_runtime or load_detector_runtime(offline, flip_test)
     results: list[tuple[Path, dict[str, Any]]] = []
 
     for input_path in input_paths:
         image = cv2.imread(str(input_path), cv2.IMREAD_COLOR)
         if image is None:
             raise ValueError(f"could not decode image: {input_path}")
-        predictions = detector(image)
+        image_height, image_width = image.shape[:2]
+        if (
+            image_width > MAX_IMAGE_DIMENSION
+            or image_height > MAX_IMAGE_DIMENSION
+            or image_width * image_height > MAX_IMAGE_PIXELS
+        ):
+            raise ValueError(
+                f"image dimensions exceed the portable runtime limit: {image_width}x{image_height}"
+            )
+        predictions = runtime.detector(image)
         if not predictions:
             diagnostic = {
                 "input": input_path.name,
@@ -1337,7 +1391,7 @@ def compile_paths(
             results.append((diagnostic_path, diagnostic))
             continue
 
-        manifest = build_manifest(input_path, image, predictions, digests)
+        manifest = build_manifest(input_path, image, predictions, runtime.digests)
         output_path = output_dir / f"{input_path.stem}.limg"
         output_path.write_text(json.dumps(manifest, separators=(",", ":")), encoding="utf-8")
         if overlay_dir:
